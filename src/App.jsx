@@ -12,7 +12,6 @@ import thunderSound from '/assets/sounds/thunder.mp3';
 function App() {
   const [response, setResponse] = useState(null);
   const { customSound, setCustomSound } = useContext(Context);
-  console.log('customSound: ', customSound);
 
   return (
     <>

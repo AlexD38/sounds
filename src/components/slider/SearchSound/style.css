@@ -1,19 +1,22 @@
 .search-container {
-  min-width: 100%;
+  width: 100%;
   display: flex;
-  flex-direction: row;
+  flex-direction: column;
   justify-content: center;
   align-items: center;
+  /* border: 1px solid red; */
+  gap: 1rem;
+  margin-bottom: 3rem;
 }
 
 .search-bar {
-  width: 20%;
-  margin: 5rem auto;
+  width: 80%;
+  margin: 0 auto;
   padding: 1rem;
   border-radius: 0.5rem;
   height: 3rem;
 }
-/* .search-expand {
-  height: 3rem;
-  width: 70%;
-} */
+.search-button {
+  /* border: 1px solid red; */
+  min-width: 20%;
+}

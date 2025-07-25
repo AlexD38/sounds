@@ -36,7 +36,11 @@ export default function SearchSound() {
         ref={inputRef}
         onChange={handleInput}
       />
-      {searchBtnDisplayed && <button onClick={handleSearch}>Search !</button>}
+      {searchBtnDisplayed && (
+        <button className="search-button" onClick={handleSearch}>
+          Search !
+        </button>
+      )}
     </div>
   );
 }
