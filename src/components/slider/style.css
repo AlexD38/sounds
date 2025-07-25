@@ -1,0 +1,42 @@
+@import url('https://fonts.googleapis.com/css2?family=Orbitron&display=swap'); /* exemple de font */
+
+.slider-container {
+  position: relative;
+  width: 60px;
+  background: #222;
+  border-radius: 10px;
+  user-select: none;
+  cursor: pointer;
+  font-family: 'Orbitron', sans-serif;
+}
+
+.slider-track {
+  position: absolute;
+  width: 10px;
+  left: 50%;
+  transform: translateX(-50%);
+  height: 100%;
+  background: #555;
+  border-radius: 5px;
+}
+
+.slider-thumb {
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 30px;
+  height: 30px;
+  background: #4caf50;
+  border-radius: 50%;
+  box-shadow: 0 0 5px #4caf50aa;
+  transition: background 0.2s;
+}
+
+.slider-value {
+  position: absolute;
+  bottom: -30px;
+  width: 100%;
+  text-align: center;
+  color: #eee;
+  font-size: 1.2em;
+}
