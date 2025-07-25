@@ -4,7 +4,11 @@ import Slider from './components/slider/Slider';
 import Player from './Player';
 import SearchSound from './components/slider/SearchSound/SearchSound';
 import { Context } from './context/context';
-
+import villageSound from '/assets/sounds/village.mp3';
+import springSound from '/assets/sounds/spring.mp3';
+import oceanSound from '/assets/sounds/ocean.mp3';
+import rainSound from '/assets/sounds/rain.mp3';
+import thunderSound from '/assets/sounds/thunder.mp3';
 function App() {
   const [response, setResponse] = useState(null);
   const { customSound, setCustomSound } = useContext(Context);
@@ -22,11 +26,11 @@ function App() {
         title="Morning birds"
         sourcePath="/public/assets/sounds/morning.mp3"
       />
-      <Player title="Village" sourcePath="/public/assets/sounds/village.mp3" />
-      <Player title="Spring" sourcePath="/public/assets/sounds/spring.mp3" />
-      <Player title="Ocean" sourcePath="/public/assets/sounds/ocean.mp3" />
-      <Player title="Rain" sourcePath="/public/assets/sounds/rain.mp3" />
-      <Player title="Thunder" sourcePath="/public/assets/sounds/thunder.mp3" />
+      <Player title="Village" sourcePath={villageSound} />
+      <Player title="Spring" sourcePath={springSound} />
+      <Player title="Ocean" sourcePath={oceanSound} />
+      <Player title="Rain" sourcePath={rainSound} />
+      <Player title="Thunder" sourcePath={thunderSound} />
     </>
   );
 }
