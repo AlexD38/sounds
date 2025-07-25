@@ -3,7 +3,7 @@ import './App.css';
 import { Context } from './context/context';
 import { SearchThatSound } from './utils/utils';
 
-function Player({ title, sourcePath }) {
+function Player({ title, sourcePath, custom }) {
   const [filterValue, setFilterValue] = useState(800);
   const [volValue, setVolValue] = useState(0.5);
   const [isPLaying, setIsPlaying] = useState();
@@ -273,9 +273,11 @@ function Player({ title, sourcePath }) {
                 <button onClick={applyStereoEffectNow}>
                   <i className="fa-solid fa-check-double playing"></i>
                 </button>
-                <button onClick={refresh}>
-                  <i className="fa-solid fa-arrows-rotate playing"></i>{' '}
-                </button>
+                {custom && (
+                  <button onClick={refresh}>
+                    <i className="fa-solid fa-arrows-rotate playing"></i>{' '}
+                  </button>
+                )}
               </>
             )}
           </div>

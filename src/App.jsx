@@ -17,7 +17,11 @@ function App() {
     <>
       <SearchSound />
       {customSound && (
-        <Player title={customSound.title} sourcePath={customSound.url} />
+        <Player
+          title={customSound.title}
+          sourcePath={customSound.url}
+          custom={true}
+        />
       )}
 
       <Player title="Noise" />

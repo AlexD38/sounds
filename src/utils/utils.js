@@ -228,7 +228,7 @@ export const SearchThatSound = async query => {
 
   const obj = {
     url: mp3Preview,
-    title: previews.name.split('.')[0].split(' ').slice(0, 3)[0] || query,
+    title: query,
     image: previews.images['spectral_bw_l'],
     tags: previews.category,
     similar: previews.similar_sounds,
