@@ -7,13 +7,16 @@ function Player({ title, sourcePath, custom }) {
   const [filterValue, setFilterValue] = useState(800);
   const [volValue, setVolValue] = useState(0.5);
   const [isPLaying, setIsPlaying] = useState();
+  const [playbackRate, setPlaybackRate] = useState(1);
+  const [isStereo, setIsStereo] = useState(false);
   const audioCtxRef = useRef(null);
   const sourceNodeRef = useRef(null);
   const noiseSourceRef = useRef(null);
   const gainNodeRef = useRef(null);
   const filterRef = useRef(null);
   const modulatorIntervalRef = useRef(null);
-  const stereoAppliedRef = useRef(false);
+  
+  const stereoNodesRef = useRef(null);
   const token = import.meta.env.VITE_API_KEY;
 
   const { customSound, setCustomSound, currentInput, setCurrentInput } =
@@ -43,6 +46,19 @@ function Player({ title, sourcePath, custom }) {
       );
     }
   };
+
+  const handlePlaybackRateChange = e => {
+    const value = parseFloat(e.currentTarget.value);
+    setPlaybackRate(value);
+    if (sourceNodeRef.current && audioCtxRef.current) {
+      sourceNodeRef.current.playbackRate.setTargetAtTime(
+        value,
+        audioCtxRef.current.currentTime,
+        0.01
+      );
+    }
+  };
+
   async function play(event, sourcePath, custom) {
     setIsPlaying(true);
     if (isPLaying && event.target.dataset.stop) {
@@ -129,6 +145,7 @@ function Player({ title, sourcePath, custom }) {
       const bufferSource = audioCtx.createBufferSource();
       bufferSource.buffer = audioBuffer;
       bufferSource.loop = true; // facultatif
+      bufferSource.playbackRate.value = playbackRate;
 
       // Gain
       const gainNode = audioCtx.createGain();
@@ -157,6 +174,7 @@ function Player({ title, sourcePath, custom }) {
   }
   function stop() {
     setIsPlaying(false);
+    setIsStereo(false);
     console.log('stop');
     if (noiseSourceRef.current) {
       noiseSourceRef.current.stop();
@@ -180,24 +198,36 @@ function Player({ title, sourcePath, custom }) {
       audioCtxRef.current = null;
     }
   }
-  function applyStereoEffectNow() {
+  function toggleStereoEffect() {
     const audioCtx = audioCtxRef.current;
     const filter = filterRef.current;
     const gainNode = gainNodeRef.current;
 
-    if (!audioCtx || !filter || !gainNode || stereoAppliedRef.current) return;
+    if (!audioCtx || !filter || !gainNode) return;
 
-    // Déconnecter l'ancien chemin direct
-    filter.disconnect();
+    if (isStereo) {
+      // Disable stereo
+      const { merger } = stereoNodesRef.current;
 
-    // Appliquer le traitement stéréo
-    const stereoSignal = applyStereoDelayRight(audioCtx, filter);
+      filter.disconnect();
+      merger.disconnect();
 
-    // Reconnecter vers le gainNode
-    stereoSignal.connect(gainNode);
+      // Reconnect filter directly to gainNode
+      filter.connect(gainNode);
 
-    // Marquer comme appliqué
-    stereoAppliedRef.current = true;
+      setIsStereo(false);
+      stereoNodesRef.current = null;
+    } else {
+      // Enable stereo
+      filter.disconnect();
+
+      const stereoNodes = applyStereoDelayRight(audioCtx, filter);
+      stereoNodesRef.current = stereoNodes;
+
+      stereoNodes.merger.connect(gainNode);
+
+      setIsStereo(true);
+    }
   }
   function applyStereoDelayRight(audioCtx, sourceNode) {
     const splitter = audioCtx.createChannelSplitter(2);
@@ -216,7 +246,7 @@ function Player({ title, sourcePath, custom }) {
     splitter.connect(delayRight, 0); // out channel 0 → delay
     delayRight.connect(merger, 0, 1); // delay output → in channel 1
 
-    return merger; // Tu dois connecter ce "merger" ensuite à la suite (ex: gainNode)
+    return { splitter, delayRight, merger };
   }
 
   const refresh = async () => {
@@ -261,6 +291,16 @@ function Player({ title, sourcePath, custom }) {
                 defaultValue={50}
                 onChange={handleVolValue}
               />
+              <span>Speed</span>
+              <input
+                className="speed-range"
+                type="range"
+                min="0.5"
+                max="2"
+                step="0.1"
+                defaultValue={1}
+                onChange={handlePlaybackRateChange}
+              />
             </div>
           )}
 
@@ -270,8 +310,12 @@ function Player({ title, sourcePath, custom }) {
                 <button onClick={stop} data-stop={true}>
                   <i className="fa-solid fa-pause playing" data-stop={true}></i>
                 </button>
-                <button onClick={applyStereoEffectNow}>
-                  <i className="fa-solid fa-check-double playing"></i>
+                <button onClick={toggleStereoEffect}>
+                  <i
+                    className={`fa-solid ${
+                      isStereo ? 'fa-check-double' : 'fa-check'
+                    } playing`}
+                  ></i>
                 </button>
                 {custom && (
                   <button onClick={refresh}>

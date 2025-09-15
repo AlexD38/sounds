@@ -194,7 +194,7 @@ function applyStereoDelayRight(audioCtx, sourceNode) {
 }
 export const SearchThatSound = async query => {
   const response = await fetch(
-    `https://freesound.org/apiv2/search/text/?token=${token}&query=${query}&filter=category:Soundscapes`
+    `https://freesound.org/apiv2/search/text/?token=${token}&query=${query}&filter=category:Music`
   );
 
   let datas = await response.json();
