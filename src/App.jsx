@@ -5,6 +5,7 @@ import Player from './Player';
 import SearchSound from './components/slider/SearchSound/SearchSound';
 import { Context } from './context/context';
 import villageSound from '/assets/sounds/village.mp3';
+import monrningSound from '/assets/sounds/morning.mp3';
 import springSound from '/assets/sounds/spring.mp3';
 import oceanSound from '/assets/sounds/ocean.mp3';
 import rainSound from '/assets/sounds/rain.mp3';
@@ -25,10 +26,7 @@ function App() {
       )}
 
       <Player title="Noise" />
-      <Player
-        title="Morning birds"
-        sourcePath="/public/assets/sounds/morning.mp3"
-      />
+      <Player title="Morning birds" sourcePath={monrningSound} />
       <Player title="Village" sourcePath={villageSound} />
       <Player title="Spring" sourcePath={springSound} />
       <Player title="Ocean" sourcePath={oceanSound} />
