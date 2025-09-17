@@ -9,7 +9,10 @@ import monrningSound from '/assets/sounds/morning.mp3';
 import springSound from '/assets/sounds/spring.mp3';
 import oceanSound from '/assets/sounds/ocean.mp3';
 import rainSound from '/assets/sounds/rain.mp3';
+import pianoSound from '/assets/sounds/piano.mp3';
+import windows from '/assets/sounds/windows.wav';
 import thunderSound from '/assets/sounds/thunder.mp3';
+import Stretcher from './strecther/Stretcher';
 function App() {
   const [response, setResponse] = useState(null);
   const { customSound, setCustomSound } = useContext(Context);
@@ -24,7 +27,7 @@ function App() {
           custom={true}
         />
       )}
-
+      <Stretcher source={pianoSound} />
       <Player title="Noise" />
       <Player title="Morning birds" sourcePath={monrningSound} />
       <Player title="Village" sourcePath={villageSound} />

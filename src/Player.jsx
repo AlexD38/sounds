@@ -4,8 +4,8 @@ import { Context } from './context/context';
 import { SearchThatSound } from './utils/utils';
 
 function Player({ title, sourcePath, custom }) {
-  const [filterValue, setFilterValue] = useState(800);
-  const [volValue, setVolValue] = useState(0.5);
+  const [filterValue, setFilterValue] = useState(1500);
+  const [volValue, setVolValue] = useState(1);
   const [isPLaying, setIsPlaying] = useState();
   const [playbackRate, setPlaybackRate] = useState(1);
   const [isStereo, setIsStereo] = useState(false);
@@ -15,7 +15,7 @@ function Player({ title, sourcePath, custom }) {
   const gainNodeRef = useRef(null);
   const filterRef = useRef(null);
   const modulatorIntervalRef = useRef(null);
-  
+
   const stereoNodesRef = useRef(null);
   const token = import.meta.env.VITE_API_KEY;
 
@@ -280,6 +280,7 @@ function Player({ title, sourcePath, custom }) {
                 max="1500"
                 step="10"
                 onChange={handleFilterValue}
+                value={filterValue}
               />
               <span>Volume</span>
               <input
@@ -288,7 +289,7 @@ function Player({ title, sourcePath, custom }) {
                 min="0"
                 max="100"
                 step="1"
-                defaultValue={50}
+                value={volValue * 100}
                 onChange={handleVolValue}
               />
               <span>Speed</span>
@@ -298,7 +299,7 @@ function Player({ title, sourcePath, custom }) {
                 min="0.5"
                 max="2"
                 step="0.1"
-                defaultValue={1}
+                value={playbackRate}
                 onChange={handlePlaybackRateChange}
               />
             </div>
