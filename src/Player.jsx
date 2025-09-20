@@ -1,12 +1,12 @@
-import { useContext, useRef, useState } from 'react';
+import { useContext, useRef, useState, useEffect } from 'react';
 import './App.css';
 import { Context } from './context/context';
-import { SearchThatSound } from './utils/utils';
+import { perlinNoise, SearchThatSound } from './utils/utils';
 
 function Player({ title, sourcePath, custom }) {
-  const [filterValue, setFilterValue] = useState(1500);
-  const [volValue, setVolValue] = useState(1);
-  const [isPLaying, setIsPlaying] = useState();
+  const [filterValue, setFilterValue] = useState(1800);
+  const [volValue, setVolValue] = useState(1.5);
+  const [isPlaying, setIsPlaying] = useState(false);
   const [playbackRate, setPlaybackRate] = useState(1);
   const [isStereo, setIsStereo] = useState(false);
   const audioCtxRef = useRef(null);
@@ -21,6 +21,34 @@ function Player({ title, sourcePath, custom }) {
 
   const { customSound, setCustomSound, currentInput, setCurrentInput } =
     useContext(Context);
+
+  function startPerlinModulation(minGain = 0, maxGain = 1.5) {
+    if (!gainNodeRef.current || !audioCtxRef.current) return;
+
+    // Clear d'abord pour éviter les doublons
+    if (modulatorIntervalRef.current) {
+      clearInterval(modulatorIntervalRef.current);
+    }
+
+    // console.log(`Starting Perlin noise with range [${minGain}, ${maxGain}]`);
+    let t = 0;
+    const speed = 0.005;
+
+    modulatorIntervalRef.current = setInterval(() => {
+      const noise = perlinNoise(t);
+      const mapped = (noise + 1) / 2;
+      const newGain = minGain + mapped * (maxGain - minGain);
+
+      gainNodeRef.current.gain.setTargetAtTime(
+        newGain,
+        audioCtxRef.current.currentTime,
+        0.05
+      );
+      console.log('Perlin modulation → value:', newGain.toFixed(2));
+
+      t += speed;
+    }, 50);
+  }
 
   const handleFilterValue = e => {
     const value = parseFloat(e.currentTarget.value);
@@ -60,17 +88,19 @@ function Player({ title, sourcePath, custom }) {
   };
 
   async function play(event, sourcePath, custom) {
-    setIsPlaying(true);
-    if (isPLaying && event.target.dataset.stop) {
+    if (isPlaying && event.target.dataset.stop) {
       setIsPlaying(false);
       stop();
       return;
     }
-    if (isPLaying) {
+    if (isPlaying) {
       return;
     }
+    setIsPlaying(true);
+
     if (sourcePath) {
       await playFromSource(sourcePath, custom);
+
       return;
     }
 
@@ -109,13 +139,18 @@ function Player({ title, sourcePath, custom }) {
     filter.frequency.setValueAtTime(filterValue, audioCtx.currentTime);
     filterRef.current = filter;
 
-    // 🔄 Connexion initiale simple (pas de stéréo encore)
     filter.connect(gainNode);
     gainNode.connect(audioCtx.destination);
 
     noiseSource.connect(filter);
     noiseSource.start();
+
+    // Ici aussi, si bruit blanc + perlin activé
+    if (custom === 'perlinNoise') {
+      startPerlinModulation(0, 1.5);
+    }
   }
+
   async function playFromSource(sourcePath, custom) {
     try {
       // Crée un nouveau contexte audio si nécessaire
@@ -168,6 +203,10 @@ function Player({ title, sourcePath, custom }) {
       sourceNodeRef.current = bufferSource;
       gainNodeRef.current = gainNode;
       filterRef.current = filter;
+      // Ici aussi, perlin activé
+      if (custom === 'perlinNoise') {
+        startPerlinModulation(0, 1.5);
+      }
     } catch (err) {
       console.error('Erreur lors de la lecture du fichier :', err);
     }
@@ -261,16 +300,16 @@ function Player({ title, sourcePath, custom }) {
     <div
       data-stop={true}
       className={
-        isPLaying
+        isPlaying
           ? ' player-container is-playing playing expand'
           : 'player-container'
       }
-      onClick={event => play(event, sourcePath)}
+      onClick={event => play(event, sourcePath, custom)}
     >
-      <h3 className={isPLaying ? 'playing' : ''}>{title}</h3>
-      {isPLaying && (
+      <h3 className={isPlaying ? 'playing' : ''}>{title}</h3>
+      {isPlaying && (
         <div className="main-container">
-          {isPLaying && (
+          {isPlaying && (
             <div className="sliders-container">
               <span>Filter</span>
               <input
@@ -306,7 +345,7 @@ function Player({ title, sourcePath, custom }) {
           )}
 
           <div className="btn-container">
-            {isPLaying && (
+            {isPlaying && (
               <>
                 <button onClick={stop} data-stop={true}>
                   <i className="fa-solid fa-pause playing" data-stop={true}></i>
