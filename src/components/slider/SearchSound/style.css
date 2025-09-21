@@ -20,3 +20,12 @@
   /* border: 1px solid red; */
   min-width: 20%;
 }
+.search-bar {
+  width: 40%;
+  margin: 2rem auto;
+  transition: all .3s ease;
+}
+.search-bar:focus {
+  width: 70%;
+  transition: all .3s ease;
+}

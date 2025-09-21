@@ -30,7 +30,7 @@ function Player({ title, sourcePath, custom }) {
       clearInterval(modulatorIntervalRef.current);
     }
 
-    // console.log(`Starting Perlin noise with range [${minGain}, ${maxGain}]`);
+    console.log(`Starting Perlin noise with range [${minGain}, ${maxGain}]`);
     let t = 0;
     const speed = 0.005;
 
@@ -50,6 +50,13 @@ function Player({ title, sourcePath, custom }) {
     }, 50);
   }
 
+  function stopPerlinModulation() {
+    if (modulatorIntervalRef.current) {
+      clearInterval(modulatorIntervalRef.current);
+      modulatorIntervalRef.current = null;
+    }
+  }
+
   const handleFilterValue = e => {
     const value = parseFloat(e.currentTarget.value);
     setFilterValue(value);
@@ -63,15 +70,29 @@ function Player({ title, sourcePath, custom }) {
   };
   const handleVolValue = e => {
     const value = parseFloat(e.currentTarget.value) / 100;
-
     setVolValue(value);
 
-    if (gainNodeRef.current && audioCtxRef.current) {
-      gainNodeRef.current.gain.setTargetAtTime(
-        value,
-        audioCtxRef.current.currentTime,
-        0.01
-      );
+    if (custom === 'perlinNoise' && isPlaying) {
+      if (value === 0) {
+        stopPerlinModulation();
+        if (gainNodeRef.current && audioCtxRef.current) {
+          gainNodeRef.current.gain.setTargetAtTime(
+            0,
+            audioCtxRef.current.currentTime,
+            0.01
+          );
+        }
+      } else {
+        startPerlinModulation(0.5, value);
+      }
+    } else {
+      if (gainNodeRef.current && audioCtxRef.current) {
+        gainNodeRef.current.gain.setTargetAtTime(
+          value,
+          audioCtxRef.current.currentTime,
+          0.01
+        );
+      }
     }
   };
 
@@ -147,7 +168,7 @@ function Player({ title, sourcePath, custom }) {
 
     // Ici aussi, si bruit blanc + perlin activé
     if (custom === 'perlinNoise') {
-      startPerlinModulation(0, 1.5);
+      startPerlinModulation(0.5, volValue);
     }
   }
 
@@ -205,7 +226,7 @@ function Player({ title, sourcePath, custom }) {
       filterRef.current = filter;
       // Ici aussi, perlin activé
       if (custom === 'perlinNoise') {
-        startPerlinModulation(0, 1.5);
+        startPerlinModulation(0.5, volValue);
       }
     } catch (err) {
       console.error('Erreur lors de la lecture du fichier :', err);
@@ -311,36 +332,46 @@ function Player({ title, sourcePath, custom }) {
         <div className="main-container">
           {isPlaying && (
             <div className="sliders-container">
-              <span>Filter</span>
-              <input
-                className="noise-range"
-                type="range"
-                min="50"
-                max="1500"
-                step="10"
-                onChange={handleFilterValue}
-                value={filterValue}
-              />
-              <span>Volume</span>
-              <input
-                className="vol-range"
-                type="range"
-                min="0"
-                max="100"
-                step="1"
-                value={volValue * 100}
-                onChange={handleVolValue}
-              />
-              <span>Speed</span>
-              <input
-                className="speed-range"
-                type="range"
-                min="0.5"
-                max="2"
-                step="0.1"
-                value={playbackRate}
-                onChange={handlePlaybackRateChange}
-              />
+              <div className="sliders-labels">
+                <span>
+                  <i class="fa-solid fa-filter"></i>
+                </span>
+                <span>
+                  <i class="fa-solid fa-volume-high"></i>
+                </span>
+                <span>
+                  <i class="fa-solid fa-gauge-high"></i>
+                </span>
+              </div>
+              <div className="sliders">
+                <input
+                  className="noise-range"
+                  type="range"
+                  min="50"
+                  max="1500"
+                  step="10"
+                  onChange={handleFilterValue}
+                  value={filterValue}
+                />
+                <input
+                  className="vol-range"
+                  type="range"
+                  min="0"
+                  max="150"
+                  step="1"
+                  value={volValue * 100}
+                  onChange={handleVolValue}
+                />
+                <input
+                  className="speed-range"
+                  type="range"
+                  min="0.5"
+                  max="2"
+                  step="0.1"
+                  value={playbackRate}
+                  onChange={handlePlaybackRateChange}
+                />
+              </div>
             </div>
           )}
 
