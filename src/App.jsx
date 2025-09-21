@@ -29,24 +29,51 @@ function App() {
           custom={true}
         />
       )}
-      <Stretcher source={windows} custom="perlinNoise" />
-      <Player title="Noise" custom="perlinNoise" />
+      {/* <Stretcher source={windows} custom="perlinNoise" /> */}
       <Player
-        title="Morning birds"
+        title={<i class="fa-solid fa-ear-listen"></i>}
+        custom="perlinNoise"
+      />
+      <Player
+        title={<i class="fa-solid fa-dove"></i>}
         sourcePath={monrningSound}
         custom="perlinNoise"
       />
-      <Player title="Fireplace" sourcePath={fireSound} custom="perlinNoise" />
-      <Player title="Village" sourcePath={villageSound} custom="perlinNoise" />
-      <Player title="Spring" sourcePath={springSound} custom="perlinNoise" />
-      <Player title="Ocean" sourcePath={oceanSound} custom="perlinNoise" />
       <Player
-        title="LightRain"
+        title={<i class="fa-solid fa-fire"></i>}
+        sourcePath={fireSound}
+        custom="perlinNoise"
+      />
+      <Player
+        title={<i class="fa-solid fa-house"></i>}
+        sourcePath={villageSound}
+        custom="perlinNoise"
+      />
+      <Player
+        title={<i class="fa-solid fa-seedling"></i>}
+        sourcePath={springSound}
+        custom="perlinNoise"
+      />
+      <Player
+        title={<i class="fa-solid fa-water"></i>}
+        sourcePath={oceanSound}
+        custom="perlinNoise"
+      />
+      <Player
+        title={<i class="fa-solid fa-cloud-rain"></i>}
         sourcePath={lightRainSound}
         custom="perlinNoise"
       />
-      <Player title="Rain" sourcePath={rainSound} custom="perlinNoise" />
-      <Player title="Thunder" sourcePath={thunderSound} custom="perlinNoise" />
+      <Player
+        title={<i class="fa-solid fa-umbrella"></i>}
+        sourcePath={rainSound}
+        custom="perlinNoise"
+      />
+      <Player
+        title={<i class="fa-solid fa-cloud-bolt"></i>}
+        sourcePath={thunderSound}
+        custom="perlinNoise"
+      />
     </>
   );
 }
