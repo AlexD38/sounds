@@ -388,7 +388,7 @@ function Player({ title, sourcePath, custom }) {
                     } playing`}
                   ></i>
                 </button>
-                {custom && (
+                {custom == true && (
                   <button onClick={refresh}>
                     <i className="fa-solid fa-arrows-rotate playing"></i>{' '}
                   </button>
