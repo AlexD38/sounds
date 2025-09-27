@@ -30,33 +30,60 @@ function App() {
           custom={true}
         />
       )}
+
       {/* <Stretcher source={windows} custom="perlinNoise" /> */}
+
       <WhiteNoisePlayer custom="perlinNoise" />
+
       <Player
         title={'morning'}
         sourcePath={monrningSound}
         custom="perlinNoise"
       />
+
       <Player title={'fire'} sourcePath={fireSound} custom="perlinNoise" />
+
       <Player
         title={'village'}
         sourcePath={villageSound}
         custom="perlinNoise"
       />
+
       <Player title={'srping'} sourcePath={springSound} custom="perlinNoise" />
-      <Player title={'ocean'} sourcePath={oceanSound} custom="perlinNoise" />
+
+      <Player
+        title={'ocean'}
+        sourcePath={oceanSound}
+        custom="perlinNoise"
+        speed={true}
+      />
+
       <Player
         title={'lightRain'}
         sourcePath={lightRainSound}
         custom="perlinNoise"
       />
-      <Player title={'rain'} sourcePath={rainSound} custom="perlinNoise" />
+
+      <Player
+        title={'rain'}
+        sourcePath={rainSound}
+        custom="perlinNoise"
+        speed={true}
+      />
+
       <Player
         title={'thunder'}
         sourcePath={thunderSound}
         custom="perlinNoise"
+        speed={true}
       />
-      <Player title={'train'} sourcePath={trainSound} custom="perlinNoise" />
+
+      <Player
+        title={'train'}
+        sourcePath={trainSound}
+        custom="perlinNoise"
+        speed={true}
+      />
     </>
   );
 }

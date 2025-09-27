@@ -5,7 +5,7 @@ import { perlinNoise, SearchThatSound } from '../../utils/utils';
 import { soundTools } from '../../utils/modulateSound.tools';
 import { PlayerTitle } from '../PlayerTitle/PlayerTitle';
 
-function Player({ title, sourcePath, custom }) {
+function Player({ title, sourcePath, custom, speed }) {
   const [filterValue, setFilterValue] = useState(1800);
   const [volValue, setVolValue] = useState(1.5);
   const [isPlaying, setIsPlaying] = useState(false);
@@ -337,6 +337,7 @@ function Player({ title, sourcePath, custom }) {
                     }
                   ></i>
                 </span>
+
                 <span>
                   <i
                     className={
@@ -346,15 +347,17 @@ function Player({ title, sourcePath, custom }) {
                     }
                   ></i>
                 </span>
-                <span>
-                  <i
-                    className={
-                      isPlaying
-                        ? 'fa-solid fa-gauge-high playing'
-                        : 'fa-solid fa-gauge-high'
-                    }
-                  ></i>
-                </span>
+                {speed && (
+                  <span>
+                    <i
+                      className={
+                        isPlaying
+                          ? 'fa-solid fa-gauge-high playing'
+                          : 'fa-solid fa-gauge-high'
+                      }
+                    ></i>
+                  </span>
+                )}
               </div>
               <div className="sliders">
                 <input
@@ -375,15 +378,17 @@ function Player({ title, sourcePath, custom }) {
                   value={volValue * 100}
                   onChange={handleVolValue}
                 />
-                <input
-                  className="speed-range"
-                  type="range"
-                  min="0.5"
-                  max="2"
-                  step="0.1"
-                  value={playbackRate}
-                  onChange={handlePlaybackRateChange}
-                />
+                {speed && (
+                  <input
+                    className="speed-range"
+                    type="range"
+                    min="0.5"
+                    max="2"
+                    step="0.1"
+                    value={playbackRate}
+                    onChange={handlePlaybackRateChange}
+                  />
+                )}
               </div>
             </div>
           )}
