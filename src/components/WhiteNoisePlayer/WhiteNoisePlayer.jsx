@@ -1,9 +1,9 @@
 import { useContext, useRef, useState, useEffect } from 'react';
-import './App.css';
-import { Context } from './context/context';
-import { perlinNoise, SearchThatSound } from './utils/utils';
+import '../../App.css';
+import { Context } from '../../context/context';
+import { soundTools } from '../../utils/modulateSound.tools';
 
-function Player({ title, sourcePath, custom }) {
+function WhiteNoisePlayer({ title, custom }) {
   const [filterValue, setFilterValue] = useState(1800);
   const [volValue, setVolValue] = useState(1.5);
   const [isPlaying, setIsPlaying] = useState(false);
@@ -17,46 +17,8 @@ function Player({ title, sourcePath, custom }) {
   const modulatorIntervalRef = useRef(null);
 
   const stereoNodesRef = useRef(null);
-  const token = import.meta.env.VITE_API_KEY;
 
-  const { customSound, setCustomSound, currentInput, setCurrentInput } =
-    useContext(Context);
-
-  function startPerlinModulation(minGain = 0, maxGain = 1.5) {
-    if (!gainNodeRef.current || !audioCtxRef.current) return;
-
-    // Clear d'abord pour éviter les doublons
-    if (modulatorIntervalRef.current) {
-      clearInterval(modulatorIntervalRef.current);
-    }
-
-    console.log(`Starting Perlin noise with range [${minGain}, ${maxGain}]`);
-    let t = 0;
-    const speed = 0.005;
-
-    modulatorIntervalRef.current = setInterval(() => {
-      const noise = perlinNoise(t);
-      const mapped = (noise + 1) / 2;
-      const newGain = minGain + mapped * (maxGain - minGain);
-
-      gainNodeRef.current.gain.setTargetAtTime(
-        newGain,
-        audioCtxRef.current.currentTime,
-        0.05
-      );
-      console.log('Perlin modulation → value:', newGain.toFixed(2));
-
-      t += speed;
-    }, 50);
-  }
-
-  function stopPerlinModulation() {
-    if (modulatorIntervalRef.current) {
-      clearInterval(modulatorIntervalRef.current);
-      modulatorIntervalRef.current = null;
-    }
-  }
-
+  // FILTER ----------------------------------------
   const handleFilterValue = e => {
     const value = parseFloat(e.currentTarget.value);
     setFilterValue(value);
@@ -68,13 +30,15 @@ function Player({ title, sourcePath, custom }) {
       );
     }
   };
+
+  // VOLUME ----------------------------------------
   const handleVolValue = e => {
     const value = parseFloat(e.currentTarget.value) / 100;
     setVolValue(value);
 
     if (custom === 'perlinNoise' && isPlaying) {
       if (value === 0) {
-        stopPerlinModulation();
+        soundTools.perlinNoise.stopPerlinModulation(modulatorIntervalRef);
         if (gainNodeRef.current && audioCtxRef.current) {
           gainNodeRef.current.gain.setTargetAtTime(
             0,
@@ -83,7 +47,13 @@ function Player({ title, sourcePath, custom }) {
           );
         }
       } else {
-        startPerlinModulation(0.5, value);
+        soundTools.perlinNoise.startPerlinModulation(
+          0.5,
+          value,
+          gainNodeRef,
+          audioCtxRef,
+          modulatorIntervalRef
+        );
       }
     } else {
       if (gainNodeRef.current && audioCtxRef.current) {
@@ -96,19 +66,8 @@ function Player({ title, sourcePath, custom }) {
     }
   };
 
-  const handlePlaybackRateChange = e => {
-    const value = parseFloat(e.currentTarget.value);
-    setPlaybackRate(value);
-    if (sourceNodeRef.current && audioCtxRef.current) {
-      sourceNodeRef.current.playbackRate.setTargetAtTime(
-        value,
-        audioCtxRef.current.currentTime,
-        0.01
-      );
-    }
-  };
-
-  async function play(event, sourcePath, custom) {
+  // PLAY ----------------------------------------
+  async function play(event, custom) {
     if (isPlaying && event.target.dataset.stop) {
       setIsPlaying(false);
       stop();
@@ -119,39 +78,11 @@ function Player({ title, sourcePath, custom }) {
     }
     setIsPlaying(true);
 
-    if (sourcePath) {
-      await playFromSource(sourcePath, custom);
-
-      return;
-    }
-
     if (audioCtxRef.current) return;
 
-    const audioCtx = new window.AudioContext();
-    audioCtxRef.current = audioCtx;
+    const { gainNode, audioCtx, noiseSource } =
+      soundTools.noise.createWhiteNoise(audioCtxRef, noiseSourceRef);
 
-    const bufferSize = 2 * audioCtx.sampleRate;
-    const noiseBuffer = audioCtx.createBuffer(
-      1,
-      bufferSize,
-      audioCtx.sampleRate
-    );
-    const output = noiseBuffer.getChannelData(0);
-
-    let lastOut = 0.0;
-    for (let i = 0; i < bufferSize; i++) {
-      const white = Math.random() * 2 - 1;
-      output[i] = (lastOut + 0.02 * white) / 1.02;
-      lastOut = output[i];
-      output[i] *= 3.5;
-    }
-
-    const noiseSource = audioCtx.createBufferSource();
-    noiseSource.buffer = noiseBuffer;
-    noiseSource.loop = true;
-    noiseSourceRef.current = noiseSource;
-
-    const gainNode = audioCtx.createGain();
     gainNode.gain.setValueAtTime(volValue, audioCtx.currentTime);
     gainNodeRef.current = gainNode;
 
@@ -166,76 +97,21 @@ function Player({ title, sourcePath, custom }) {
     noiseSource.connect(filter);
     noiseSource.start();
 
-    // Ici aussi, si bruit blanc + perlin activé
     if (custom === 'perlinNoise') {
-      startPerlinModulation(0.5, volValue);
+      soundTools.perlinNoise.startPerlinModulation(
+        0.5,
+        volValue,
+        gainNodeRef,
+        audioCtxRef,
+        modulatorIntervalRef
+      );
     }
   }
 
-  async function playFromSource(sourcePath, custom) {
-    try {
-      // Crée un nouveau contexte audio si nécessaire
-      if (!audioCtxRef.current) {
-        audioCtxRef.current = new (window.AudioContext ||
-          window.webkitAudioContext)();
-      }
-      const audioCtx = audioCtxRef.current;
-
-      const response = await fetch(sourcePath);
-      console.log('final fetch for reading');
-      if (!response.ok) throw new Error('Fichier introuvable ou inaccessible');
-
-      const arrayBuffer = await response.arrayBuffer();
-
-      // Décode les données audio
-      const audioBuffer = await audioCtx.decodeAudioData(arrayBuffer);
-
-      // Stop l'ancienne source si elle existe
-      if (sourceNodeRef.current) {
-        try {
-          sourceNodeRef.current.stop();
-        } catch (e) {}
-      }
-
-      // Crée un BufferSource pour lire le buffer décodé
-      const bufferSource = audioCtx.createBufferSource();
-      bufferSource.buffer = audioBuffer;
-      bufferSource.loop = true; // facultatif
-      bufferSource.playbackRate.value = playbackRate;
-
-      // Gain
-      const gainNode = audioCtx.createGain();
-      gainNode.gain.setValueAtTime(volValue, audioCtx.currentTime);
-
-      // Filtre
-      const filter = audioCtx.createBiquadFilter();
-      filter.type = 'lowpass';
-      filter.frequency.setValueAtTime(filterValue, audioCtx.currentTime);
-
-      // Connexions : source → filtre → gain → destination
-      bufferSource.connect(filter);
-      filter.connect(gainNode);
-      gainNode.connect(audioCtx.destination);
-
-      // Démarre la lecture
-      bufferSource.start();
-
-      // Stocke les références
-      sourceNodeRef.current = bufferSource;
-      gainNodeRef.current = gainNode;
-      filterRef.current = filter;
-      // Ici aussi, perlin activé
-      if (custom === 'perlinNoise') {
-        startPerlinModulation(0.5, volValue);
-      }
-    } catch (err) {
-      console.error('Erreur lors de la lecture du fichier :', err);
-    }
-  }
+  // STOP -------------------------------------------------
   function stop() {
     setIsPlaying(false);
     setIsStereo(false);
-    console.log('stop');
     if (noiseSourceRef.current) {
       noiseSourceRef.current.stop();
       noiseSourceRef.current.disconnect();
@@ -258,6 +134,8 @@ function Player({ title, sourcePath, custom }) {
       audioCtxRef.current = null;
     }
   }
+
+  // STEREO ------------------------------------------------
   function toggleStereoEffect() {
     const audioCtx = audioCtxRef.current;
     const filter = filterRef.current;
@@ -289,6 +167,7 @@ function Player({ title, sourcePath, custom }) {
       setIsStereo(true);
     }
   }
+
   function applyStereoDelayRight(audioCtx, sourceNode) {
     const splitter = audioCtx.createChannelSplitter(2);
     const delayRight = audioCtx.createDelay();
@@ -309,14 +188,6 @@ function Player({ title, sourcePath, custom }) {
     return { splitter, delayRight, merger };
   }
 
-  const refresh = async () => {
-    const { obj } = await SearchThatSound(currentInput);
-    setCustomSound(obj);
-    stop();
-    playFromSource(obj.url);
-    setIsPlaying(true);
-  };
-
   return (
     <div
       data-stop={true}
@@ -325,7 +196,7 @@ function Player({ title, sourcePath, custom }) {
           ? ' player-container is-playing playing expand'
           : 'player-container'
       }
-      onClick={event => play(event, sourcePath, custom)}
+      onClick={event => play(event, custom)}
     >
       <h3 className={isPlaying ? 'playing' : ''}>{title}</h3>
       {isPlaying && (
@@ -334,13 +205,10 @@ function Player({ title, sourcePath, custom }) {
             <div className="sliders-container">
               <div className="sliders-labels">
                 <span>
-                  <i class="fa-solid fa-filter"></i>
+                  <i className="fa-solid fa-filter"></i>
                 </span>
                 <span>
-                  <i class="fa-solid fa-volume-high"></i>
-                </span>
-                <span>
-                  <i class="fa-solid fa-gauge-high"></i>
+                  <i className="fa-solid fa-volume-high"></i>
                 </span>
               </div>
               <div className="sliders">
@@ -361,15 +229,6 @@ function Player({ title, sourcePath, custom }) {
                   step="1"
                   value={volValue * 100}
                   onChange={handleVolValue}
-                />
-                <input
-                  className="speed-range"
-                  type="range"
-                  min="0.5"
-                  max="2"
-                  step="0.1"
-                  value={playbackRate}
-                  onChange={handlePlaybackRateChange}
                 />
               </div>
             </div>
@@ -402,4 +261,4 @@ function Player({ title, sourcePath, custom }) {
   );
 }
 
-export default Player;
+export default WhiteNoisePlayer;
