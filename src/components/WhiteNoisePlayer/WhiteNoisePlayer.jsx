@@ -3,7 +3,7 @@ import '../../App.css';
 import { Context } from '../../context/context';
 import { soundTools } from '../../utils/modulateSound.tools';
 
-function WhiteNoisePlayer({ title, custom }) {
+function WhiteNoisePlayer({ custom }) {
   const [filterValue, setFilterValue] = useState(1800);
   const [volValue, setVolValue] = useState(1.5);
   const [isPlaying, setIsPlaying] = useState(false);
@@ -198,17 +198,37 @@ function WhiteNoisePlayer({ title, custom }) {
       }
       onClick={event => play(event, custom)}
     >
-      <h3 className={isPlaying ? 'playing' : ''}>{title}</h3>
+      <h3 className={isPlaying ? 'playing' : ''}>
+        <i
+          className={
+            isPlaying
+              ? 'fa-solid fa-ear-listen title playing'
+              : 'fa-solid fa-ear-listen title'
+          }
+        ></i>
+      </h3>
       {isPlaying && (
         <div className="main-container">
           {isPlaying && (
             <div className="sliders-container">
               <div className="sliders-labels">
                 <span>
-                  <i className="fa-solid fa-filter"></i>
+                  <i
+                    className={
+                      isPlaying
+                        ? 'fa-solid fa-filter playing'
+                        : 'fa-solid fa-filter'
+                    }
+                  ></i>
                 </span>
                 <span>
-                  <i className="fa-solid fa-volume-high"></i>
+                  <i
+                    className={
+                      isPlaying
+                        ? 'fa-solid fa-volume-high playing'
+                        : 'fa-solid fa-volume-high'
+                    }
+                  ></i>
                 </span>
               </div>
               <div className="sliders">
