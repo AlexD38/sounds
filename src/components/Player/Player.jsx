@@ -3,6 +3,7 @@ import '../../App.css';
 import { Context } from '../../context/context';
 import { perlinNoise, SearchThatSound } from '../../utils/utils';
 import { soundTools } from '../../utils/modulateSound.tools';
+import { PlayerTitle } from '../PlayerTitle/PlayerTitle';
 
 function Player({ title, sourcePath, custom }) {
   const [filterValue, setFilterValue] = useState(1800);
@@ -319,7 +320,9 @@ function Player({ title, sourcePath, custom }) {
       }
       onClick={event => play(event, sourcePath, custom)}
     >
-      <h3 className={isPlaying ? 'playing' : ''}>{title}</h3>
+      <h3 className={isPlaying ? 'playing' : ''}>
+        <PlayerTitle title={title} isPlaying={isPlaying} />
+      </h3>
       {isPlaying && (
         <div className="main-container">
           {isPlaying && (
