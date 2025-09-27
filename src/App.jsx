@@ -32,52 +32,49 @@ function App() {
         />
       )}
       {/* <Stretcher source={windows} custom="perlinNoise" /> */}
-      <WhiteNoisePlayer
-        title={<i className="fa-solid fa-ear-listen"></i>}
-        custom="perlinNoise"
-      />
+      <WhiteNoisePlayer custom="perlinNoise" />
       <Player
-        title={<i className="fa-solid fa-dove"></i>}
+        title={<i className="fa-solid fa-dove title"></i>}
         sourcePath={monrningSound}
         custom="perlinNoise"
       />
       <Player
-        title={<i className="fa-solid fa-fire"></i>}
+        title={<i className="fa-solid fa-fire title"></i>}
         sourcePath={fireSound}
         custom="perlinNoise"
       />
       <Player
-        title={<i className="fa-solid fa-house"></i>}
+        title={<i className="fa-solid fa-house title"></i>}
         sourcePath={villageSound}
         custom="perlinNoise"
       />
       <Player
-        title={<i className="fa-solid fa-seedling"></i>}
+        title={<i className="fa-solid fa-seedling title"></i>}
         sourcePath={springSound}
         custom="perlinNoise"
       />
       <Player
-        title={<i className="fa-solid fa-water"></i>}
+        title={<i className="fa-solid fa-water title"></i>}
         sourcePath={oceanSound}
         custom="perlinNoise"
       />
       <Player
-        title={<i className="fa-solid fa-cloud-rain"></i>}
+        title={<i className="fa-solid fa-cloud-rain title"></i>}
         sourcePath={lightRainSound}
         custom="perlinNoise"
       />
       <Player
-        title={<i className="fa-solid fa-umbrella"></i>}
+        title={<i className="fa-solid fa-umbrella title"></i>}
         sourcePath={rainSound}
         custom="perlinNoise"
       />
       <Player
-        title={<i className="fa-solid fa-cloud-bolt"></i>}
+        title={<i className="fa-solid fa-cloud-bolt title"></i>}
         sourcePath={thunderSound}
         custom="perlinNoise"
       />
       <Player
-        title={<i className="fa-solid fa-train"></i>}
+        title={<i className="fa-solid fa-train title"></i>}
         sourcePath={trainSound}
         custom="perlinNoise"
       />

@@ -326,13 +326,31 @@ function Player({ title, sourcePath, custom }) {
             <div className="sliders-container">
               <div className="sliders-labels">
                 <span>
-                  <i class="fa-solid fa-filter"></i>
+                  <i
+                    className={
+                      isPlaying
+                        ? 'fa-solid fa-filter playing'
+                        : 'fa-solid fa-filter'
+                    }
+                  ></i>
                 </span>
                 <span>
-                  <i class="fa-solid fa-volume-high"></i>
+                  <i
+                    className={
+                      isPlaying
+                        ? 'fa-solid fa-volume-high playing'
+                        : 'fa-solid fa-volume-high'
+                    }
+                  ></i>
                 </span>
                 <span>
-                  <i class="fa-solid fa-gauge-high"></i>
+                  <i
+                    className={
+                      isPlaying
+                        ? 'fa-solid fa-gauge-high playing'
+                        : 'fa-solid fa-gauge-high'
+                    }
+                  ></i>
                 </span>
               </div>
               <div className="sliders">
