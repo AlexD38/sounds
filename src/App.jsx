@@ -22,6 +22,7 @@ function App() {
 
   return (
     <>
+      <h1 className="logo">Safe & Sounds</h1>
       <SearchSound />
       {customSound && (
         <Player
