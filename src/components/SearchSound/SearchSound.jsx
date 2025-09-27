@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect, useContext } from 'react';
 import './style.css';
-import { Context } from '../../../context/context';
-import { SearchThatSound } from '../../../utils/utils';
+import { Context } from '../../context/context';
+import { SearchThatSound } from '../../utils/utils';
 export default function SearchSound() {
   const [expanded, setExpanded] = useState(false);
   const [searchBtnDisplayed, setSearchBtnDisplayed] = useState(false);

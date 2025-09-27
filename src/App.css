@@ -62,14 +62,9 @@ i {
   filter: contrast(50%);
   transition: all 0.3s ease;
   transition: all 0.3s ease;
-  /* overflow-y: hidden; */
-  height: 5rem;
   cursor: pointer;
-  /* border: 1px solid rgba(128, 128, 128, 0); */
 }
 .player-container:hover {
-  /* border: 1px solid grey; */
-  /* scale: 1.1; */
   transition: all 0.3s ease;
   background-color: #ffffff09;
 }
@@ -79,7 +74,6 @@ i {
   transition: all .3s ease;
 }
 .main-container {
-  /* border: 1px solid red; */
   padding: 1rem;
   width: fit-content;
   display: flex;
@@ -94,41 +88,42 @@ i {
   justify-content: center;
   align-items: center;
   gap: 0.5rem;
+  margin-top: 3rem;
 }
 .sliders-container {
   display: flex;
   justify-content: flex-start;
-  flex-direction: column;
+  flex-direction: row;
   align-items: center;
-  gap: 0.2rem;
-  min-height: 8rem;
+  gap: 1rem;
   min-width: 50%;
   position: relative;
 }
 
 .sliders-labels {
   display: flex;
-  justify-content: space-around;
+  flex-direction: column;
+  justify-content: center;
   align-items: center;
   width: 100%;
-  /* border : 1px solid red; */
-  gap: 1rem;
+  height: 100%;
+  gap: 2rem;
 }
 
 .sliders {
   display: flex;
   justify-content: center;
   align-items: center;
-  margin-top: 3rem;
-  margin-bottom: 4rem;
+  flex-direction: column;
   min-height: 7rem;
+  gap : 2rem
 }
 
 .noise-range,
 .vol-range, .speed-range {
   /* width: 5rem; */
   outline: none;
-  transform: rotate(-90deg);
+  /* transform: rotate(-90deg); */
   /* margin: 0 2rem; */
 }
 
@@ -146,8 +141,6 @@ i {
   transition: all 0.8s ease;
 }
 .expand {
-  height: 25rem;
-  min-width: 100%;
   background-color: #ffffff09;
   transition: all 0.3s ease;
 }
