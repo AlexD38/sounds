@@ -1,6 +1,5 @@
 import { useRef, useState, useContext } from 'react';
 import './App.css';
-import Slider from './components/Slider/Slider';
 import Player from './components/Player/Player';
 import SearchSound from './components/SearchSound/SearchSound';
 import { Context } from './context/context';
