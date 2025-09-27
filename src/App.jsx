@@ -33,50 +33,30 @@ function App() {
       {/* <Stretcher source={windows} custom="perlinNoise" /> */}
       <WhiteNoisePlayer custom="perlinNoise" />
       <Player
-        title={<i className="fa-solid fa-dove title"></i>}
+        title={'morning'}
         sourcePath={monrningSound}
         custom="perlinNoise"
       />
+      <Player title={'fire'} sourcePath={fireSound} custom="perlinNoise" />
       <Player
-        title={<i className="fa-solid fa-fire title"></i>}
-        sourcePath={fireSound}
-        custom="perlinNoise"
-      />
-      <Player
-        title={<i className="fa-solid fa-house title"></i>}
+        title={'village'}
         sourcePath={villageSound}
         custom="perlinNoise"
       />
+      <Player title={'srping'} sourcePath={springSound} custom="perlinNoise" />
+      <Player title={'ocean'} sourcePath={oceanSound} custom="perlinNoise" />
       <Player
-        title={<i className="fa-solid fa-seedling title"></i>}
-        sourcePath={springSound}
-        custom="perlinNoise"
-      />
-      <Player
-        title={<i className="fa-solid fa-water title"></i>}
-        sourcePath={oceanSound}
-        custom="perlinNoise"
-      />
-      <Player
-        title={<i className="fa-solid fa-cloud-rain title"></i>}
+        title={'lightRain'}
         sourcePath={lightRainSound}
         custom="perlinNoise"
       />
+      <Player title={'rain'} sourcePath={rainSound} custom="perlinNoise" />
       <Player
-        title={<i className="fa-solid fa-umbrella title"></i>}
-        sourcePath={rainSound}
-        custom="perlinNoise"
-      />
-      <Player
-        title={<i className="fa-solid fa-cloud-bolt title"></i>}
+        title={'thunder'}
         sourcePath={thunderSound}
         custom="perlinNoise"
       />
-      <Player
-        title={<i className="fa-solid fa-train title"></i>}
-        sourcePath={trainSound}
-        custom="perlinNoise"
-      />
+      <Player title={'train'} sourcePath={trainSound} custom="perlinNoise" />
     </>
   );
 }
