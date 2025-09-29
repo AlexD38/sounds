@@ -10,7 +10,7 @@
 
 ## Ad owl and undistinctive chattering players
 
-## palete :
+## palette :
 
 #FAF8F1
 #FAEAB1
