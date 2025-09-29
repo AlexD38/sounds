@@ -1,0 +1,22 @@
+.snapshot-saver {
+  position: absolute;
+  top: 3rem;
+  left: 0;
+  padding: 0.5rem;
+  /* border: 1px solid red; */
+  background-color: #ffffff09;
+  border-radius: 0px 5px 5px 0px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+.snapshot-saver i {
+  font-size: 2rem;
+}
+.snapshot-saver:hover {
+  transition: all 0.3s ease;
+  background-color: #ffffff3e;
+  padding-left: 1rem;
+}
+.snapshot-saver:hover i {
+  color: #faeab1;
+}

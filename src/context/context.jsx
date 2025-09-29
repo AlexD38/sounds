@@ -6,36 +6,27 @@ export const Context = createContext();
 // Crée le provider
 export function ContextProvider({ children }) {
   const [theme, setTheme] = useState('light');
-  const [isNoisePlaying, setIsNoisePlaying] = useState(false);
-  const [isVillagePlaying, setIsVillagePlaying] = useState(false);
-  const [isSpringPlaying, setIsSpringPlaying] = useState(false);
-  const [isOceanPlaying, setIsOceanPlaying] = useState(false);
-  const [isRainPlaying, setIsRainPlaying] = useState(false);
-  const [isThunderPlaying, setIsThunderPlaying] = useState(false);
   const [customSound, setCustomSound] = useState(null);
   const [currentInput, setCurrentInput] = useState(null);
+  const [snapshotMix, setSnapshotMix] = useState(new Map());
+
+  const registerPlayerSituation = (title, obj) => {
+    snapshotMix.set(title, obj);
+  };
+
+  snapshotMix.set('whiteNoise', { isPLaying: true });
 
   return (
     <Context.Provider
       value={{
         theme,
         setTheme,
-        isNoisePlaying,
-        setIsNoisePlaying,
-        isVillagePlaying,
-        setIsVillagePlaying,
-        isSpringPlaying,
-        setIsSpringPlaying,
-        isOceanPlaying,
-        setIsOceanPlaying,
-        isRainPlaying,
-        setIsRainPlaying,
-        isThunderPlaying,
-        setIsThunderPlaying,
         customSound,
         setCustomSound,
         currentInput,
         setCurrentInput,
+        snapshotMix,
+        registerPlayerSituation,
       }}
     >
       {children}

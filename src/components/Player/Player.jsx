@@ -1,7 +1,11 @@
 import { useContext, useRef, useState, useEffect } from 'react';
 import '../../App.css';
 import { Context } from '../../context/context';
-import { perlinNoise, SearchThatSound } from '../../utils/utils';
+import {
+  handleSnapshotMix,
+  perlinNoise,
+  SearchThatSound,
+} from '../../utils/utils';
 import { soundTools } from '../../utils/modulateSound.tools';
 import { PlayerTitle } from '../PlayerTitle/PlayerTitle';
 
@@ -17,6 +21,7 @@ function Player({ title, sourcePath, custom, speed }) {
   const gainNodeRef = useRef(null);
   const filterRef = useRef(null);
   const modulatorIntervalRef = useRef(null);
+  const { snapshotMix, registerPlayerSituation } = useContext(Context);
 
   const stereoNodesRef = useRef(null);
   const token = import.meta.env.VITE_API_KEY;
@@ -119,6 +124,7 @@ function Player({ title, sourcePath, custom, speed }) {
   // PLAY ----------------------------------------
   async function play(event, sourcePath, custom) {
     if (isPlaying && event.target.dataset.stop) {
+      registerPlayerSituation(title, { isPlaying: false });
       setIsPlaying(false);
       stop();
       return;
@@ -127,6 +133,7 @@ function Player({ title, sourcePath, custom, speed }) {
       return;
     }
     setIsPlaying(true);
+    registerPlayerSituation(title, { isPlaying: true });
 
     if (sourcePath) {
       await playFromSource(sourcePath, custom);
