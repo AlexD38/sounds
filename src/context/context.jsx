@@ -13,12 +13,21 @@ export function ContextProvider({ children }) {
   const [notification, setNotification] = useState(null);
 
   const registerPlayerSituation = (title, obj) => {
-    snapshotMix.set(title, obj);
+    const concernedObj = snapshotMix.get(title);
+    if (!concernedObj) {
+      snapshotMix.set(title, obj);
+    } else {
+      const prop = Object.keys(obj)[0];
+      const value = obj[prop];
+      concernedObj[prop] = value;
+      snapshotMix.set(title, { ...concernedObj, [prop]: value });
+    }
   };
 
   const saveSnapshot = async () => {
     // On transforme le Map en données sérialisables uniquement
     const serializableMap = new Map();
+
     if (snapshotMix.size === 0) {
       setNotification({
         message: 'There is nothing to save',
@@ -45,13 +54,9 @@ export function ContextProvider({ children }) {
       }
     }
 
-    snapshotMix.forEach((value, key) => {
+    snapshotMix.forEach((key, value) => {
       // On extrait seulement les propriétés utilisables
-      serializableMap.set(key, {
-        isPlaying: value.isPlaying ?? false,
-        volume: value.volume ?? 1,
-        // ajoute ici uniquement les props primitives/JSON-compatibles
-      });
+      serializableMap.set(key, value);
     });
 
     await localforage.setItem('snapshot', serializableMap);
