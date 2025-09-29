@@ -113,6 +113,7 @@ function Player({ title, sourcePath, custom, speed }) {
   const handlePlaybackRateChange = e => {
     const value = parseFloat(e.currentTarget.value);
     setPlaybackRate(value);
+    registerPlayerSituation(title, { speed: value });
     if (sourceNodeRef.current && audioCtxRef.current) {
       sourceNodeRef.current.playbackRate.setTargetAtTime(
         value,
