@@ -16,6 +16,7 @@ import thunderSound from '/assets/sounds/thunder.mp3';
 import trainSound from '/assets/sounds/train.mp3';
 import Stretcher from './strecther/Stretcher';
 import WhiteNoisePlayer from './components/WhiteNoisePlayer/WhiteNoisePlayer';
+import { SaveSnapshotMix } from './components/SaveSnapshotMix/SaveSnapshotMix';
 function App() {
   const [response, setResponse] = useState(null);
   const { customSound, setCustomSound } = useContext(Context);
@@ -23,6 +24,7 @@ function App() {
   return (
     <>
       <h1 className="logo">Safe & Sounds</h1>
+      <SaveSnapshotMix />
       <SearchSound />
       {customSound && (
         <Player
