@@ -1,0 +1,9 @@
+.notification {
+  position: absolute;
+  top: 1rem;
+  right: 1rem;
+  background-color: #faeab1;
+  color: #334443;
+  padding: 1rem 0.6rem;
+  border-radius: 0.5rem;
+}

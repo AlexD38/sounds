@@ -4,16 +4,11 @@ import './styles.css';
 import { handleSnapshotMix } from '../../utils/utils';
 
 export const SaveSnapshotMix = () => {
-  const { snapshotMix } = useContext(Context);
+  const { saveSnapshot } = useContext(Context);
 
-  const handleSaveSnapshot = () => {
-    console.log(snapshotMix);
-    // save snapshot into localstorage here ?
-    // snapshotMix
-  };
   return (
     <div
-      onClick={handleSaveSnapshot}
+      onClick={saveSnapshot}
       className="snapshot-saver"
       title="Save current mix for later..."
     >

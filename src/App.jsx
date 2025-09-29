@@ -17,6 +17,7 @@ import trainSound from '/assets/sounds/train.mp3';
 import Stretcher from './strecther/Stretcher';
 import WhiteNoisePlayer from './components/WhiteNoisePlayer/WhiteNoisePlayer';
 import { SaveSnapshotMix } from './components/SaveSnapshotMix/SaveSnapshotMix';
+import { Notification } from './components/notification/notification';
 function App() {
   const [response, setResponse] = useState(null);
   const { customSound, setCustomSound } = useContext(Context);
@@ -87,6 +88,8 @@ function App() {
         custom="perlinNoise"
         speed={true}
       />
+
+      <Notification />
     </>
   );
 }
