@@ -71,6 +71,8 @@ function Player({ title, sourcePath, custom, speed }) {
   const handleFilterValue = e => {
     const value = parseFloat(e.currentTarget.value);
     setFilterValue(value);
+    registerPlayerSituation(title, { filter: value });
+
     if (filterRef.current && audioCtxRef.current) {
       filterRef.current.frequency.setTargetAtTime(
         value,
@@ -84,6 +86,7 @@ function Player({ title, sourcePath, custom, speed }) {
   const handleVolValue = e => {
     const value = parseFloat(e.currentTarget.value) / 100;
     setVolValue(value);
+    registerPlayerSituation(title, { volume: value });
 
     if (custom === 'perlinNoise' && isPlaying) {
       if (value === 0) {
