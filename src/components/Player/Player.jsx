@@ -10,9 +10,11 @@ import { soundTools } from '../../utils/modulateSound.tools';
 import { PlayerTitle } from '../PlayerTitle/PlayerTitle';
 
 function Player({ title, sourcePath, custom, speed }) {
+  const { snapshotMix, registerPlayerSituation } = useContext(Context);
+
   const [filterValue, setFilterValue] = useState(1800);
   const [volValue, setVolValue] = useState(1.5);
-  const [isPlaying, setIsPlaying] = useState(false);
+  const [isPlaying, setIsPlaying] = useState(snapshotMix.get(title)?.isPlaying);
   const [playbackRate, setPlaybackRate] = useState(1);
   const [isStereo, setIsStereo] = useState(false);
   const audioCtxRef = useRef(null);
@@ -21,7 +23,6 @@ function Player({ title, sourcePath, custom, speed }) {
   const gainNodeRef = useRef(null);
   const filterRef = useRef(null);
   const modulatorIntervalRef = useRef(null);
-  const { snapshotMix, registerPlayerSituation } = useContext(Context);
 
   const stereoNodesRef = useRef(null);
   const token = import.meta.env.VITE_API_KEY;
@@ -52,7 +53,7 @@ function Player({ title, sourcePath, custom, speed }) {
         audioCtxRef.current.currentTime,
         0.05
       );
-      console.log('Perlin modulation → value:', newGain.toFixed(2));
+      // console.log('Perlin modulation → value:', newGain.toFixed(2));
 
       t += speed;
     }, 50);
@@ -231,7 +232,6 @@ function Player({ title, sourcePath, custom, speed }) {
   function stop() {
     setIsPlaying(false);
     setIsStereo(false);
-    console.log('stop');
     if (noiseSourceRef.current) {
       noiseSourceRef.current.stop();
       noiseSourceRef.current.disconnect();
