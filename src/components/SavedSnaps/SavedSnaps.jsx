@@ -1,9 +1,16 @@
-import { useContext } from 'react';
+import { useContext, useEffect } from 'react';
 import { Context } from '../../context/context';
 import './styles.css';
 
 export const SavedSnaps = () => {
-  const { savedSnaps, setNotification, setLoadASnap } = useContext(Context);
+  const { savedSnaps, setSavedSnaps, setNotification, setLoadASnap } =
+    useContext(Context);
+
+  useEffect(() => {
+    if (!savedSnaps) {
+      return;
+    }
+  }, [savedSnaps, setSavedSnaps]);
   const handleLoadSavedSnap = () => {
     setNotification({
       message: `Now playing "${savedSnaps.title}"`,

@@ -10,8 +10,13 @@ import { soundTools } from '../../utils/modulateSound.tools';
 import { PlayerTitle } from '../PlayerTitle/PlayerTitle';
 
 function Player({ title, sourcePath, custom, speed }) {
-  const { snapshotMix, registerPlayerSituation, savedSnaps, loadASnap } =
-    useContext(Context);
+  const {
+    snapshotMix,
+    registerPlayerSituation,
+    savedSnaps,
+    loadASnap,
+    setLoadASnap,
+  } = useContext(Context);
 
   const [filterValue, setFilterValue] = useState(1800);
   const [volValue, setVolValue] = useState(1.5);
@@ -37,11 +42,9 @@ function Player({ title, sourcePath, custom, speed }) {
     }
     if (loadASnap) {
       for (const player of savedSnaps.players) {
-        console.log('player: ', player);
         if (player.playerTitle == title && player.isPlaying) {
-          console.log('player: ', player);
           setIsPlaying(true);
-          play(event, sourcePath, custom);
+          play(null, sourcePath, custom);
         }
       }
     }
@@ -89,6 +92,9 @@ function Player({ title, sourcePath, custom, speed }) {
     setFilterValue(value);
     registerPlayerSituation(title, { filter: value });
 
+    if (loadASnap) {
+      setLoadASnap(false);
+    }
     if (filterRef.current && audioCtxRef.current) {
       filterRef.current.frequency.setTargetAtTime(
         value,
@@ -104,6 +110,9 @@ function Player({ title, sourcePath, custom, speed }) {
     setVolValue(value);
     registerPlayerSituation(title, { volume: value });
 
+    if (loadASnap) {
+      setLoadASnap(false);
+    }
     if (custom === 'perlinNoise' && isPlaying) {
       if (value === 0) {
         stopPerlinModulation();
@@ -130,6 +139,9 @@ function Player({ title, sourcePath, custom, speed }) {
 
   // SPEED ----------------------------------------
   const handlePlaybackRateChange = e => {
+    if (loadASnap) {
+      setLoadASnap(false);
+    }
     const value = parseFloat(e.currentTarget.value);
     setPlaybackRate(value);
     registerPlayerSituation(title, { speed: value });
@@ -144,7 +156,7 @@ function Player({ title, sourcePath, custom, speed }) {
 
   // PLAY ----------------------------------------
   async function play(event, sourcePath, custom) {
-    if (isPlaying && event.target.dataset.stop) {
+    if (isPlaying && event?.target?.dataset?.stop) {
       registerPlayerSituation(title, { isPlaying: false });
       setIsPlaying(false);
       stop();
@@ -252,6 +264,10 @@ function Player({ title, sourcePath, custom, speed }) {
   function stop() {
     setIsPlaying(false);
     setIsStereo(false);
+
+    if (loadASnap) {
+      setLoadASnap(false);
+    }
     if (noiseSourceRef.current) {
       noiseSourceRef.current.stop();
       noiseSourceRef.current.disconnect();

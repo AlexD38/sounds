@@ -21,7 +21,7 @@ export function ContextProvider({ children }) {
     };
 
     getSavedSnaps();
-  }, []);
+  }, [savedSnaps]);
 
   const registerPlayerSituation = (title, obj) => {
     const concernedObj = snapshotMix.get(title);
