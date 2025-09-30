@@ -44,6 +44,10 @@ function Player({ title, sourcePath, custom, speed }) {
       for (const player of savedSnaps.players) {
         if (player.playerTitle == title && player.isPlaying) {
           setIsPlaying(true);
+          setFilterValue(player.filter);
+          setVolValue(player.volume);
+          setPlaybackRate(player.speed);
+
           play(null, sourcePath, custom);
         }
       }
