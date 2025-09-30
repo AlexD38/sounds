@@ -33,6 +33,7 @@ export const SaveSnapshotMix = () => {
       </div>
       {showInput && (
         <div className="snapshot-title-container">
+          <h3>Name your snapshot : </h3>
           <input className="snapshot-title-input" type="text" ref={inputRef} />
           <div className="snapshot-footer-container">
             <button onClick={handleSaveSnapshot}>Save</button>

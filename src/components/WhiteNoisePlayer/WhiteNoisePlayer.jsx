@@ -4,6 +4,8 @@ import { Context } from '../../context/context';
 import { soundTools } from '../../utils/modulateSound.tools';
 
 function WhiteNoisePlayer({ custom }) {
+  const { snapshotMix, registerPlayerSituation } = useContext(Context);
+
   const [filterValue, setFilterValue] = useState(1800);
   const [volValue, setVolValue] = useState(1.5);
   const [isPlaying, setIsPlaying] = useState(false);
@@ -15,13 +17,13 @@ function WhiteNoisePlayer({ custom }) {
   const gainNodeRef = useRef(null);
   const filterRef = useRef(null);
   const modulatorIntervalRef = useRef(null);
-
   const stereoNodesRef = useRef(null);
 
   // FILTER ----------------------------------------
   const handleFilterValue = e => {
     const value = parseFloat(e.currentTarget.value);
     setFilterValue(value);
+    registerPlayerSituation('whiteNoise', { filter: value });
     if (filterRef.current && audioCtxRef.current) {
       filterRef.current.frequency.setTargetAtTime(
         value,
@@ -35,6 +37,7 @@ function WhiteNoisePlayer({ custom }) {
   const handleVolValue = e => {
     const value = parseFloat(e.currentTarget.value) / 100;
     setVolValue(value);
+    registerPlayerSituation('whiteNoise', { volume: value });
 
     if (custom === 'perlinNoise' && isPlaying) {
       if (value === 0) {
@@ -70,6 +73,8 @@ function WhiteNoisePlayer({ custom }) {
   async function play(event, custom) {
     if (isPlaying && event.target.dataset.stop) {
       setIsPlaying(false);
+      registerPlayerSituation('whiteNoise', { isPlaying: false });
+
       stop();
       return;
     }
@@ -77,6 +82,7 @@ function WhiteNoisePlayer({ custom }) {
       return;
     }
     setIsPlaying(true);
+    registerPlayerSituation('whiteNoise', { isPlaying: true });
 
     if (audioCtxRef.current) return;
 

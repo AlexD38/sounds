@@ -5,7 +5,7 @@
   text-align: center;
   display: flex;
   justify-content: center;
-  align-items: flex-start;
+  align-items: center;
   flex-wrap: wrap;
   max-width: 80%;
   gap: 1rem;
@@ -15,15 +15,14 @@ i {
 }
 
 .logo {
-  color: #FAEAB1;
+  color: #faeab1;
   font-weight: 900;
   position: absolute;
   font-size: 1.5rem;
-  top: -.5rem;
+  top: -0.5rem;
   left: 1rem;
   cursor: pointer;
 }
-
 
 @keyframes logo-spin {
   from {
@@ -44,7 +43,6 @@ i {
   padding: 2em;
 }
 
-
 /* ------------------COMP CSS------------------------- */
 
 .player-container {
@@ -59,18 +57,17 @@ i {
   transition: all 0.3s ease;
   transition: all 0.3s ease;
   cursor: pointer;
-  
 }
 i {
-  color: #34656D;
+  color: #34656d;
 }
 .player-container:hover {
   background-color: #ffffff09;
-  color: #FAEAB1;
+  color: #faeab1;
   transition: all 0.3s ease;
 }
 .player-container:hover i {
-  color: #FAEAB1;
+  color: #faeab1;
   transition: all 0.5s ease;
 }
 
@@ -112,7 +109,6 @@ i {
 }
 .sliders-labels * {
   font-size: 1.2rem;
-
 }
 
 .sliders {
@@ -121,11 +117,12 @@ i {
   align-items: center;
   flex-direction: column;
   min-height: 7rem;
-  gap : 2rem
+  gap: 2rem;
 }
 
 .noise-range,
-.vol-range, .speed-range {
+.vol-range,
+.speed-range {
   /* width: 5rem; */
   outline: none;
   /* transform: rotate(-90deg); */
@@ -139,7 +136,7 @@ i {
   right: 0;
 }
 .playing {
-  color: #FAEAB1;
+  color: #faeab1;
 }
 .is-playing {
   filter: contrast(100%);

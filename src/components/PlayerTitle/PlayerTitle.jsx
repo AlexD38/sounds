@@ -18,6 +18,12 @@ export const PlayerTitle = ({ title, isPlaying }) => {
     iconLabel = 'cloud-bolt';
   } else if (title === 'train') {
     iconLabel = 'train';
+  } else if (title === 'night') {
+    iconLabel = 'moon';
+  } else if (title === 'scary') {
+    iconLabel = 'ghost';
+  } else {
+    return title;
   }
 
   let iconClassName = `fa-solid fa-${iconLabel} title`;
