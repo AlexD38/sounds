@@ -18,9 +18,10 @@ import Stretcher from './strecther/Stretcher';
 import WhiteNoisePlayer from './components/WhiteNoisePlayer/WhiteNoisePlayer';
 import { SaveSnapshotMix } from './components/SaveSnapshotMix/SaveSnapshotMix';
 import { Notification } from './components/notification/notification';
+
 function App() {
   const [response, setResponse] = useState(null);
-  const { customSound, setCustomSound } = useContext(Context);
+  const { customSound, setCustomSound, savedSnaps } = useContext(Context);
 
   return (
     <>
@@ -38,7 +39,7 @@ function App() {
       {/* <Stretcher source={windows} custom="perlinNoise" /> */}
 
       <WhiteNoisePlayer custom="perlinNoise" />
-
+      {savedSnaps && <div>{}</div>}
       <Player
         title={'morning'}
         sourcePath={monrningSound}

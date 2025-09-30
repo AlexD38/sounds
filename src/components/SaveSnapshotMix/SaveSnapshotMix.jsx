@@ -1,16 +1,27 @@
 import { useContext, useRef, useState } from 'react';
 import { Context } from '../../context/context';
 import './styles.css';
-import { handleSnapshotMix } from '../../utils/utils';
+import localforage from 'localforage';
 
 export const SaveSnapshotMix = () => {
   const { saveSnapshot, isSavable, snapshotMix } = useContext(Context);
   const [showInput, setShowInput] = useState(false);
   const inputRef = useRef(null);
 
-  const handleSaveSnapshot = () => {
+  const handleSaveSnapshot = async () => {
+    const formattedSnapshot = { title: null, players: [] };
     const snapShotTitle = inputRef.current.value;
-    snapshotMix.set('snapshotTitle', { title: snapShotTitle });
+    formattedSnapshot.title = snapShotTitle;
+
+    for (const obj of snapshotMix.entries()) {
+      const title = obj[0];
+      formattedSnapshot.players.push({ playerTitle: title, ...obj[1] });
+    }
+    console.log('formattedSnapshot: ', formattedSnapshot);
+    // await localforage.setItem('snapshotTitle', {
+    //   title: snapShotTitle,
+    // });
+    // snapshotMix.set('snapshotTitle', { title: snapShotTitle });
     setShowInput(false);
     saveSnapshot();
   };
