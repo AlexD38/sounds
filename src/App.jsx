@@ -39,7 +39,7 @@ function App() {
       {/* <Stretcher source={windows} custom="perlinNoise" /> */}
 
       <WhiteNoisePlayer custom="perlinNoise" />
-      {savedSnaps && <div>{}</div>}
+      {savedSnaps && <div className="saved-snap">{savedSnaps.title}</div>}
       <Player
         title={'morning'}
         sourcePath={monrningSound}

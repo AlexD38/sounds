@@ -17,7 +17,6 @@ export const SaveSnapshotMix = () => {
       const title = obj[0];
       formattedSnapshot.players.push({ playerTitle: title, ...obj[1] });
     }
-    console.log('formattedSnapshot: ', formattedSnapshot);
     await localforage.setItem('savedSnapshot', formattedSnapshot);
     setShowInput(false);
     saveSnapshot();
