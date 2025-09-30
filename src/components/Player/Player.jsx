@@ -10,11 +10,12 @@ import { soundTools } from '../../utils/modulateSound.tools';
 import { PlayerTitle } from '../PlayerTitle/PlayerTitle';
 
 function Player({ title, sourcePath, custom, speed }) {
-  const { snapshotMix, registerPlayerSituation } = useContext(Context);
+  const { snapshotMix, registerPlayerSituation, savedSnaps, loadASnap } =
+    useContext(Context);
 
   const [filterValue, setFilterValue] = useState(1800);
   const [volValue, setVolValue] = useState(1.5);
-  const [isPlaying, setIsPlaying] = useState(snapshotMix.get(title)?.isPlaying);
+  const [isPlaying, setIsPlaying] = useState(false);
   const [playbackRate, setPlaybackRate] = useState(1);
   const [isStereo, setIsStereo] = useState(false);
   const audioCtxRef = useRef(null);
@@ -30,6 +31,21 @@ function Player({ title, sourcePath, custom, speed }) {
   const { customSound, setCustomSound, currentInput, setCurrentInput } =
     useContext(Context);
 
+  useEffect(() => {
+    if (!savedSnaps) {
+      return;
+    }
+    if (loadASnap) {
+      for (const player of savedSnaps.players) {
+        console.log('player: ', player);
+        if (player.playerTitle == title && player.isPlaying) {
+          console.log('player: ', player);
+          setIsPlaying(true);
+          play(event, sourcePath, custom);
+        }
+      }
+    }
+  }, [savedSnaps, loadASnap]);
   //  PERLIN --------------------------------------
   function startPerlinModulation(minGain = 0, maxGain = 1.5) {
     if (!gainNodeRef.current || !audioCtxRef.current) return;

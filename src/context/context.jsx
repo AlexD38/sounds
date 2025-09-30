@@ -12,6 +12,7 @@ export function ContextProvider({ children }) {
   const [snapshotMix, setSnapshotMix] = useState(new Map());
   const [notification, setNotification] = useState(null);
   const [savedSnaps, setSavedSnaps] = useState(null);
+  const [loadASnap, setLoadASnap] = useState(false);
 
   useEffect(() => {
     const getSavedSnaps = async () => {
@@ -92,6 +93,8 @@ export function ContextProvider({ children }) {
         setNotification,
         saveSnapshot,
         savedSnaps,
+        loadASnap,
+        setLoadASnap,
       }}
     >
       {children}

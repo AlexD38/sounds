@@ -3,11 +3,12 @@ import { Context } from '../../context/context';
 import './styles.css';
 
 export const SavedSnaps = () => {
-  const { savedSnaps, setNotification } = useContext(Context);
+  const { savedSnaps, setNotification, setLoadASnap } = useContext(Context);
   const handleLoadSavedSnap = () => {
     setNotification({
       message: `Now playing "${savedSnaps.title}"`,
     });
+    setLoadASnap(true);
 
     setTimeout(() => {
       setNotification(null);
