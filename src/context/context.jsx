@@ -1,4 +1,4 @@
-import { createContext, useState } from 'react';
+import { createContext, useEffect, useState } from 'react';
 import localforage from 'localforage';
 
 // Crée le contexte
@@ -11,6 +11,16 @@ export function ContextProvider({ children }) {
   const [currentInput, setCurrentInput] = useState(null);
   const [snapshotMix, setSnapshotMix] = useState(new Map());
   const [notification, setNotification] = useState(null);
+  const [savedSnaps, setSavedSnaps] = useState(null);
+
+  useEffect(() => {
+    const getSavedSnaps = async () => {
+      const savedSnaps = await localforage.getItem('snapshot');
+      setSavedSnaps(savedSnaps);
+    };
+
+    getSavedSnaps();
+  }, []);
 
   const registerPlayerSituation = (title, obj) => {
     const concernedObj = snapshotMix.get(title);
@@ -81,6 +91,7 @@ export function ContextProvider({ children }) {
         notification,
         setNotification,
         saveSnapshot,
+        savedSnaps,
       }}
     >
       {children}
