@@ -15,7 +15,7 @@ export function ContextProvider({ children }) {
 
   useEffect(() => {
     const getSavedSnaps = async () => {
-      const savedSnaps = await localforage.getItem('snapshot');
+      const savedSnaps = await localforage.getItem('savedSnapshot');
       setSavedSnaps(savedSnaps);
     };
 
