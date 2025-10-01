@@ -23,6 +23,7 @@ function WhiteNoisePlayer({ custom }) {
   const handleFilterValue = e => {
     const value = parseFloat(e.currentTarget.value);
     setFilterValue(value);
+
     registerPlayerSituation('whiteNoise', { filter: value });
     if (filterRef.current && audioCtxRef.current) {
       filterRef.current.frequency.setTargetAtTime(
