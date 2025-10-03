@@ -14,6 +14,7 @@ import thunderSound from '/assets/sounds/thunder.mp3';
 import trainSound from '/assets/sounds/train.mp3';
 import nightSound from '/assets/sounds/night.wav';
 import scaryNightSound from '/assets/sounds/scaryNightForest.wav';
+import scaryNightSound_2 from '/assets/sounds/scaryNightForest_2.mp3';
 
 import WhiteNoisePlayer from './components/WhiteNoisePlayer/WhiteNoisePlayer';
 import { SaveSnapshotMix } from './components/SaveSnapshotMix/SaveSnapshotMix';
@@ -95,6 +96,12 @@ function App() {
       <Player
         title={'scary'}
         sourcePath={scaryNightSound}
+        custom="perlinNoise"
+        speed={true}
+      />
+      <Player
+        title={'wolf'}
+        sourcePath={scaryNightSound_2}
         custom="perlinNoise"
         speed={true}
       />
