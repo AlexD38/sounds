@@ -9,6 +9,16 @@ import {
 import { soundTools } from '../../utils/modulateSound.tools';
 import { PlayerTitle } from '../PlayerTitle/PlayerTitle';
 
+function getRMS(audioBuffer) {
+  const channelData = audioBuffer.getChannelData(0); // Use the first channel
+  let sumOfSquares = 0;
+  for (let i = 0; i < channelData.length; i++) {
+    sumOfSquares += channelData[i] * channelData[i];
+  }
+  const meanSquare = sumOfSquares / channelData.length;
+  return Math.sqrt(meanSquare);
+}
+
 function Player({ title, sourcePath, custom, speed }) {
   const {
     snapshotMix,
@@ -23,6 +33,7 @@ function Player({ title, sourcePath, custom, speed }) {
   const [isPlaying, setIsPlaying] = useState(false);
   const [playbackRate, setPlaybackRate] = useState(1);
   const [isStereo, setIsStereo] = useState(false);
+  const [normalizationFactor, setNormalizationFactor] = useState(1);
   const audioCtxRef = useRef(null);
   const sourceNodeRef = useRef(null);
   const noiseSourceRef = useRef(null);
@@ -128,12 +139,15 @@ function Player({ title, sourcePath, custom, speed }) {
           );
         }
       } else {
-        startPerlinModulation(0.5, value);
+        startPerlinModulation(
+          0.5 * normalizationFactor,
+          value * normalizationFactor
+        );
       }
     } else {
       if (gainNodeRef.current && audioCtxRef.current) {
         gainNodeRef.current.gain.setTargetAtTime(
-          value,
+          value * normalizationFactor,
           audioCtxRef.current.currentTime,
           0.01
         );
@@ -180,6 +194,8 @@ function Player({ title, sourcePath, custom, speed }) {
 
     if (audioCtxRef.current) return;
 
+    setNormalizationFactor(1); // Reset for noise
+
     const { gainNode, audioCtx, noiseSource } =
       soundTools.noise.createWhiteNoise(audioCtxRef, noiseSourceRef);
 
@@ -221,6 +237,12 @@ function Player({ title, sourcePath, custom, speed }) {
       // Décode les données audio
       const audioBuffer = await audioCtx.decodeAudioData(arrayBuffer);
 
+      // Normalisation du volume
+      const rms = getRMS(audioBuffer);
+      const targetRMS = 0.1; // Cible de volume. Ajustable au besoin.
+      const newNormalizationFactor = rms > 0 ? targetRMS / rms : 1;
+      setNormalizationFactor(newNormalizationFactor);
+
       // Stop l'ancienne source si elle existe
       if (sourceNodeRef.current) {
         try {
@@ -236,7 +258,10 @@ function Player({ title, sourcePath, custom, speed }) {
 
       // Gain
       const gainNode = audioCtx.createGain();
-      gainNode.gain.setValueAtTime(volValue, audioCtx.currentTime);
+      gainNode.gain.setValueAtTime(
+        volValue * newNormalizationFactor,
+        audioCtx.currentTime
+      );
 
       // Filtre
       const filter = audioCtx.createBiquadFilter();
@@ -257,7 +282,10 @@ function Player({ title, sourcePath, custom, speed }) {
       filterRef.current = filter;
       // Ici aussi, perlin activé
       if (custom === 'perlinNoise') {
-        startPerlinModulation(0.5, volValue);
+        startPerlinModulation(
+          0.5 * newNormalizationFactor,
+          volValue * newNormalizationFactor
+        );
       }
     } catch (err) {
       console.error('Erreur lors de la lecture du fichier :', err);
