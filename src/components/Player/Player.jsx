@@ -26,6 +26,7 @@ function Player({ title, sourcePath, custom, speed }) {
     savedSnaps,
     loadASnap,
     setLoadASnap,
+    playingSnap,
   } = useContext(Context);
 
   const [filterValue, setFilterValue] = useState(1800);
@@ -48,22 +49,35 @@ function Player({ title, sourcePath, custom, speed }) {
     useContext(Context);
 
   useEffect(() => {
-    if (!savedSnaps) {
+    if (!savedSnaps || !loadASnap) {
       return;
     }
-    if (loadASnap) {
-      for (const player of savedSnaps.players) {
-        if (player.playerTitle == title && player.isPlaying) {
-          setIsPlaying(true);
-          setFilterValue(player.filter);
-          setVolValue(player.volume);
-          setPlaybackRate(player.speed);
 
-          play(null, sourcePath, custom);
-        }
-      }
+    const loadedSnap = savedSnaps.get(playingSnap);
+    if (!loadedSnap) {
+      return;
     }
-  }, [savedSnaps, loadASnap]);
+
+    const playerState = loadedSnap.players.find(
+      (p) => p.playerTitle === title
+    );
+
+    if (playerState) {
+      if (playerState.isPlaying) {
+        setIsPlaying(true);
+        setFilterValue(playerState.filter);
+        setVolValue(playerState.volume);
+        setPlaybackRate(playerState.speed);
+        play(null, sourcePath, custom);
+      } else {
+        setIsPlaying(false);
+        stop();
+      }
+    } else {
+      setIsPlaying(false);
+      stop();
+    }
+  }, [savedSnaps, loadASnap, playingSnap]);
   //  PERLIN --------------------------------------
   function startPerlinModulation(minGain = 0, maxGain = 1.5) {
     if (!gainNodeRef.current || !audioCtxRef.current) return;
