@@ -1,5 +1,5 @@
 .snapshot-saver {
-  position: absolute;
+  position: fixed;
   top: 5rem;
   left: 0;
   padding: 0.5rem;
@@ -73,6 +73,6 @@ h3 {
     margin: 0 auto;
   }
   .snapshot-saver {
-    top: 10rem;
+    top: 5rem;
   }
 }
