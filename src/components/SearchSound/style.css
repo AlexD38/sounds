@@ -32,3 +32,10 @@
   color: #34656d;
   transition: all 0.3s ease;
 }
+/* MEDIA QUERIES */
+@media (max-width: 768px) {
+  .search-bar {
+    margin: 5rem 0;
+    width: 100%;
+  }
+}

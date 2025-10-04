@@ -12,6 +12,7 @@
   /* padding: 2rem; */
   text-align: center;
   display: flex;
+  flex-direction: column;
   justify-content: center;
   align-items: center;
   flex-wrap: wrap;
@@ -164,4 +165,18 @@ i {
 
 .loader {
   animation: rotate 2s linear infinite;
+}
+
+/* MEDIA QUERIES */
+@media (max-width: 768px) {
+  .logo {
+    left: 50%;
+    transform: translate(-50%, 0);
+    min-width: 100%;
+    top: 1rem;
+    margin-bottom: 1rem;
+  }
+  .snapshot-saver {
+    top: 10rem;
+  }
 }

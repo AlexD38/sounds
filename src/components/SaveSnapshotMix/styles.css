@@ -67,3 +67,12 @@
 h3 {
   color: #faeab1;
 }
+@media (max-width: 768px) {
+  .logo {
+    position: relative;
+    margin: 0 auto;
+  }
+  .snapshot-saver {
+    top: 10rem;
+  }
+}
