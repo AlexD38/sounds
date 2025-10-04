@@ -11,13 +11,15 @@ export function ContextProvider({ children }) {
   const [currentInput, setCurrentInput] = useState(null);
   const [snapshotMix, setSnapshotMix] = useState(new Map());
   const [notification, setNotification] = useState(null);
-  const [savedSnaps, setSavedSnaps] = useState(null);
+  const [savedSnaps, setSavedSnaps] = useState(new Map());
   const [loadASnap, setLoadASnap] = useState(false);
+  const [playingSnap, setPlayingSnap] = useState(null);
 
   useEffect(() => {
     const getSavedSnaps = async () => {
-      const savedSnaps = await localforage.getItem('savedSnapshots');
-      setSavedSnaps(savedSnaps);
+      const previouslySavedSnaps =
+        (await localforage.getItem('savedSnapshots')) ?? savedSnaps;
+      setSavedSnaps(previouslySavedSnaps);
     };
 
     getSavedSnaps();
@@ -70,6 +72,7 @@ export function ContextProvider({ children }) {
       serializableMap.set(key, value);
     });
 
+    // await localforage.setItem('snapshot', serializableMap);
     setNotification({ message: 'Successfully saved snapshot' });
 
     setTimeout(() => {
@@ -94,6 +97,8 @@ export function ContextProvider({ children }) {
         savedSnaps,
         loadASnap,
         setLoadASnap,
+        playingSnap,
+        setPlayingSnap,
       }}
     >
       {children}
