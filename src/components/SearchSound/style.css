@@ -1,5 +1,5 @@
 .search-container {
-  width: 100%;
+  width: 50vw;
   display: flex;
   justify-content: flex-start;
   flex-direction: column;
@@ -14,7 +14,7 @@
   padding: 1rem;
   border-radius: 0.5rem;
   height: 3rem;
-  width: 50%;
+  width: 70%;
   /* margin: 2rem auto; */
   transition: all 0.3s ease;
   background-color: #34656d;
@@ -28,6 +28,7 @@
   height: 3rem;
 }
 .search-bar:focus {
+  width: 100%;
   background-color: #faeab1;
   color: #34656d;
   transition: all 0.3s ease;

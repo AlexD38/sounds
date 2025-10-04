@@ -1,12 +1,8 @@
 # ROADMAP
 
-- [ ] Possibility to save more than 1 snapshot
+- [x] Possibility to save more than 1 snapshot
 - [ ] Possibility to pass Perlin Noise into filter
 - [x] Add undistinctive chattering Sound
-
-# Fix
-
-- [ ] WhiteNoise doesn't snapshot save or load
 
 ## palette :
 
