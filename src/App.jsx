@@ -32,7 +32,7 @@ function App() {
 
   return (
     <>
-      <h1 className="logo">Safe & Sounds</h1>
+      <h1 className="logo">Ambient Architect</h1>
       <SaveSnapshotMix />
       <SearchSound />
       {customSound && (
