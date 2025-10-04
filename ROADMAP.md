@@ -4,6 +4,10 @@
 - [ ] Possibility to pass Perlin Noise into filter
 - [x] Add undistinctive chattering Sound
 
+# Fix
+
+- [ ] WhiteNoise doesn't snapshot save or load
+
 ## palette :
 
 - #FAF8F1

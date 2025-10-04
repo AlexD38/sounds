@@ -15,15 +15,23 @@ export function ContextProvider({ children }) {
   const [loadASnap, setLoadASnap] = useState(false);
   const [playingSnap, setPlayingSnap] = useState(null);
 
+  // Load snaps from localforage on initial mount
   useEffect(() => {
     const getSavedSnaps = async () => {
-      const previouslySavedSnaps =
-        (await localforage.getItem('savedSnapshots')) ?? savedSnaps;
-      setSavedSnaps(previouslySavedSnaps);
+      const previouslySavedSnaps = await localforage.getItem('savedSnapshots');
+      if (previouslySavedSnaps) {
+        setSavedSnaps(previouslySavedSnaps);
+      }
     };
 
     getSavedSnaps();
-  }, [savedSnaps]);
+  }, []); // Empty dependency array ensures this runs only once
+
+  // Function to update state and persist to localforage
+  const updateAndPersistSavedSnaps = async (newSnaps) => {
+    setSavedSnaps(newSnaps);
+    await localforage.setItem('savedSnapshots', newSnaps);
+  };
 
   const registerPlayerSituation = (title, obj) => {
     const concernedObj = snapshotMix.get(title);
@@ -94,6 +102,7 @@ export function ContextProvider({ children }) {
         notification,
         setNotification,
         saveSnapshot,
+        setSavedSnaps: updateAndPersistSavedSnaps, // Provide the new function
         savedSnaps,
         loadASnap,
         setLoadASnap,
