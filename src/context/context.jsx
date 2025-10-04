@@ -16,7 +16,7 @@ export function ContextProvider({ children }) {
 
   useEffect(() => {
     const getSavedSnaps = async () => {
-      const savedSnaps = await localforage.getItem('savedSnapshot');
+      const savedSnaps = await localforage.getItem('savedSnapshots');
       setSavedSnaps(savedSnaps);
     };
 
@@ -70,7 +70,6 @@ export function ContextProvider({ children }) {
       serializableMap.set(key, value);
     });
 
-    await localforage.setItem('snapshot', serializableMap);
     setNotification({ message: 'Successfully saved snapshot' });
 
     setTimeout(() => {
