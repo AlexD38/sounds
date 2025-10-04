@@ -31,7 +31,7 @@ export default function SearchSound() {
       <input
         type="search"
         className={expanded ? 'search-bar search-expand' : 'search-bar'}
-        placeholder="Search any sound here..."
+        placeholder="Search any additional sound here..."
         onClick={handleExpand}
         ref={inputRef}
         onChange={handleInput}
