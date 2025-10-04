@@ -27,10 +27,13 @@ i {
   color: #faeab1;
   font-weight: 900;
   position: absolute;
-  font-size: 2.5rem;
+  font-size: 2rem;
   top: -1rem;
   left: 1rem;
   cursor: pointer;
+}
+.logo > i {
+  transform: rotate(180deg);
 }
 
 @keyframes logo-spin {

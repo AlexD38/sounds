@@ -32,7 +32,9 @@ function App() {
 
   return (
     <>
-      <h1 className="logo">Ambient Architect</h1>
+      <h1 className="logo">
+        Ambient <i class="fa-solid fa-compass-drafting"></i> Architect
+      </h1>
       <SaveSnapshotMix />
       <SearchSound />
       {customSound && (
