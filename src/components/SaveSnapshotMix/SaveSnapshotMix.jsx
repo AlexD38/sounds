@@ -1,28 +1,49 @@
 import { useContext, useRef, useState } from 'react';
 import { Context } from '../../context/context';
 import './styles.css';
-import localforage from 'localforage';
 
 export const SaveSnapshotMix = () => {
-  const { saveSnapshot, isSavable, snapshotMix, savedSnaps } =
+  const { snapshotMix, savedSnaps, setSavedSnaps, setNotification } =
     useContext(Context);
   const [showInput, setShowInput] = useState(false);
   const inputRef = useRef(null);
 
   const handleSaveSnapshot = async () => {
-    const formattedSnapshot = { title: null, players: [] };
     const snapShotTitle = inputRef.current.value;
-    formattedSnapshot.title = snapShotTitle;
 
-    for (const obj of snapshotMix.entries()) {
-      const title = obj[0];
-      formattedSnapshot.players.push({ playerTitle: title, ...obj[1] });
+    if (!snapShotTitle) {
+      setNotification({ message: 'Please enter a name for your snapshot.' });
+      setTimeout(() => setNotification(null), 3000);
+      return;
     }
-    console.log('savedSnaps: ', savedSnaps);
-    savedSnaps.set(snapShotTitle, formattedSnapshot);
-    await localforage.setItem('savedSnapshots', savedSnaps);
+
+    const formattedSnapshot = { title: snapShotTitle, players: [] };
+
+    let IsSavable = false;
+    for (const [title, playerData] of snapshotMix.entries()) {
+      if (playerData.isPlaying) {
+        IsSavable = true;
+      }
+      formattedSnapshot.players.push({ playerTitle: title, ...playerData });
+    }
+    if (!IsSavable) {
+      setShowInput(false);
+      setNotification({ message: `You cannot save when nothing is playing !` });
+      setTimeout(() => setNotification(null), 3000);
+      return;
+    }
+    // 1. On crée une nouvelle Map
+    const updatedSnaps = new Map(savedSnaps);
+    // 2. On ajoute le nouveau snapshot
+    updatedSnaps.set(snapShotTitle, formattedSnapshot);
+
+    // 3. On utilise la fonction du contexte pour mettre à jour l'état et localforage
+    setSavedSnaps(updatedSnaps);
+
+    setNotification({ message: `Snapshot "${snapShotTitle}" saved!` });
+    setTimeout(() => setNotification(null), 3000);
+
     setShowInput(false);
-    saveSnapshot();
   };
 
   return (

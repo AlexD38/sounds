@@ -19,21 +19,20 @@
   font-weight: 900;
   text-transform: capitalize;
   cursor: pointer;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
 }
 .saved-snap:hover {
   transition: all 0.3s ease;
   filter: brightness(110%);
   background-color: #34656d;
 }
-.saved-snap > i {
-  color: #4d8a93;
-  position: absolute;
-  right: 0.5rem;
-  top: 1rem;
-  font-size: 1rem;
+.del-btn {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  font-size: 1.2rem;
   transition: all 0.3s ease;
-}
-.saved-snap > i:hover {
   color: #faeab1;
-  transition: all 0.3s ease;
 }

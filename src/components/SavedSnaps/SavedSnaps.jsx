@@ -12,7 +12,6 @@ export const SavedSnaps = () => {
   } = useContext(Context);
 
   const [snapsToDisplay, setSnapsToDisplay] = useState([]);
-  const [hoveredSnapTitle, setHoveredSnapTitle] = useState(null);
 
   useEffect(() => {
     if (savedSnaps) {
@@ -20,7 +19,10 @@ export const SavedSnaps = () => {
     }
   }, [savedSnaps]);
 
-  const handleLoadSavedSnap = snapTitle => {
+  const handleLoadSavedSnap = (e, snapTitle) => {
+    if (e.target.dataset.id) {
+      return;
+    }
     setPlayingSnap(snapTitle);
 
     setNotification({
@@ -33,13 +35,21 @@ export const SavedSnaps = () => {
     }, 3000);
   };
 
-  const handleDelSnap = () => {
+  const handleDelSnap = e => {
+    e.stopPropagation();
+    const snapTitle = e.currentTarget.dataset.id;
+
     setNotification({
-      message: `Successfully deleted  "${hoveredSnapTitle}"`,
+      message: `Successfully deleted  "${snapTitle}"`,
     });
 
-    savedSnaps.delete(hoveredSnapTitle);
-    setSavedSnaps(savedSnaps);
+    const updatedSnaps = new Map(savedSnaps);
+    updatedSnaps.delete(snapTitle);
+
+    setSavedSnaps(updatedSnaps);
+    setTimeout(() => {
+      setNotification(null);
+    }, 3000);
   };
 
   return (
@@ -49,17 +59,14 @@ export const SavedSnaps = () => {
           <div
             className="saved-snap"
             key={snap.title}
-            onClick={() => handleLoadSavedSnap(snap.title)}
-            onMouseEnter={() => setHoveredSnapTitle(snap.title)}
-            onMouseLeave={() => setHoveredSnapTitle(null)}
+            onClick={e => handleLoadSavedSnap(e, snap.title)}
           >
             {snap.title}{' '}
-            {/* {hoveredSnapTitle === snap.title && (
-              <i
-                className="fa-solid fa-trash"
-                onClick={() => handleDelSnap}
-              ></i>
-            )} */}
+            <i
+              data-id={snap.title}
+              onClick={handleDelSnap}
+              className="fa-solid fa-trash del-btn"
+            ></i>
           </div>
         ))}
     </div>
