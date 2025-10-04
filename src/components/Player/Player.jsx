@@ -35,6 +35,8 @@ function Player({ title, sourcePath, custom, speed }) {
   const [playbackRate, setPlaybackRate] = useState(1);
   const [isStereo, setIsStereo] = useState(false);
   const [normalizationFactor, setNormalizationFactor] = useState(1);
+  const [isLoading, setIsLoading] = useState(true);
+
   const audioCtxRef = useRef(null);
   const sourceNodeRef = useRef(null);
   const noiseSourceRef = useRef(null);
@@ -58,9 +60,7 @@ function Player({ title, sourcePath, custom, speed }) {
       return;
     }
 
-    const playerState = loadedSnap.players.find(
-      (p) => p.playerTitle === title
-    );
+    const playerState = loadedSnap.players.find(p => p.playerTitle === title);
 
     if (playerState) {
       if (playerState.isPlaying) {
@@ -226,6 +226,7 @@ function Player({ title, sourcePath, custom, speed }) {
 
     noiseSource.connect(filter);
     noiseSource.start();
+    setIsLoading(false);
 
     // Ici aussi, si bruit blanc + perlin activé
     if (custom === 'perlinNoise') {
@@ -301,6 +302,7 @@ function Player({ title, sourcePath, custom, speed }) {
           volValue * newNormalizationFactor
         );
       }
+      setIsLoading(false);
     } catch (err) {
       console.error('Erreur lors de la lecture du fichier :', err);
     }
@@ -412,99 +414,105 @@ function Player({ title, sourcePath, custom, speed }) {
       <h3 className={isPlaying ? 'playing' : ''}>
         <PlayerTitle title={title} isPlaying={isPlaying} />
       </h3>
-      {isPlaying && (
-        <div className="main-container">
-          {isPlaying && (
-            <div className="sliders-container">
-              <div className="sliders-labels">
-                <span>
-                  <i
-                    className={
-                      isPlaying
-                        ? 'fa-solid fa-filter playing'
-                        : 'fa-solid fa-filter'
-                    }
-                  ></i>
-                </span>
-
-                <span>
-                  <i
-                    className={
-                      isPlaying
-                        ? 'fa-solid fa-volume-high playing'
-                        : 'fa-solid fa-volume-high'
-                    }
-                  ></i>
-                </span>
-                {speed && (
+      {isPlaying &&
+        (isLoading ? (
+          <i class="fa-solid fa-spinner loader"></i>
+        ) : (
+          <div className="main-container">
+            {isPlaying && (
+              <div className="sliders-container">
+                <div className="sliders-labels">
                   <span>
                     <i
                       className={
                         isPlaying
-                          ? 'fa-solid fa-gauge-high playing'
-                          : 'fa-solid fa-gauge-high'
+                          ? 'fa-solid fa-filter playing'
+                          : 'fa-solid fa-filter'
                       }
                     ></i>
                   </span>
-                )}
-              </div>
-              <div className="sliders">
-                <input
-                  className="noise-range"
-                  type="range"
-                  min="50"
-                  max="1500"
-                  step="10"
-                  onChange={handleFilterValue}
-                  value={filterValue}
-                />
-                <input
-                  className="vol-range"
-                  type="range"
-                  min="0"
-                  max="150"
-                  step="1"
-                  value={volValue * 100}
-                  onChange={handleVolValue}
-                />
-                {speed && (
-                  <input
-                    className="speed-range"
-                    type="range"
-                    min="0.5"
-                    max="2"
-                    step="0.1"
-                    value={playbackRate}
-                    onChange={handlePlaybackRateChange}
-                  />
-                )}
-              </div>
-            </div>
-          )}
 
-          <div className="btn-container">
-            {isPlaying && (
-              <>
-                <button onClick={stop} data-stop={true}>
-                  <i className="fa-solid fa-pause playing" data-stop={true}></i>
-                </button>
-                <button onClick={toggleStereoEffect}>
-                  <i
-                    className={`fa-solid ${
-                      isStereo ? 'fa-check-double' : 'fa-check'
-                    } playing`}
-                  ></i>
-                </button>
-                {custom == true && (
-                  <button onClick={refresh}>
-                    <i className="fa-solid fa-arrows-rotate playing"></i>{' '}
-                  </button>
-                )}
-              </>
+                  <span>
+                    <i
+                      className={
+                        isPlaying
+                          ? 'fa-solid fa-volume-high playing'
+                          : 'fa-solid fa-volume-high'
+                      }
+                    ></i>
+                  </span>
+                  {speed && (
+                    <span>
+                      <i
+                        className={
+                          isPlaying
+                            ? 'fa-solid fa-gauge-high playing'
+                            : 'fa-solid fa-gauge-high'
+                        }
+                      ></i>
+                    </span>
+                  )}
+                </div>
+                <div className="sliders">
+                  <input
+                    className="noise-range"
+                    type="range"
+                    min="50"
+                    max="1500"
+                    step="10"
+                    onChange={handleFilterValue}
+                    value={filterValue}
+                  />
+                  <input
+                    className="vol-range"
+                    type="range"
+                    min="0"
+                    max="150"
+                    step="1"
+                    value={volValue * 100}
+                    onChange={handleVolValue}
+                  />
+                  {speed && (
+                    <input
+                      className="speed-range"
+                      type="range"
+                      min="0.5"
+                      max="2"
+                      step="0.1"
+                      value={playbackRate}
+                      onChange={handlePlaybackRateChange}
+                    />
+                  )}
+                </div>
+              </div>
             )}
+
+            <div className="btn-container">
+              {isPlaying && (
+                <>
+                  <button onClick={stop} data-stop={true}>
+                    <i
+                      className="fa-solid fa-pause playing"
+                      data-stop={true}
+                    ></i>
+                  </button>
+                  <button onClick={toggleStereoEffect}>
+                    <i
+                      className={`fa-solid ${
+                        isStereo ? 'fa-check-double' : 'fa-check'
+                      } playing`}
+                    ></i>
+                  </button>
+                  {custom == true && (
+                    <button onClick={refresh}>
+                      <i className="fa-solid fa-arrows-rotate playing"></i>{' '}
+                    </button>
+                  )}
+                </>
+              )}
+            </div>
           </div>
-        </div>
-      )}
+        ))}
     </div>
   );
 }
