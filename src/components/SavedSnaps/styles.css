@@ -22,6 +22,7 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
+  gap: 2rem;
 }
 .saved-snap:hover {
   transition: all 0.3s ease;
@@ -35,4 +36,10 @@
   font-size: 1.2rem;
   transition: all 0.3s ease;
   color: #faeab1;
+}
+
+@media (max-width: 768px) {
+  .saved-snap {
+    gap: 2rem;
+  }
 }

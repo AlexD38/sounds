@@ -1,4 +1,4 @@
-import { useRef, useState, useContext } from 'react';
+import { useRef, useState, useContext, useEffect } from 'react';
 import './App.css';
 import Player from './components/Player/Player';
 import SearchSound from './components/SearchSound/SearchSound';
@@ -29,11 +29,35 @@ import { SavedSnaps } from './components/SavedSnaps/SavedSnaps';
 function App() {
   const [response, setResponse] = useState(null);
   const { customSound, setCustomSound, savedSnaps } = useContext(Context);
+  const [title, setTitle] = useState(
+    <>
+      Ambient <i className="fa-solid fa-compass-drafting"></i> Architect
+    </>
+  );
+  const [opacity, setOpacity] = useState(1);
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setOpacity(0);
+      setTimeout(() => {
+        setTitle(
+          <>
+            A <i className="fa-solid fa-compass-drafting"></i> A
+          </>
+        );
+        setOpacity(1);
+      }, 500);
+    }, 3000);
+    return () => clearTimeout(timer);
+  }, []);
 
   return (
     <>
-      <h1 className="logo">
-        Ambient <i class="fa-solid fa-compass-drafting"></i> Architect
+      <h1
+        className="logo"
+        style={{ opacity, transition: 'opacity 0.5s ease-in-out' }}
+      >
+        {title}
       </h1>
       <SaveSnapshotMix />
       <SearchSound />
