@@ -2,7 +2,7 @@
 
 - [ ] Possibility to save more than 1 snapshot
 - [ ] Possibility to pass Perlin Noise into filter
-- [ ] Add undistinctive chattering Sound
+- [x] Add undistinctive chattering Sound
 
 ## palette :
 

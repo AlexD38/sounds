@@ -21,9 +21,11 @@ export const PlayerTitle = ({ title, isPlaying }) => {
   } else if (title === 'night') {
     iconLabel = 'moon';
   } else if (title === 'scary') {
-    iconLabel = 'hat-wizard';
-  } else if (title === 'wolf') {
     iconLabel = 'ghost';
+  } else if (title === 'chatter') {
+    iconLabel = 'comments';
+  } else if (title === 'crow') {
+    iconLabel = 'crow';
   } else {
     return title;
   }

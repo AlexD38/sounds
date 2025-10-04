@@ -4,7 +4,8 @@ import './styles.css';
 import localforage from 'localforage';
 
 export const SaveSnapshotMix = () => {
-  const { saveSnapshot, isSavable, snapshotMix } = useContext(Context);
+  const { saveSnapshot, isSavable, snapshotMix, savedSnaps } =
+    useContext(Context);
   const [showInput, setShowInput] = useState(false);
   const inputRef = useRef(null);
 
@@ -17,7 +18,8 @@ export const SaveSnapshotMix = () => {
       const title = obj[0];
       formattedSnapshot.players.push({ playerTitle: title, ...obj[1] });
     }
-    await localforage.setItem('savedSnapshot', formattedSnapshot);
+    console.log(savedSnaps);
+    await localforage.setItem('savedSnapshots', formattedSnapshot);
     setShowInput(false);
     saveSnapshot();
   };
