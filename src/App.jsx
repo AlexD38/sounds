@@ -25,10 +25,12 @@ import Stretcher from './strecther/Stretcher';
 import windows from '/assets/sounds/windows.wav';
 import pianoSound from '/assets/sounds/piano.mp3';
 import { SavedSnaps } from './components/SavedSnaps/SavedSnaps';
+import { StopAll } from './components/StopAll/StopAll';
 
 function App() {
   const [response, setResponse] = useState(null);
-  const { customSound, setCustomSound, savedSnaps } = useContext(Context);
+  const { customSound, setCustomSound, savedSnaps, stopAll } =
+    useContext(Context);
   const [title, setTitle] = useState(
     <>
       Ambient <i className="fa-solid fa-compass-drafting"></i> Architect
@@ -59,6 +61,7 @@ function App() {
       >
         {title}
       </h1>
+      <StopAll />
       <SaveSnapshotMix />
       <SearchSound />
       {customSound && (
@@ -70,62 +73,77 @@ function App() {
       )}
       {/* <Stretcher source={windows} custom="perlinNoise" /> */}
       <SavedSnaps />
+      <main>
+        <WhiteNoisePlayer custom="perlinNoise" stopAll={stopAll} />
+        <Player
+          title={'morning'}
+          sourcePath={villageSound}
+          custom="perlinNoise"
+          stopAll={stopAll}
+        />
+        <Player
+          title={'fire'}
+          sourcePath={fireSound}
+          custom="perlinNoise"
+          stopAll={stopAll}
+        />
 
-      <WhiteNoisePlayer custom="perlinNoise" />
-      <Player
-        title={'morning'}
-        sourcePath={villageSound}
-        custom="perlinNoise"
-      />
-      <Player title={'fire'} sourcePath={fireSound} custom="perlinNoise" />
-      <Player
-        title={'ocean'}
-        sourcePath={oceanSound}
-        custom="perlinNoise"
-        speed={true}
-      />
-      <Player
-        title={'lightRain'}
-        sourcePath={lightRainSound}
-        custom="perlinNoise"
-      />
-      <Player
-        title={'rain'}
-        sourcePath={rainSound}
-        custom="perlinNoise"
-        speed={true}
-      />
-      <Player
-        title={'thunder'}
-        sourcePath={thunderSound}
-        custom="perlinNoise"
-        speed={true}
-      />
-      <Player
-        title={'train'}
-        sourcePath={trainSound}
-        custom="perlinNoise"
-        speed={true}
-      />
-      <Player
-        title={'night'}
-        sourcePath={nightSound}
-        custom="perlinNoise"
-        speed={true}
-      />
-      <Player
-        title={'scary'}
-        sourcePath={scaryNightSound}
-        custom="perlinNoise"
-        speed={true}
-      />
-      <Player
-        title={'crow'}
-        sourcePath={crowSound}
-        custom="perlinNoise"
-        speed={true}
-      />
-      <Player title={'chatter'} sourcePath={chatterSound} speed={true} />
+        <Player
+          title={'ocean'}
+          sourcePath={oceanSound}
+          custom="perlinNoise"
+          speed={true}
+          stopAll={stopAll}
+        />
+        <Player
+          title={'lightRain'}
+          sourcePath={lightRainSound}
+          custom="perlinNoise"
+          stopAll={stopAll}
+        />
+        <Player
+          title={'rain'}
+          sourcePath={rainSound}
+          custom="perlinNoise"
+          speed={true}
+          stopAll={stopAll}
+        />
+        <Player
+          title={'thunder'}
+          sourcePath={thunderSound}
+          custom="perlinNoise"
+          speed={true}
+          stopAll={stopAll}
+        />
+        <Player
+          title={'train'}
+          sourcePath={trainSound}
+          custom="perlinNoise"
+          speed={true}
+          stopAll={stopAll}
+        />
+        <Player
+          title={'night'}
+          sourcePath={nightSound}
+          custom="perlinNoise"
+          speed={true}
+          stopAll={stopAll}
+        />
+        <Player
+          title={'scary'}
+          sourcePath={scaryNightSound}
+          custom="perlinNoise"
+          speed={true}
+          stopAll={stopAll}
+        />
+        <Player
+          title={'crow'}
+          sourcePath={crowSound}
+          custom="perlinNoise"
+          stopAll={stopAll}
+        />
+        <Player title={'chatter'} sourcePath={chatterSound} stopAll={stopAll} />
+      </main>
       <Notification />
     </>
   );

@@ -9,6 +9,7 @@ export const SavedSnaps = () => {
     setNotification,
     setLoadASnap,
     setPlayingSnap,
+    setStopAll,
   } = useContext(Context);
 
   const [snapsToDisplay, setSnapsToDisplay] = useState([]);
@@ -23,6 +24,7 @@ export const SavedSnaps = () => {
     if (e.target.dataset.id) {
       return;
     }
+    setStopAll(false);
     setPlayingSnap(snapTitle);
 
     setNotification({
