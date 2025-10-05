@@ -72,19 +72,12 @@ function App() {
       <SavedSnaps />
 
       <WhiteNoisePlayer custom="perlinNoise" />
-
       <Player
         title={'morning'}
-        sourcePath={monrningSound}
-        custom="perlinNoise"
-      />
-      <Player title={'fire'} sourcePath={fireSound} custom="perlinNoise" />
-      <Player
-        title={'village'}
         sourcePath={villageSound}
         custom="perlinNoise"
       />
-      <Player title={'srping'} sourcePath={springSound} custom="perlinNoise" />
+      <Player title={'fire'} sourcePath={fireSound} custom="perlinNoise" />
       <Player
         title={'ocean'}
         sourcePath={oceanSound}
