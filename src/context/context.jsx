@@ -14,6 +14,7 @@ export function ContextProvider({ children }) {
   const [savedSnaps, setSavedSnaps] = useState(new Map());
   const [loadASnap, setLoadASnap] = useState(false);
   const [playingSnap, setPlayingSnap] = useState(null);
+  const [stopAll, setStopAll] = useState(false);
 
   // Load snaps from localforage on initial mount
   useEffect(() => {
@@ -28,7 +29,7 @@ export function ContextProvider({ children }) {
   }, []); // Empty dependency array ensures this runs only once
 
   // Function to update state and persist to localforage
-  const updateAndPersistSavedSnaps = async (newSnaps) => {
+  const updateAndPersistSavedSnaps = async newSnaps => {
     setSavedSnaps(newSnaps);
     await localforage.setItem('savedSnapshots', newSnaps);
   };
@@ -108,6 +109,8 @@ export function ContextProvider({ children }) {
         setLoadASnap,
         playingSnap,
         setPlayingSnap,
+        stopAll,
+        setStopAll,
       }}
     >
       {children}

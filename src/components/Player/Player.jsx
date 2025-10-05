@@ -19,7 +19,7 @@ function getRMS(audioBuffer) {
   return Math.sqrt(meanSquare);
 }
 
-function Player({ title, sourcePath, custom, speed }) {
+function Player({ title, sourcePath, custom, speed, stopAll }) {
   const {
     snapshotMix,
     registerPlayerSituation,
@@ -27,6 +27,7 @@ function Player({ title, sourcePath, custom, speed }) {
     loadASnap,
     setLoadASnap,
     playingSnap,
+    setStopAll,
   } = useContext(Context);
 
   const [filterValue, setFilterValue] = useState(1800);
@@ -51,6 +52,11 @@ function Player({ title, sourcePath, custom, speed }) {
     useContext(Context);
 
   useEffect(() => {
+    if (stopAll) {
+      stop();
+      setIsPlaying(false);
+      return;
+    }
     if (!savedSnaps || !loadASnap) {
       return;
     }
@@ -65,9 +71,10 @@ function Player({ title, sourcePath, custom, speed }) {
     if (playerState) {
       if (playerState.isPlaying) {
         setIsPlaying(true);
-        setFilterValue(playerState.filter);
-        setVolValue(playerState.volume);
-        setPlaybackRate(playerState.speed);
+        setStopAll(false);
+        setFilterValue(playerState.filter || 1800);
+        setVolValue(playerState.volume || 1.5);
+        setPlaybackRate(playerState.speed || 1);
         play(null, sourcePath, custom);
       } else {
         setIsPlaying(false);
@@ -77,7 +84,7 @@ function Player({ title, sourcePath, custom, speed }) {
       setIsPlaying(false);
       stop();
     }
-  }, [savedSnaps, loadASnap, playingSnap]);
+  }, [savedSnaps, loadASnap, playingSnap, stopAll]);
   //  PERLIN --------------------------------------
   function startPerlinModulation(minGain = 0, maxGain = 1.5) {
     if (!gainNodeRef.current || !audioCtxRef.current) return;
@@ -198,7 +205,13 @@ function Player({ title, sourcePath, custom, speed }) {
       return;
     }
     setIsPlaying(true);
-    registerPlayerSituation(title, { isPlaying: true });
+    setStopAll(false);
+    registerPlayerSituation(title, {
+      isPlaying: true,
+      volume: volValue,
+      filter: filterValue,
+      speed: playbackRate,
+    });
 
     if (sourcePath) {
       await playFromSource(sourcePath, custom);
