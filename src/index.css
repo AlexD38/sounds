@@ -4,7 +4,7 @@
   font-weight: 400;
 
   color-scheme: light dark;
-  color: #FAF8F1;
+  color: #faf8f1;
   background-color: #334443;
 
   font-synthesis: none;
@@ -33,13 +33,15 @@ button {
   font-size: 1em;
   font-weight: 500;
   font-family: inherit;
-  background-color: #1a1a1a;
+  background-color: #334443;
   cursor: pointer;
   transition: border-color 0.25s;
+  filter: brightness(110%);
+  /* border: 0.1px solid #faeab1; */
 }
 button:hover {
-  filter: brightness(110%);
-  transition: all .3s ease;
+  filter: brightness(100%);
+  transition: all 0.3s ease;
 }
 button:focus,
 button:focus-visible {

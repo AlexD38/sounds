@@ -115,7 +115,7 @@ i {
   flex-direction: row;
   align-items: center;
   gap: 1rem;
-  min-width: 50%;
+  min-width: 70%;
   position: relative;
 }
 
@@ -124,7 +124,7 @@ i {
   flex-direction: column;
   justify-content: center;
   align-items: center;
-  width: 100%;
+  width: 20%;
   height: 100%;
   gap: 2rem;
 }
@@ -144,7 +144,7 @@ i {
 .noise-range,
 .vol-range,
 .speed-range {
-  /* width: 5rem; */
+  width: 12rem;
   outline: none;
   /* transform: rotate(-90deg); */
   /* margin: 0 2rem; */
