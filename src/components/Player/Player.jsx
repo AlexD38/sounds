@@ -36,7 +36,6 @@ function Player({ title, sourcePath, custom, speed, stopAll }) {
   const [isPlaying, setIsPlaying] = useState(false);
   const [playbackRate, setPlaybackRate] = useState(1);
   const [isStereo, setIsStereo] = useState(false);
-  const [normalizationFactor, setNormalizationFactor] = useState(1);
   const [isLoading, setIsLoading] = useState(true);
 
   const audioCtxRef = useRef(null);
@@ -46,6 +45,7 @@ function Player({ title, sourcePath, custom, speed, stopAll }) {
   const filterRef = useRef(null);
   const modulatorIntervalRef = useRef(null);
   const limiterNodeRef = useRef(null); // Ajout de la ref pour le limiteur
+  const normalizationFactorRef = useRef(1);
 
   const stereoNodesRef = useRef(null);
   const token = import.meta.env.VITE_API_KEY;
@@ -143,24 +143,20 @@ function Player({ title, sourcePath, custom, speed, stopAll }) {
   };
 
   // VOLUME ----------------------------------------
+  // VOLUME ----------------------------------------
   const handleVolValue = e => {
-    const sliderValue = parseFloat(e.currentTarget.value); // Valeur brute du curseur (0-250)
-    const maxSliderValue = 250; // Corresponds au "max" de l'input
-    const maxGain = 1.5; // Le gain maximum que vous souhaitez
-
-    // Appliquer une courbe exponentielle (puissance 3) pour un contrôle plus fin en bas
-    const normalizedValue = sliderValue / maxSliderValue; // Valeur linéaire 0-1
-    const curvedValue = normalizedValue ** 3; // Valeur avec la courbe (0-1)
-    const finalGain = curvedValue * maxGain; // Remettre à l'échelle du gain souhaité (0-1.5)
-
-    setVolValue(finalGain);
-    registerPlayerSituation(title, { volume: finalGain });
+    const value = parseFloat(e.currentTarget.value);
+    setVolValue(value);
+    registerPlayerSituation(title, { volume: value });
 
     if (loadASnap) {
       setLoadASnap(false);
     }
+
+    const totalGain = value * normalizationFactorRef.current;
+
     if (custom === 'perlinNoise' && isPlaying) {
-      if (finalGain === 0) {
+      if (value === 0) {
         stopPerlinModulation();
         if (gainNodeRef.current && audioCtxRef.current) {
           gainNodeRef.current.gain.setTargetAtTime(
@@ -170,15 +166,12 @@ function Player({ title, sourcePath, custom, speed, stopAll }) {
           );
         }
       } else {
-        startPerlinModulation(
-          0.5 * normalizationFactor,
-          finalGain * normalizationFactor
-        );
+        startPerlinModulation(0.5, totalGain);
       }
     } else {
       if (gainNodeRef.current && audioCtxRef.current) {
         gainNodeRef.current.gain.setTargetAtTime(
-          finalGain * normalizationFactor,
+          totalGain,
           audioCtxRef.current.currentTime,
           0.01
         );
@@ -230,8 +223,6 @@ function Player({ title, sourcePath, custom, speed, stopAll }) {
     }
 
     if (audioCtxRef.current) return;
-
-    setNormalizationFactor(1); // Reset for noise
 
     const { gainNode, audioCtx, noiseSource } =
       soundTools.noise.createWhiteNoise(audioCtxRef, noiseSourceRef);
@@ -303,9 +294,9 @@ function Player({ title, sourcePath, custom, speed, stopAll }) {
 
       // Normalisation du volume
       const rms = getRMS(audioBuffer);
-      const targetRMS = 0.18; // Cible de volume augmentée pour mieux normaliser.
+      const targetRMS = 0.18;
       const newNormalizationFactor = rms > 0 ? targetRMS / rms : 1;
-      setNormalizationFactor(newNormalizationFactor);
+      normalizationFactorRef.current = newNormalizationFactor;
 
       // Stop l'ancienne source si elle existe
       if (sourceNodeRef.current) {
@@ -347,10 +338,7 @@ function Player({ title, sourcePath, custom, speed, stopAll }) {
       filterRef.current = filter;
       // Ici aussi, perlin activé
       if (custom === 'perlinNoise') {
-        startPerlinModulation(
-          0.5 * newNormalizationFactor,
-          volValue * newNormalizationFactor
-        );
+        startPerlinModulation(0.5, volValue * newNormalizationFactor);
       }
       setIsLoading(false);
     } catch (err) {
@@ -522,9 +510,9 @@ function Player({ title, sourcePath, custom, speed, stopAll }) {
                     className="vol-range"
                     type="range"
                     min="0"
-                    max="250"
-                    step="1"
-                    value={Math.pow(volValue / 1.5, 1 / 3) * 250}
+                    max="2"
+                    step="0.01"
+                    value={volValue}
                     onChange={handleVolValue}
                   />
                   {speed && (

@@ -3,8 +3,15 @@ import '../../App.css';
 import { Context } from '../../context/context';
 import { soundTools } from '../../utils/modulateSound.tools';
 
-function WhiteNoisePlayer({ custom }) {
-  const { snapshotMix, registerPlayerSituation } = useContext(Context);
+function WhiteNoisePlayer({ custom, stopAll, title }) {
+  const {
+    snapshotMix,
+    registerPlayerSituation,
+    savedSnaps,
+    loadASnap,
+    playingSnap,
+    setStopAll,
+  } = useContext(Context);
 
   const [filterValue, setFilterValue] = useState(1800);
   const [volValue, setVolValue] = useState(1.5);
@@ -18,6 +25,41 @@ function WhiteNoisePlayer({ custom }) {
   const filterRef = useRef(null);
   const modulatorIntervalRef = useRef(null);
   const stereoNodesRef = useRef(null);
+
+  useEffect(() => {
+    if (stopAll) {
+      stop();
+      setIsPlaying(false);
+      return;
+    }
+    if (!savedSnaps || !loadASnap) {
+      return;
+    }
+
+    const loadedSnap = savedSnaps.get(playingSnap);
+    if (!loadedSnap) {
+      return;
+    }
+
+    const playerState = loadedSnap.players.find(p => p.playerTitle === title);
+
+    if (playerState) {
+      if (playerState.isPlaying) {
+        setIsPlaying(true);
+        setStopAll(false);
+        setFilterValue(playerState.filter || 1800);
+        setVolValue(playerState.volume || 1.5);
+        setPlaybackRate(playerState.speed || 1);
+        play(null, custom);
+      } else {
+        setIsPlaying(false);
+        stop();
+      }
+    } else {
+      setIsPlaying(false);
+      stop();
+    }
+  }, [savedSnaps, loadASnap, playingSnap, stopAll]);
 
   // FILTER ----------------------------------------
   const handleFilterValue = e => {

@@ -35,15 +35,13 @@ export function ContextProvider({ children }) {
   };
 
   const registerPlayerSituation = (title, obj) => {
-    const concernedObj = snapshotMix.get(title);
-    if (!concernedObj) {
-      snapshotMix.set(title, obj);
-    } else {
-      const prop = Object.keys(obj)[0];
-      const value = obj[prop];
-      concernedObj[prop] = value;
-      snapshotMix.set(title, { ...concernedObj, [prop]: value });
-    }
+    setSnapshotMix(prevSnapshotMix => {
+      const newSnapshotMix = new Map(prevSnapshotMix);
+      const currentPlayerData = newSnapshotMix.get(title) || {};
+      const updatedPlayerData = { ...currentPlayerData, ...obj };
+      newSnapshotMix.set(title, updatedPlayerData);
+      return newSnapshotMix;
+    });
   };
 
   const saveSnapshot = async () => {
