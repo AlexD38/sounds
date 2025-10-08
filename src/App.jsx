@@ -75,7 +75,11 @@ function App() {
       {/* <Stretcher source={windows} custom="perlinNoise" /> */}
       <SavedSnaps />
       <main>
-        <WhiteNoisePlayer custom="perlinNoise" stopAll={stopAll} />
+        <WhiteNoisePlayer
+          title={'whiteNoise'}
+          custom="perlinNoise"
+          stopAll={stopAll}
+        />
         <Player
           title={'morning'}
           sourcePath={villageSound}
