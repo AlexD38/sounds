@@ -1,5 +1,6 @@
 import { useContext, useRef, useState, useEffect } from 'react';
 import '../../App.css';
+import './styles.css'; // Import local styles
 import { Context } from '../../context/context';
 import {
   handleSnapshotMix,
@@ -44,6 +45,7 @@ function Player({ title, sourcePath, custom, speed, stopAll }) {
   const gainNodeRef = useRef(null);
   const filterRef = useRef(null);
   const modulatorIntervalRef = useRef(null);
+  const limiterNodeRef = useRef(null); // Ajout de la ref pour le limiteur
 
   const stereoNodesRef = useRef(null);
   const token = import.meta.env.VITE_API_KEY;
@@ -142,15 +144,23 @@ function Player({ title, sourcePath, custom, speed, stopAll }) {
 
   // VOLUME ----------------------------------------
   const handleVolValue = e => {
-    const value = parseFloat(e.currentTarget.value) / 100;
-    setVolValue(value);
-    registerPlayerSituation(title, { volume: value });
+    const sliderValue = parseFloat(e.currentTarget.value); // Valeur brute du curseur (0-250)
+    const maxSliderValue = 250; // Corresponds au "max" de l'input
+    const maxGain = 1.5; // Le gain maximum que vous souhaitez
+
+    // Appliquer une courbe exponentielle (puissance 3) pour un contrôle plus fin en bas
+    const normalizedValue = sliderValue / maxSliderValue; // Valeur linéaire 0-1
+    const curvedValue = normalizedValue ** 3; // Valeur avec la courbe (0-1)
+    const finalGain = curvedValue * maxGain; // Remettre à l'échelle du gain souhaité (0-1.5)
+
+    setVolValue(finalGain);
+    registerPlayerSituation(title, { volume: finalGain });
 
     if (loadASnap) {
       setLoadASnap(false);
     }
     if (custom === 'perlinNoise' && isPlaying) {
-      if (value === 0) {
+      if (finalGain === 0) {
         stopPerlinModulation();
         if (gainNodeRef.current && audioCtxRef.current) {
           gainNodeRef.current.gain.setTargetAtTime(
@@ -162,13 +172,13 @@ function Player({ title, sourcePath, custom, speed, stopAll }) {
       } else {
         startPerlinModulation(
           0.5 * normalizationFactor,
-          value * normalizationFactor
+          finalGain * normalizationFactor
         );
       }
     } else {
       if (gainNodeRef.current && audioCtxRef.current) {
         gainNodeRef.current.gain.setTargetAtTime(
-          value * normalizationFactor,
+          finalGain * normalizationFactor,
           audioCtxRef.current.currentTime,
           0.01
         );
@@ -226,6 +236,18 @@ function Player({ title, sourcePath, custom, speed, stopAll }) {
     const { gainNode, audioCtx, noiseSource } =
       soundTools.noise.createWhiteNoise(audioCtxRef, noiseSourceRef);
 
+    // Création du limiteur pour le bruit blanc
+    if (!limiterNodeRef.current) {
+      const limiter = audioCtx.createDynamicsCompressor();
+      limiter.threshold.setValueAtTime(-2, audioCtx.currentTime);
+      limiter.knee.setValueAtTime(0, audioCtx.currentTime);
+      limiter.ratio.setValueAtTime(20, audioCtx.currentTime);
+      limiter.attack.setValueAtTime(0.005, audioCtx.currentTime);
+      limiter.release.setValueAtTime(0.05, audioCtx.currentTime);
+      limiterNodeRef.current = limiter;
+    }
+    const limiter = limiterNodeRef.current;
+
     gainNode.gain.setValueAtTime(volValue, audioCtx.currentTime);
     gainNodeRef.current = gainNode;
 
@@ -234,8 +256,10 @@ function Player({ title, sourcePath, custom, speed, stopAll }) {
     filter.frequency.setValueAtTime(filterValue, audioCtx.currentTime);
     filterRef.current = filter;
 
+    // Chaînage avec le limiteur
     filter.connect(gainNode);
-    gainNode.connect(audioCtx.destination);
+    gainNode.connect(limiter);
+    limiter.connect(audioCtx.destination);
 
     noiseSource.connect(filter);
     noiseSource.start();
@@ -256,6 +280,18 @@ function Player({ title, sourcePath, custom, speed, stopAll }) {
       }
       const audioCtx = audioCtxRef.current;
 
+      // Crée le limiteur s'il n'existe pas
+      if (!limiterNodeRef.current) {
+        const limiter = audioCtx.createDynamicsCompressor();
+        limiter.threshold.setValueAtTime(-2, audioCtx.currentTime);
+        limiter.knee.setValueAtTime(0, audioCtx.currentTime);
+        limiter.ratio.setValueAtTime(20, audioCtx.currentTime);
+        limiter.attack.setValueAtTime(0.005, audioCtx.currentTime);
+        limiter.release.setValueAtTime(0.05, audioCtx.currentTime);
+        limiterNodeRef.current = limiter;
+      }
+      const limiter = limiterNodeRef.current;
+
       const response = await fetch(sourcePath);
       console.log('final fetch for reading');
       if (!response.ok) throw new Error('Fichier introuvable ou inaccessible');
@@ -267,7 +303,7 @@ function Player({ title, sourcePath, custom, speed, stopAll }) {
 
       // Normalisation du volume
       const rms = getRMS(audioBuffer);
-      const targetRMS = 0.1; // Cible de volume. Ajustable au besoin.
+      const targetRMS = 0.18; // Cible de volume augmentée pour mieux normaliser.
       const newNormalizationFactor = rms > 0 ? targetRMS / rms : 1;
       setNormalizationFactor(newNormalizationFactor);
 
@@ -296,10 +332,11 @@ function Player({ title, sourcePath, custom, speed, stopAll }) {
       filter.type = 'lowpass';
       filter.frequency.setValueAtTime(filterValue, audioCtx.currentTime);
 
-      // Connexions : source → filtre → gain → destination
+      // Connexions : source → filtre → gain → limiter → destination
       bufferSource.connect(filter);
       filter.connect(gainNode);
-      gainNode.connect(audioCtx.destination);
+      gainNode.connect(limiter);
+      limiter.connect(audioCtx.destination);
 
       // Démarre la lecture
       bufferSource.start();
@@ -341,6 +378,11 @@ function Player({ title, sourcePath, custom, speed, stopAll }) {
     if (gainNodeRef.current) {
       gainNodeRef.current.disconnect();
       gainNodeRef.current = null;
+    }
+    // Déconnexion du limiteur
+    if (limiterNodeRef.current) {
+      limiterNodeRef.current.disconnect();
+      limiterNodeRef.current = null;
     }
     if (modulatorIntervalRef.current) {
       clearInterval(modulatorIntervalRef.current);
@@ -480,9 +522,9 @@ function Player({ title, sourcePath, custom, speed, stopAll }) {
                     className="vol-range"
                     type="range"
                     min="0"
-                    max="150"
+                    max="250"
                     step="1"
-                    value={volValue * 100}
+                    value={Math.pow(volValue / 1.5, 1 / 3) * 250}
                     onChange={handleVolValue}
                   />
                   {speed && (

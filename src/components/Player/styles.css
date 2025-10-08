@@ -1,0 +1,56 @@
+/*
+ * Custom Slider Styles
+ */
+
+.noise-range,
+.vol-range,
+.speed-range {
+  -webkit-appearance: none; /* Override default look */
+  appearance: none;
+  width: 100%;
+  background: transparent; /* Hide original track */
+  cursor: pointer;
+}
+
+/* --- Track Styles --- */
+
+.noise-range::-webkit-slider-runnable-track,
+.vol-range::-webkit-slider-runnable-track,
+.speed-range::-webkit-slider-runnable-track {
+  background: #FAEAB1; /* Sandy yellow */
+  height: 8px;
+  border-radius: 4px;
+}
+
+.noise-range::-moz-range-track,
+.vol-range::-moz-range-track,
+.speed-range::-moz-range-track {
+  background: #FAEAB1; /* Sandy yellow */
+  height: 8px;
+  border-radius: 4px;
+}
+
+/* --- Thumb Styles --- */
+
+.noise-range::-webkit-slider-thumb,
+.vol-range::-webkit-slider-thumb,
+.speed-range::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  margin-top: -6px; /* Center thumb on track */
+  width: 20px;
+  height: 20px;
+  background: #334443; /* Dark color */
+  border-radius: 50%;
+  border: 1px solid #FAF8F1; /* Light beige border for definition */
+}
+
+.noise-range::-moz-range-thumb,
+.vol-range::-moz-range-thumb,
+.speed-range::-moz-range-thumb {
+  width: 20px;
+  height: 20px;
+  background: #334443; /* Dark color */
+  border-radius: 50%;
+  border: 1px solid #FAF8F1; /* Light beige border for definition */
+}
