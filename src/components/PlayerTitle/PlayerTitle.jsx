@@ -26,6 +26,8 @@ export const PlayerTitle = ({ title, isPlaying }) => {
     iconLabel = 'comments';
   } else if (title === 'crow') {
     iconLabel = 'crow';
+  } else if (title === 'satie') {
+    iconLabel = 'music';
   } else {
     return title;
   }

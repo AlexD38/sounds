@@ -16,6 +16,7 @@ import nightSound from '/assets/sounds/night.wav';
 import scaryNightSound from '/assets/sounds/scaryNightForest.wav';
 import crowSound from '/assets/sounds/crow.wav';
 import chatterSound from '/assets/sounds/chatter.wav';
+import satieSound from '/assets/sounds/gymnopedie.mp3';
 
 import WhiteNoisePlayer from './components/WhiteNoisePlayer/WhiteNoisePlayer';
 import { SaveSnapshotMix } from './components/SaveSnapshotMix/SaveSnapshotMix';
@@ -142,7 +143,19 @@ function App() {
           custom="perlinNoise"
           stopAll={stopAll}
         />
-        <Player title={'chatter'} sourcePath={chatterSound} stopAll={stopAll} />
+        <Player
+          title={'chatter'}
+          sourcePath={chatterSound}
+          stopAll={stopAll}
+          speed={true}
+        />
+        <Player
+          title={'satie'}
+          sourcePath={satieSound}
+          custom="perlinNoise"
+          stopAll={stopAll}
+          speed={true}
+        />
       </main>
       <Notification />
     </>
