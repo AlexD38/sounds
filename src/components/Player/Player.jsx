@@ -54,6 +54,10 @@ function Player({ title, sourcePath, custom, speed, stopAll }) {
     useContext(Context);
 
   useEffect(() => {
+    if (sourcePath == 'apiSearch') {
+      handleFilterValue(350);
+      handlePlaybackRateChange(0.7);
+    }
     if (stopAll) {
       stop();
       setIsPlaying(false);
@@ -86,7 +90,8 @@ function Player({ title, sourcePath, custom, speed, stopAll }) {
       setIsPlaying(false);
       stop();
     }
-  }, [savedSnaps, loadASnap, playingSnap, stopAll]);
+  }, [savedSnaps, loadASnap, playingSnap, stopAll, isPlaying, isLoading]);
+
   //  PERLIN --------------------------------------
   function startPerlinModulation(minGain = 0, maxGain = 1.5) {
     if (!gainNodeRef.current || !audioCtxRef.current) return;
@@ -126,7 +131,7 @@ function Player({ title, sourcePath, custom, speed, stopAll }) {
 
   // FILTER ----------------------------------------
   const handleFilterValue = e => {
-    const value = parseFloat(e.currentTarget.value);
+    const value = parseFloat(e?.currentTarget?.value || e);
     setFilterValue(value);
     registerPlayerSituation(title, { filter: value });
 
@@ -184,7 +189,7 @@ function Player({ title, sourcePath, custom, speed, stopAll }) {
     if (loadASnap) {
       setLoadASnap(false);
     }
-    const value = parseFloat(e.currentTarget.value);
+    const value = parseFloat(e?.currentTarget?.value || e);
     setPlaybackRate(value);
     registerPlayerSituation(title, { speed: value });
     if (sourceNodeRef.current && audioCtxRef.current) {
@@ -271,6 +276,12 @@ function Player({ title, sourcePath, custom, speed, stopAll }) {
       }
       const audioCtx = audioCtxRef.current;
 
+      if (sourcePath == 'apiSearch') {
+        setIsLoading(true);
+        refresh();
+        return;
+      }
+
       // Crée le limiteur s'il n'existe pas
       if (!limiterNodeRef.current) {
         const limiter = audioCtx.createDynamicsCompressor();
@@ -330,6 +341,7 @@ function Player({ title, sourcePath, custom, speed, stopAll }) {
       limiter.connect(audioCtx.destination);
 
       // Démarre la lecture
+
       bufferSource.start();
 
       // Stocke les références
@@ -437,11 +449,29 @@ function Player({ title, sourcePath, custom, speed, stopAll }) {
 
   // REFRESH -----------------------------------------------
   const refresh = async () => {
-    const { obj } = await SearchThatSound(currentInput);
+    setIsLoading(true);
+    const arrayOfQuery = [
+      'Beethoven',
+      'Satie',
+      'Chopin',
+      'Gnossienne',
+      'piano+romantic',
+      'calm',
+      'sad',
+      'classics',
+      'melancholic',
+      'Gymnopedie No.1',
+    ];
+    const randomIndex = Math.floor(Math.random() * arrayOfQuery.length);
+    const { obj } = await SearchThatSound(arrayOfQuery[randomIndex]);
+    console.log('arrayOfQuery[randomIndex]: ', arrayOfQuery[randomIndex]);
     setCustomSound(obj);
+    console.log('obj: ', obj);
+    setIsLoading(true);
     stop();
     playFromSource(obj.url);
     setIsPlaying(true);
+    setIsLoading(false);
   };
 
   return (
@@ -459,7 +489,7 @@ function Player({ title, sourcePath, custom, speed, stopAll }) {
       </h3>
       {isPlaying &&
         (isLoading ? (
-          <i class="fa-solid fa-spinner loader"></i>
+          <i className="fa-solid fa-spinner loader"></i>
         ) : (
           <div className="main-container">
             {isPlaying && (

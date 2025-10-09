@@ -193,12 +193,14 @@ function applyStereoDelayRight(audioCtx, sourceNode) {
   return merger; // Tu dois connecter ce "merger" ensuite à la suite (ex: gainNode)
 }
 export const SearchThatSound = async query => {
+  const exclude = [46415, 339671, 335908, 39046, 231562, 2425];
   const response = await fetch(
-    `https://freesound.org/apiv2/search/text/?token=${token}&query=${query}&filter=category:Soundscapes`
+    `https://freesound.org/apiv2/search/text/?token=${token}&query=${query}&filter=category:Music&filter=description:piano&sort=downloads_desc`
   );
 
   let datas = await response.json();
-  datas = datas.results;
+  datas = datas.results.filter(x => !exclude.includes(x.id));
+  console.log('datas: ', datas);
   console.log('retrieved responses for that query');
 
   let randomIndex = +(Math.random(datas.length) * 10).toFixed(0);
@@ -212,9 +214,10 @@ export const SearchThatSound = async query => {
 
   let previews = await fetch(responseId.url);
   previews = await previews.json();
-  const rating = previews.avg_rating;
+  const duration = previews.duration;
 
-  if (rating < 4) {
+  if (duration < 10) {
+    console.log('another');
     randomIndex = +(Math.random(datas.length) * 10).toFixed(0);
     const responseId = await fetch(
       `https://freesound.org/apiv2/sounds/${randomResultId}/?token=${token}`
@@ -224,7 +227,6 @@ export const SearchThatSound = async query => {
   }
 
   const mp3Preview = `${previews.previews['preview-hq-mp3']}?token=${token}`;
-  console.log('extracted preveiws');
 
   const obj = {
     url: mp3Preview,
