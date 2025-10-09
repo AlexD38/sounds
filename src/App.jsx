@@ -64,14 +64,13 @@ function App() {
       </h1>
       <StopAll />
       <SaveSnapshotMix />
-      <SearchSound />
-      {customSound && (
-        <Player
-          title={customSound.title}
-          sourcePath={customSound.url}
-          custom={true}
-        />
-      )}
+      {/* <SearchSound /> */}
+      {/* <Player
+        title={'random'}
+        sourcePath={'apiSearch'}
+        custom={true}
+        speed={true}
+      /> */}
       {/* <Stretcher source={windows} custom="perlinNoise" /> */}
       <SavedSnaps />
       <main>
@@ -154,9 +153,9 @@ function App() {
           speed={true}
         />
         <Player
-          title={'satie'}
-          sourcePath={satieSound}
-          custom="perlinNoise"
+          title={'music'}
+          sourcePath={'apiSearch'}
+          custom={true}
           stopAll={stopAll}
           speed={true}
         />
