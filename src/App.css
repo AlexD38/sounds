@@ -8,7 +8,7 @@
 }
 #root {
   max-width: 1280px;
-  margin: 3rem auto;
+  margin: 0 auto;
   /* padding: 2rem; */
   text-align: center;
   display: flex;
@@ -18,7 +18,7 @@
   flex-wrap: wrap;
   min-width: 90%;
   gap: 1rem;
-  padding-top: 3rem;
+  /* padding-top: 3rem; */
 }
 i {
   font-size: 1.5rem;
@@ -51,12 +51,6 @@ main {
   }
   to {
     transform: rotate(360deg);
-  }
-}
-
-@media (prefers-reduced-motion: no-preference) {
-  a:nth-of-type(2) .logo {
-    animation: logo-spin infinite 20s linear;
   }
 }
 
@@ -177,12 +171,15 @@ i {
 
 /* MEDIA QUERIES */
 @media (max-width: 768px) {
+  body {
+    padding-top: 3rem;
+  }
   .logo {
     left: 50%;
     transform: translate(-50%, 0);
     min-width: 100%;
     top: 1rem;
-    margin-bottom: 1rem;
+    margin-bottom: 3rem;
   }
   .snapshot-saver {
     top: 10rem;
