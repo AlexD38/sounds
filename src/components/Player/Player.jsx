@@ -475,10 +475,9 @@ function Player({ title, sourcePath, custom, speed, stopAll }) {
     const playerConfig = config.find(x => x.title == title);
     const arrayOfQuery = playerConfig.apiSuggestions;
     const randomIndex = Math.floor(Math.random() * arrayOfQuery.length);
-    console.log('arrayOfQuery[randomIndex]: ', arrayOfQuery[randomIndex]);
     const { obj } = await SearchThatSound(arrayOfQuery[randomIndex]);
+
     setCustomSound(obj);
-    console.log('obj: ', obj);
     setIsLoading(true);
     stop();
     playFromSource(obj.url, null, volValue, filterValue, playbackRate);
