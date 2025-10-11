@@ -200,24 +200,20 @@ export const SearchThatSound = async query => {
 
   let datas = await response.json();
   datas = datas.results.filter(x => !exclude.includes(x.id));
-  console.log('datas: ', datas);
-  console.log('retrieved responses for that query');
 
-  let randomIndex = +(Math.random(datas.length) * 10).toFixed(0);
+  let randomIndex = Math.floor(Math.random() * datas.length);
 
   let randomResultId = datas[randomIndex].id;
 
   const responseId = await fetch(
     `https://freesound.org/apiv2/sounds/${randomResultId}/?token=${token}`
   );
-  console.log('retrieved 1st responseId');
 
   let previews = await fetch(responseId.url);
   previews = await previews.json();
   const duration = previews.duration;
 
   if (duration < 10) {
-    console.log('another');
     randomIndex = +(Math.random(datas.length) * 10).toFixed(0);
     const responseId = await fetch(
       `https://freesound.org/apiv2/sounds/${randomResultId}/?token=${token}`
