@@ -16,7 +16,7 @@ export const Timer = () => {
 
   const handleValidate = () => {
     const minutes = Number(minutesRef.current.value);
-    setRemainingTime(minutes);
+    setRemainingTime(minutes * 60);
 
     setNotification({
       message: `Sounds will stop in ${minutes} minutes`,
@@ -34,7 +34,8 @@ export const Timer = () => {
       }, 1000);
 
       return () => clearInterval(intervalId);
-    } else if (remainingTime === 0) {
+    } else if (countDown && remainingTime === 0) {
+      console.log('remainingTime: ', remainingTime);
       setCountDown(false);
       setStopAll(true);
       setNotification({ message: `Goodnight... and don't let the bugs bite` });
