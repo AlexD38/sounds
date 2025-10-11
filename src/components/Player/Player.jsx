@@ -472,23 +472,11 @@ function Player({ title, sourcePath, custom, speed, stopAll }) {
   // REFRESH -----------------------------------------------
   const refresh = async () => {
     setIsLoading(true);
-    const arrayOfQuery = [
-      'Beethoven',
-      'Satie',
-      'Chopin',
-      'Gnossienne',
-      'piano+romantic',
-      'calm',
-      'sad',
-      'melancholic',
-      'Gymnopedie No.1',
-      'violin',
-      'soothing',
-      'smooth',
-    ];
+    const playerConfig = config.find(x => x.title == title);
+    const arrayOfQuery = playerConfig.apiSuggestions;
     const randomIndex = Math.floor(Math.random() * arrayOfQuery.length);
-    const { obj } = await SearchThatSound(arrayOfQuery[randomIndex]);
     console.log('arrayOfQuery[randomIndex]: ', arrayOfQuery[randomIndex]);
+    const { obj } = await SearchThatSound(arrayOfQuery[randomIndex]);
     setCustomSound(obj);
     console.log('obj: ', obj);
     setIsLoading(true);
