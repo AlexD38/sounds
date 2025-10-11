@@ -9,6 +9,7 @@ import {
 } from '../../utils/utils';
 import { soundTools } from '../../utils/modulateSound.tools';
 import { PlayerTitle } from '../PlayerTitle/PlayerTitle';
+import { config } from '../../ref/random.config';
 
 function getRMS(audioBuffer) {
   const channelData = audioBuffer.getChannelData(0); // Use the first channel
