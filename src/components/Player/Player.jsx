@@ -479,9 +479,11 @@ function Player({ title, sourcePath, custom, speed, stopAll }) {
       'piano+romantic',
       'calm',
       'sad',
-      'classics',
       'melancholic',
       'Gymnopedie No.1',
+      'violin',
+      'soothing',
+      'smooth',
     ];
     const randomIndex = Math.floor(Math.random() * arrayOfQuery.length);
     const { obj } = await SearchThatSound(arrayOfQuery[randomIndex]);
