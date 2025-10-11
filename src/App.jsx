@@ -18,7 +18,6 @@ import crowSound from '/assets/sounds/crow.wav';
 import chatterSound from '/assets/sounds/chatter.wav';
 import satieSound from '/assets/sounds/gymnopedie.mp3';
 
-import WhiteNoisePlayer from './components/WhiteNoisePlayer/WhiteNoisePlayer';
 import { SaveSnapshotMix } from './components/SaveSnapshotMix/SaveSnapshotMix';
 import { Notification } from './components/notification/notification';
 
@@ -74,11 +73,7 @@ function App() {
       {/* <Stretcher source={windows} custom="perlinNoise" /> */}
       <SavedSnaps />
       <main>
-        <WhiteNoisePlayer
-          title={'whiteNoise'}
-          custom="perlinNoise"
-          stopAll={stopAll}
-        />
+        <Player title={'whiteNoise'} custom="perlinNoise" stopAll={stopAll} />
         <Player
           title={'morning'}
           sourcePath={villageSound}

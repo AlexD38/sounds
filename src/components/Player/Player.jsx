@@ -76,12 +76,19 @@ function Player({ title, sourcePath, custom, speed, stopAll }) {
 
     if (playerState) {
       if (playerState.isPlaying) {
-        setIsPlaying(true);
         setStopAll(false);
-        setFilterValue(playerState.filter || 1800);
-        setVolValue(playerState.volume || 1.5);
-        setPlaybackRate(playerState.speed || 1);
-        play(null, sourcePath, custom);
+        setFilterValue(playerState.filter);
+        setVolValue(playerState.volume);
+        setPlaybackRate(playerState.speed);
+        play(
+          null,
+          sourcePath,
+          custom,
+          playerState.volume,
+          playerState.filter,
+          playerState.speed
+        );
+        setIsPlaying(true);
       } else {
         setIsPlaying(false);
         stop();
@@ -133,6 +140,7 @@ function Player({ title, sourcePath, custom, speed, stopAll }) {
   const handleFilterValue = e => {
     const value = parseFloat(e?.currentTarget?.value || e);
     setFilterValue(value);
+    console.log(filterValue);
     registerPlayerSituation(title, { filter: value });
 
     if (loadASnap) {
@@ -150,7 +158,7 @@ function Player({ title, sourcePath, custom, speed, stopAll }) {
   // VOLUME ----------------------------------------
   // VOLUME ----------------------------------------
   const handleVolValue = e => {
-    const value = parseFloat(e.currentTarget.value);
+    const value = parseFloat(e?.currentTarget?.value || e);
     setVolValue(value);
     registerPlayerSituation(title, { volume: value });
 
@@ -202,7 +210,14 @@ function Player({ title, sourcePath, custom, speed, stopAll }) {
   };
 
   // PLAY ----------------------------------------
-  async function play(event, sourcePath, custom) {
+  async function play(
+    event,
+    sourcePath,
+    custom,
+    newVol = volValue,
+    newFilter = filterValue,
+    newSpeed = playbackRate
+  ) {
     if (isPlaying && event?.target?.dataset?.stop) {
       registerPlayerSituation(title, { isPlaying: false });
       setIsPlaying(false);
@@ -216,13 +231,13 @@ function Player({ title, sourcePath, custom, speed, stopAll }) {
     setStopAll(false);
     registerPlayerSituation(title, {
       isPlaying: true,
-      volume: volValue,
-      filter: filterValue,
-      speed: playbackRate,
+      volume: newVol,
+      filter: newFilter,
+      speed: newSpeed,
     });
 
     if (sourcePath) {
-      await playFromSource(sourcePath, custom);
+      await playFromSource(sourcePath, custom, newVol, newFilter, newSpeed);
 
       return;
     }
@@ -244,12 +259,12 @@ function Player({ title, sourcePath, custom, speed, stopAll }) {
     }
     const limiter = limiterNodeRef.current;
 
-    gainNode.gain.setValueAtTime(volValue, audioCtx.currentTime);
+    gainNode.gain.setValueAtTime(newVol, audioCtx.currentTime);
     gainNodeRef.current = gainNode;
 
     const filter = audioCtx.createBiquadFilter();
     filter.type = 'lowpass';
-    filter.frequency.setValueAtTime(filterValue, audioCtx.currentTime);
+    filter.frequency.setValueAtTime(newFilter, audioCtx.currentTime);
     filterRef.current = filter;
 
     // Chaînage avec le limiteur
@@ -263,11 +278,17 @@ function Player({ title, sourcePath, custom, speed, stopAll }) {
 
     // Ici aussi, si bruit blanc + perlin activé
     if (custom === 'perlinNoise') {
-      startPerlinModulation(0.5, volValue);
+      startPerlinModulation(0.5, newVol);
     }
   }
   // PLAY FROM SOURCE ------------------------------
-  async function playFromSource(sourcePath, custom) {
+  async function playFromSource(
+    sourcePath,
+    custom,
+    newVol = volValue,
+    newFilter = filterValue,
+    newSpeed = playbackRate
+  ) {
     try {
       // Crée un nouveau contexte audio si nécessaire
       if (!audioCtxRef.current) {
@@ -320,19 +341,19 @@ function Player({ title, sourcePath, custom, speed, stopAll }) {
       const bufferSource = audioCtx.createBufferSource();
       bufferSource.buffer = audioBuffer;
       bufferSource.loop = true; // facultatif
-      bufferSource.playbackRate.value = playbackRate;
+      bufferSource.playbackRate.value = newSpeed;
 
       // Gain
       const gainNode = audioCtx.createGain();
       gainNode.gain.setValueAtTime(
-        volValue * newNormalizationFactor,
+        newVol * newNormalizationFactor,
         audioCtx.currentTime
       );
 
       // Filtre
       const filter = audioCtx.createBiquadFilter();
       filter.type = 'lowpass';
-      filter.frequency.setValueAtTime(filterValue, audioCtx.currentTime);
+      filter.frequency.setValueAtTime(newFilter, audioCtx.currentTime);
 
       // Connexions : source → filtre → gain → limiter → destination
       bufferSource.connect(filter);
@@ -350,7 +371,7 @@ function Player({ title, sourcePath, custom, speed, stopAll }) {
       filterRef.current = filter;
       // Ici aussi, perlin activé
       if (custom === 'perlinNoise') {
-        startPerlinModulation(0.5, volValue * newNormalizationFactor);
+        startPerlinModulation(0.5, newVol * newNormalizationFactor);
       }
       setIsLoading(false);
     } catch (err) {
@@ -469,7 +490,7 @@ function Player({ title, sourcePath, custom, speed, stopAll }) {
     console.log('obj: ', obj);
     setIsLoading(true);
     stop();
-    playFromSource(obj.url);
+    playFromSource(obj.url, null, volValue, filterValue, playbackRate);
     setIsPlaying(true);
     setIsLoading(false);
   };
@@ -482,7 +503,9 @@ function Player({ title, sourcePath, custom, speed, stopAll }) {
           ? ' player-container is-playing playing expand'
           : 'player-container'
       }
-      onClick={event => play(event, sourcePath, custom)}
+      onClick={event =>
+        play(event, sourcePath, custom, volValue, filterValue, playbackRate)
+      }
     >
       <h3 className={isPlaying ? 'playing' : ''}>
         <PlayerTitle title={title} isPlaying={isPlaying} />
