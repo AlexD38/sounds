@@ -30,6 +30,8 @@ export const PlayerTitle = ({ title, isPlaying }) => {
     iconLabel = 'music';
   } else if (title === 'random') {
     iconLabel = 'dice';
+  } else if (title == 'whiteNoise') {
+    iconLabel = 'ear-listen';
   } else {
     return title;
   }

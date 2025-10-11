@@ -23,7 +23,7 @@ export const Notification = () => {
   return (
     notification && (
       <div className="notification">
-        <i class={`fa-solid fa-${iconLabel} notif-icon`}></i>
+        <i className={`fa-solid fa-${iconLabel} notif-icon`}></i>
         {notification?.message}
       </div>
     )
