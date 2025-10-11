@@ -30,6 +30,8 @@ function Player({ title, sourcePath, custom, speed, stopAll }) {
     setLoadASnap,
     playingSnap,
     setStopAll,
+    randomSnap,
+    setRandomSnap,
   } = useContext(Context);
 
   const [filterValue, setFilterValue] = useState(1800);
@@ -68,7 +70,12 @@ function Player({ title, sourcePath, custom, speed, stopAll }) {
       return;
     }
 
-    const loadedSnap = savedSnaps.get(playingSnap);
+    let loadedSnap = savedSnaps.get(playingSnap);
+
+    if (randomSnap) {
+      loadedSnap = randomSnap.get(playingSnap);
+    }
+
     if (!loadedSnap) {
       return;
     }
@@ -78,17 +85,13 @@ function Player({ title, sourcePath, custom, speed, stopAll }) {
     if (playerState) {
       if (playerState.isPlaying) {
         setStopAll(false);
-        setFilterValue(playerState.filter);
-        setVolValue(playerState.volume);
-        setPlaybackRate(playerState.speed);
-        play(
-          null,
-          sourcePath,
-          custom,
-          playerState.volume,
-          playerState.filter,
-          playerState.speed
-        );
+        const volume = playerState.volume ?? 1.5;
+        const filter = playerState.filter ?? 1800;
+        const speed = playerState.speed ?? 1;
+        setFilterValue(filter);
+        setVolValue(volume);
+        setPlaybackRate(speed);
+        play(null, sourcePath, custom, volume, filter, speed);
         setIsPlaying(true);
       } else {
         setIsPlaying(false);
@@ -109,7 +112,6 @@ function Player({ title, sourcePath, custom, speed, stopAll }) {
       clearInterval(modulatorIntervalRef.current);
     }
 
-    console.log(`Starting Perlin noise with range [${minGain}, ${maxGain}]`);
     let t = 0;
     const speed = 0.005;
 
@@ -141,7 +143,6 @@ function Player({ title, sourcePath, custom, speed, stopAll }) {
   const handleFilterValue = e => {
     const value = parseFloat(e?.currentTarget?.value || e);
     setFilterValue(value);
-    console.log(filterValue);
     registerPlayerSituation(title, { filter: value });
 
     if (loadASnap) {
@@ -317,7 +318,6 @@ function Player({ title, sourcePath, custom, speed, stopAll }) {
       const limiter = limiterNodeRef.current;
 
       const response = await fetch(sourcePath);
-      console.log('final fetch for reading');
       if (!response.ok) throw new Error('Fichier introuvable ou inaccessible');
 
       const arrayBuffer = await response.arrayBuffer();
@@ -346,10 +346,11 @@ function Player({ title, sourcePath, custom, speed, stopAll }) {
 
       // Gain
       const gainNode = audioCtx.createGain();
-      gainNode.gain.setValueAtTime(
-        newVol * newNormalizationFactor,
-        audioCtx.currentTime
-      );
+      let finalGain = newVol * newNormalizationFactor;
+      if (!isFinite(finalGain)) {
+        finalGain = newVol;
+      }
+      gainNode.gain.setValueAtTime(finalGain, audioCtx.currentTime);
 
       // Filtre
       const filter = audioCtx.createBiquadFilter();
@@ -372,7 +373,7 @@ function Player({ title, sourcePath, custom, speed, stopAll }) {
       filterRef.current = filter;
       // Ici aussi, perlin activé
       if (custom === 'perlinNoise') {
-        startPerlinModulation(0.5, newVol * newNormalizationFactor);
+        startPerlinModulation(0.5, finalGain);
       }
       setIsLoading(false);
     } catch (err) {
@@ -473,9 +474,15 @@ function Player({ title, sourcePath, custom, speed, stopAll }) {
   const refresh = async () => {
     setIsLoading(true);
     const playerConfig = config.find(x => x.title == title);
+    const category = playerConfig.category;
+    const additionalApiParams = playerConfig.additionalApiFields || null;
     const arrayOfQuery = playerConfig.apiSuggestions;
     const randomIndex = Math.floor(Math.random() * arrayOfQuery.length);
-    const { obj } = await SearchThatSound(arrayOfQuery[randomIndex]);
+    const { obj } = await SearchThatSound(
+      arrayOfQuery[randomIndex],
+      category,
+      additionalApiParams
+    );
 
     setCustomSound(obj);
     setIsLoading(true);

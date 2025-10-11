@@ -192,11 +192,14 @@ function applyStereoDelayRight(audioCtx, sourceNode) {
 
   return merger; // Tu dois connecter ce "merger" ensuite à la suite (ex: gainNode)
 }
-export const SearchThatSound = async query => {
+export const SearchThatSound = async (query, category, additionalParams) => {
   const exclude = [46415, 339671, 335908, 39046, 231562, 2425];
-  const response = await fetch(
-    `https://freesound.org/apiv2/search/text/?token=${token}&query=${query}&filter=category:Music&filter=description:piano&sort=downloads_desc`
-  );
+
+  let url = `https://freesound.org/apiv2/search/text/?token=${token}&query=${query}&filter=category:${category}&sort=downloads_desc`;
+  if (additionalParams) {
+    url = `https://freesound.org/apiv2/search/text/?token=${token}&query=${query}&filter=category:${category}${additionalParams}&sort=downloads_desc`;
+  }
+  const response = await fetch(url);
 
   let datas = await response.json();
   datas = datas.results.filter(x => !exclude.includes(x.id));

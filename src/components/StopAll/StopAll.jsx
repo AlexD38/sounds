@@ -3,7 +3,12 @@ import './styles.css';
 import { Context } from '../../context/context';
 
 export const StopAll = () => {
-  const { setStopAll } = useContext(Context);
+  const { setStopAll, setRandomSnap } = useContext(Context);
+
+  const handleStopAll = () => {
+    setStopAll(true);
+    setRandomSnap(false);
+  };
 
   return (
     <div className="stop-all-container">
