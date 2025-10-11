@@ -15,6 +15,7 @@ export function ContextProvider({ children }) {
   const [loadASnap, setLoadASnap] = useState(false);
   const [playingSnap, setPlayingSnap] = useState(null);
   const [stopAll, setStopAll] = useState(false);
+  const [randomSnap, setRandomSnap] = useState(null);
 
   // Load snaps from localforage on initial mount
   useEffect(() => {
@@ -109,6 +110,8 @@ export function ContextProvider({ children }) {
         setPlayingSnap,
         stopAll,
         setStopAll,
+        randomSnap,
+        setRandomSnap,
       }}
     >
       {children}

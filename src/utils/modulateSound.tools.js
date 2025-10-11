@@ -20,7 +20,6 @@ export const soundTools = {
         clearInterval(modulatorIntervalRef.current);
       }
 
-      console.log(`Starting Perlin noise with range [${minGain}, ${maxGain}]`);
       let t = 0;
       const speed = 0.005;
 

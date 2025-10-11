@@ -10,6 +10,7 @@ export const SavedSnaps = () => {
     setLoadASnap,
     setPlayingSnap,
     setStopAll,
+    setRandomSnap,
   } = useContext(Context);
 
   const [snapsToDisplay, setSnapsToDisplay] = useState([]);
@@ -21,6 +22,7 @@ export const SavedSnaps = () => {
   }, [savedSnaps]);
 
   const handleLoadSavedSnap = (e, snapTitle) => {
+    setRandomSnap(false);
     if (e.target.dataset.id) {
       return;
     }
