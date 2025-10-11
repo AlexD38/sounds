@@ -17,6 +17,12 @@ export const Notification = () => {
       if (notification.message.includes('cannot')) {
         setIconLabel('ban');
       }
+      if (notification.message.includes('Goodnight')) {
+        setIconLabel('moon');
+      }
+      if (notification.message.includes('minutes')) {
+        setIconLabel('stopwatchx');
+      }
     }
   }, [notification]);
 
