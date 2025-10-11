@@ -12,17 +12,17 @@ import rainSound from '/assets/sounds/rain.mp3';
 import fireSound from '/assets/sounds/fire.mp3';
 import thunderSound from '/assets/sounds/thunder.mp3';
 import trainSound from '/assets/sounds/train.mp3';
-import nightSound from '/assets/sounds/night.wav';
-import scaryNightSound from '/assets/sounds/scaryNightForest.wav';
-import crowSound from '/assets/sounds/crow.wav';
-import chatterSound from '/assets/sounds/chatter.wav';
+import nightSound from '/assets/sounds/night.mp3';
+import scaryNightSound from '/assets/sounds/scaryNightForest.mp3';
+import crowSound from '/assets/sounds/crow.mp3';
+import chatterSound from '/assets/sounds/chatter.mp3';
 import satieSound from '/assets/sounds/gymnopedie.mp3';
 
 import { SaveSnapshotMix } from './components/SaveSnapshotMix/SaveSnapshotMix';
 import { Notification } from './components/notification/notification';
 
 import Stretcher from './strecther/Stretcher';
-import windows from '/assets/sounds/windows.wav';
+import windows from '/assets/sounds/windows.mp3';
 import pianoSound from '/assets/sounds/piano.mp3';
 import { SavedSnaps } from './components/SavedSnaps/SavedSnaps';
 import { StopAll } from './components/StopAll/StopAll';
