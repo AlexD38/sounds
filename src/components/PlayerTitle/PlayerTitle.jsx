@@ -32,6 +32,10 @@ export const PlayerTitle = ({ title, isPlaying }) => {
     iconLabel = 'dice';
   } else if (title == 'whiteNoise') {
     iconLabel = 'ear-listen';
+  } else if (title == 'bowl') {
+    iconLabel = 'bell';
+  } else if (title == 'wind') {
+    iconLabel = 'wind';
   } else {
     return title;
   }
