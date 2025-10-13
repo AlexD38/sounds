@@ -1,15 +1,11 @@
-import { useContext, useRef, useState, useEffect } from 'react';
+import { useContext, useEffect, useRef, useState } from 'react';
 import '../../App.css';
-import './styles.css'; // Import local styles
 import { Context } from '../../context/context';
-import {
-  handleSnapshotMix,
-  perlinNoise,
-  SearchThatSound,
-} from '../../utils/utils';
-import { soundTools } from '../../utils/modulateSound.tools';
-import { PlayerTitle } from '../PlayerTitle/PlayerTitle';
 import { config } from '../../ref/random.config';
+import { soundTools } from '../../utils/modulateSound.tools';
+import { perlinNoise, SearchThatSound } from '../../utils/utils';
+import { PlayerTitle } from '../PlayerTitle/PlayerTitle';
+import './styles.css'; // Import local styles
 
 function getRMS(audioBuffer) {
   const channelData = audioBuffer.getChannelData(0); // Use the first channel
@@ -40,6 +36,7 @@ function Player({ title, sourcePath, custom, speed, stopAll }) {
   const [playbackRate, setPlaybackRate] = useState(1);
   const [isStereo, setIsStereo] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
+  const [bowlInterval, setBowlInterval] = useState(5000);
 
   const audioCtxRef = useRef(null);
   const sourceNodeRef = useRef(null);
@@ -56,11 +53,55 @@ function Player({ title, sourcePath, custom, speed, stopAll }) {
   const { customSound, setCustomSound, currentInput, setCurrentInput } =
     useContext(Context);
 
+  // On stocke les paramètres dans des refs pour y accéder dans le setInterval sans redéclencher l'effet
+  const paramsRef = useRef({
+    volValue,
+    filterValue,
+    playbackRate,
+    sourcePath,
+    custom,
+  });
+
+  useEffect(() => {
+    paramsRef.current = {
+      volValue,
+      filterValue,
+      playbackRate,
+      sourcePath,
+      custom,
+    };
+  });
+
+  useEffect(() => {
+    if (title !== 'bowl' || !isPlaying) {
+      return;
+    }
+
+    const replaySound = () => {
+      if (!audioCtxRef.current) {
+        return;
+      }
+      // Utilise les paramètres depuis la ref
+      const { sourcePath, custom, volValue, filterValue, playbackRate } =
+        paramsRef.current;
+      // playFromSource arrête l'ancienne source et en joue une nouvelle
+      playFromSource(sourcePath, custom, volValue, filterValue, playbackRate);
+    };
+
+    // Le premier son est joué par le `onClick`. On lance la répétition.
+    const intervalId = setInterval(replaySound, bowlInterval);
+
+    return () => {
+      clearInterval(intervalId);
+    };
+  }, [isPlaying, title, bowlInterval]);
+
   useEffect(() => {
     if (sourcePath == 'apiSearch') {
       handleFilterValue(350);
       handlePlaybackRateChange(0.7);
     }
+
     if (stopAll) {
       if (isPlaying) {
         fadeOutAndStop(1);
@@ -166,7 +207,6 @@ function Player({ title, sourcePath, custom, speed, stopAll }) {
     }
   };
 
-  // VOLUME ----------------------------------------
   // VOLUME ----------------------------------------
   const handleVolValue = e => {
     const value = parseFloat(e?.currentTarget?.value || e);
@@ -349,7 +389,7 @@ function Player({ title, sourcePath, custom, speed, stopAll }) {
       // Crée un BufferSource pour lire le buffer décodé
       const bufferSource = audioCtx.createBufferSource();
       bufferSource.buffer = audioBuffer;
-      bufferSource.loop = true; // facultatif
+      bufferSource.loop = title !== 'bowl';
       bufferSource.playbackRate.value = newSpeed;
 
       // Gain
@@ -539,6 +579,11 @@ function Player({ title, sourcePath, custom, speed, stopAll }) {
       <h3 className={isPlaying ? 'playing' : ''}>
         <PlayerTitle title={title} isPlaying={isPlaying} />
       </h3>
+      {title == 'bowl' && isPlaying && (
+        <span key={bowlInterval} className="interval-value fade-out">
+          (on repeat every {(bowlInterval / 1000).toFixed(1)}s)
+        </span>
+      )}
       {isPlaying &&
         (isLoading ? (
           <i className="fa-solid fa-spinner loader"></i>
@@ -556,7 +601,11 @@ function Player({ title, sourcePath, custom, speed, stopAll }) {
                       }
                     ></i>
                   </span>
-
+                  {title === 'bowl' && isPlaying && (
+                    <span>
+                      <i className="fa-solid fa-clock playing"></i>
+                    </span>
+                  )}
                   <span>
                     <i
                       className={
@@ -588,6 +637,19 @@ function Player({ title, sourcePath, custom, speed, stopAll }) {
                     onChange={handleFilterValue}
                     value={filterValue}
                   />
+                  {title === 'bowl' && isPlaying && (
+                    <>
+                      <input
+                        className="interval-range"
+                        type="range"
+                        min="3000"
+                        max="20000"
+                        step="100"
+                        value={bowlInterval}
+                        onChange={e => setBowlInterval(Number(e.target.value))}
+                      />
+                    </>
+                  )}
                   <input
                     className="vol-range"
                     type="range"
@@ -621,14 +683,16 @@ function Player({ title, sourcePath, custom, speed, stopAll }) {
                       data-stop={true}
                     ></i>
                   </button>
-                  <button onClick={toggleStereoEffect}>
-                    <i
-                      className={`fa-solid ${
-                        isStereo ? 'fa-check-double' : 'fa-check'
-                      } playing`}
-                    ></i>
-                  </button>
-                  {custom == true && (
+                  {title !== 'bowl' && (
+                    <button onClick={toggleStereoEffect}>
+                      <i
+                        className={`fa-solid ${
+                          isStereo ? 'fa-check-double' : 'fa-check'
+                        } playing`}
+                      ></i>
+                    </button>
+                  )}
+                  {sourcePath == 'apiSearch' && (
                     <button onClick={refresh}>
                       <i className="fa-solid fa-arrows-rotate playing"></i>{' '}
                     </button>

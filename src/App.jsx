@@ -6,7 +6,7 @@ import { Context } from './context/context';
 import villageSound from '/assets/sounds/village.mp3';
 import monrningSound from '/assets/sounds/morning.mp3';
 import springSound from '/assets/sounds/spring.mp3';
-import oceanSound from '/assets/sounds/ocean.mp3';
+import oceanSound from '/assets/sounds/ocean.wav';
 import lightRainSound from '/assets/sounds/light-rain.mp3';
 import rainSound from '/assets/sounds/rain.mp3';
 import fireSound from '/assets/sounds/fire.mp3';
@@ -17,6 +17,8 @@ import scaryNightSound from '/assets/sounds/scaryNightForest.mp3';
 import crowSound from '/assets/sounds/crow.mp3';
 import chatterSound from '/assets/sounds/chatter.mp3';
 import satieSound from '/assets/sounds/gymnopedie.mp3';
+import bowlSound from '/assets/sounds/bowl.ogg';
+import windSound from '/assets/sounds/wind.wav';
 
 import { SaveSnapshotMix } from './components/SaveSnapshotMix/SaveSnapshotMix';
 import { Notification } from './components/notification/notification';
@@ -31,26 +33,13 @@ import { RandomSnapGenerator } from './components/RandomSnapGenerator/RandomSnap
 import { Timer } from './components/timer/Timer';
 
 function App() {
-  const [response, setResponse] = useState(null);
-  const {
-    customSound,
-    setCustomSound,
-    savedSnaps,
-    stopAll,
-    setStopAll,
-    setPlayingSnap,
-    setLoadASnap,
-    setNotification,
-    setSavedSnaps,
-    randomSnap,
-    setRandomSnap,
-  } = useContext(Context);
+  const { stopAll } = useContext(Context);
+  const [opacity, setOpacity] = useState(1);
   const [title, setTitle] = useState(
     <>
       Ambient <i className="fa-solid fa-compass-drafting"></i> Architect
     </>
   );
-  const [opacity, setOpacity] = useState(1);
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -92,7 +81,7 @@ function App() {
         <Player title={'whiteNoise'} custom="perlinNoise" stopAll={stopAll} />
         <Player
           title={'morning'}
-          sourcePath={villageSound}
+          sourcePath={springSound}
           custom="perlinNoise"
           stopAll={stopAll}
         />
@@ -118,6 +107,13 @@ function App() {
         <Player
           title={'rain'}
           sourcePath={rainSound}
+          custom="perlinNoise"
+          speed={true}
+          stopAll={stopAll}
+        />
+        <Player
+          title={'wind'}
+          sourcePath={windSound}
           custom="perlinNoise"
           speed={true}
           stopAll={stopAll}
@@ -159,17 +155,17 @@ function App() {
         <Player
           title={'chatter'}
           sourcePath={chatterSound}
-          stopAll={stopAll}
           speed={true}
+          stopAll={stopAll}
         />
         <Player
           title={'music'}
           sourcePath={'apiSearch'}
           custom={true}
-          stopAll={stopAll}
           speed={true}
+          stopAll={stopAll}
         />
-        <div></div>
+        <Player title={'bowl'} sourcePath={bowlSound} stopAll={stopAll} />
       </main>
       <Notification />
     </>
