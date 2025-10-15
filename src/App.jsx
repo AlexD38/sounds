@@ -19,6 +19,8 @@ import chatterSound from '/assets/sounds/chatter.mp3';
 import satieSound from '/assets/sounds/gymnopedie.mp3';
 import bowlSound from '/assets/sounds/bowl.mp3';
 import windSound from '/assets/sounds/wind.mp3';
+import lakeSound from '/assets/sounds/lake.mp3';
+import birdWoodsSound from '/assets/sounds/birdWoods.mp3';
 
 import { SaveSnapshotMix } from './components/SaveSnapshotMix/SaveSnapshotMix';
 import { Notification } from './components/notification/notification';
@@ -81,7 +83,7 @@ function App() {
         <Player title={'whiteNoise'} custom="perlinNoise" stopAll={stopAll} />
         <Player
           title={'morning'}
-          sourcePath={springSound}
+          sourcePath={birdWoodsSound}
           custom="perlinNoise"
           stopAll={stopAll}
         />
@@ -89,6 +91,13 @@ function App() {
           title={'fire'}
           sourcePath={fireSound}
           custom="perlinNoise"
+          stopAll={stopAll}
+        />
+        <Player
+          title={'lake'}
+          sourcePath={lakeSound}
+          custom="perlinNoise"
+          speed={true}
           stopAll={stopAll}
         />
         <Player
