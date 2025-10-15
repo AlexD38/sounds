@@ -2,6 +2,8 @@ export const PlayerTitle = ({ title, isPlaying }) => {
   let iconLabel = 'question';
   if (title === 'morning') {
     iconLabel = 'dove';
+  } else if (title === 'birdWoods') {
+    iconLabel = 'tree';
   } else if (title === 'fire') {
     iconLabel = 'fire';
   } else if (title === 'village') {
@@ -9,6 +11,8 @@ export const PlayerTitle = ({ title, isPlaying }) => {
   } else if (title === 'srping') {
     iconLabel = 'seedling';
   } else if (title === 'ocean') {
+    iconLabel = 'house-tsunami';
+  } else if (title === 'lake') {
     iconLabel = 'water';
   } else if (title === 'lightRain') {
     iconLabel = 'cloud-rain';
