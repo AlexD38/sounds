@@ -24,7 +24,7 @@ export const config = [
     category: 'Soundscapes',
   },
   {
-    title: 'lightRain',
+    title: 'light-rain',
     apiSuggestions: ['light rain', 'drizzle', 'sprinkle'],
     titleSuggestions: ['rain', 'drizzle', 'rainy'],
     category: 'Soundscapes',

@@ -365,16 +365,28 @@ function Player({ title, sourcePath, custom, speed, stopAll }) {
       }
       const limiter = limiterNodeRef.current;
 
-      const response = await fetch(sourcePath);
-      if (!response.ok) throw new Error('Fichier introuvable ou inaccessible');
+      let arrayBuffer;
 
-      const arrayBuffer = await response.arrayBuffer();
+      if (typeof sourcePath === 'string') {
+        const response = await fetch(sourcePath);
+        if (!response.ok)
+          throw new Error('Fichier introuvable ou inaccessible');
+        arrayBuffer = await response.arrayBuffer();
+      } else {
+        arrayBuffer = sourcePath;
+      }
+
+      if (!arrayBuffer || arrayBuffer.byteLength === 0) {
+        console.error('Source path is invalid or ArrayBuffer is empty.');
+        setIsLoading(false);
+        return;
+      }
 
       // Décode les données audio
-      const audioBuffer = await audioCtx.decodeAudioData(arrayBuffer);
 
       // Normalisation du volume
-      const rms = getRMS(audioBuffer);
+      console.log('sourcePath: ', sourcePath);
+      const rms = getRMS(sourcePath);
       const targetRMS = 0.18;
       const newNormalizationFactor = rms > 0 ? targetRMS / rms : 1;
       normalizationFactorRef.current = newNormalizationFactor;

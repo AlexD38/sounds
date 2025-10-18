@@ -1,5 +1,7 @@
-import { createContext, useEffect, useState } from 'react';
+import { createContext, useEffect, useMemo, useState } from 'react';
 import localforage from 'localforage';
+import { cacheManager } from '../utils/cacheManager';
+import { config } from '../ref/random.config';
 
 // Crée le contexte
 export const Context = createContext();
@@ -16,6 +18,51 @@ export function ContextProvider({ children }) {
   const [playingSnap, setPlayingSnap] = useState(null);
   const [stopAll, setStopAll] = useState(false);
   const [randomSnap, setRandomSnap] = useState(null);
+  const [cachedAudios, setCachedAudios] = useState({});
+
+  // Cache des sons
+  useEffect(() => {
+    const fetchData = async () => {
+      const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      let cachedObj = {};
+
+      for (const { title } of config) {
+        if (title === 'whiteNoise' || title === 'music') continue;
+
+        const cached = await localforage.getItem(title);
+        if (cached) {
+          try {
+            const audioBuffer = await audioCtx.decodeAudioData(cached);
+            cachedObj[title] = audioBuffer;
+          } catch (error) {
+            console.error(`Error decoding cached audio for ${title}:`, error);
+            await localforage.removeItem(title);
+          }
+        }
+      }
+
+      const missingTitles = config
+        .map(c => c.title)
+        .filter(
+          title =>
+            title !== 'whiteNoise' && title !== 'music' && !cachedObj[title]
+        );
+
+      if (missingTitles.length > 0) {
+        const decodedSounds = await cacheManager.decodeSounds(
+          config.filter(c => missingTitles.includes(c.title)),
+          audioCtx
+        );
+        decodedSounds.forEach(({ title, audioBuffer }) => {
+          cachedObj[title] = audioBuffer;
+        });
+      }
+
+      setCachedAudios(cachedObj);
+    };
+
+    fetchData();
+  }, []);
 
   // Load snaps from localforage on initial mount
   useEffect(() => {
@@ -88,33 +135,46 @@ export function ContextProvider({ children }) {
     }, 3000);
   };
 
-  return (
-    <Context.Provider
-      value={{
-        theme,
-        setTheme,
-        customSound,
-        setCustomSound,
-        currentInput,
-        setCurrentInput,
-        snapshotMix,
-        registerPlayerSituation,
-        notification,
-        setNotification,
-        saveSnapshot,
-        setSavedSnaps: updateAndPersistSavedSnaps, // Provide the new function
-        savedSnaps,
-        loadASnap,
-        setLoadASnap,
-        playingSnap,
-        setPlayingSnap,
-        stopAll,
-        setStopAll,
-        randomSnap,
-        setRandomSnap,
-      }}
-    >
-      {children}
-    </Context.Provider>
+  const providerValue = useMemo(
+    () => ({
+      theme,
+      setTheme,
+      customSound,
+      setCustomSound,
+      currentInput,
+      setCurrentInput,
+      snapshotMix,
+      registerPlayerSituation,
+      notification,
+      setNotification,
+      saveSnapshot,
+      setSavedSnaps: updateAndPersistSavedSnaps,
+      savedSnaps,
+      loadASnap,
+      setLoadASnap,
+      playingSnap,
+      setPlayingSnap,
+      stopAll,
+      setStopAll,
+      randomSnap,
+      setRandomSnap,
+      cachedAudios,
+      setCachedAudios,
+    }),
+    [
+      theme,
+      customSound,
+      currentInput,
+      snapshotMix,
+      notification,
+      savedSnaps,
+      loadASnap,
+      playingSnap,
+      stopAll,
+      randomSnap,
+      cachedAudios,
+    ]
   );
+
+  return <Context.Provider value={providerValue}>{children}</Context.Provider>;
 }

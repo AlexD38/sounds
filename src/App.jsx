@@ -1,11 +1,8 @@
 import { useRef, useState, useContext, useEffect } from 'react';
 import './App.css';
 import Player from './components/Player/Player';
-import SearchSound from './components/SearchSound/SearchSound';
 import { Context } from './context/context';
 import villageSound from '/assets/sounds/village.mp3';
-import monrningSound from '/assets/sounds/morning.mp3';
-import springSound from '/assets/sounds/spring.mp3';
 import oceanSound from '/assets/sounds/ocean.mp3';
 import lightRainSound from '/assets/sounds/light-rain.mp3';
 import rainSound from '/assets/sounds/rain.mp3';
@@ -13,7 +10,7 @@ import fireSound from '/assets/sounds/fire.mp3';
 import thunderSound from '/assets/sounds/thunder.mp3';
 import trainSound from '/assets/sounds/train.mp3';
 import nightSound from '/assets/sounds/night.mp3';
-import scaryNightSound from '/assets/sounds/scaryNightForest.mp3';
+import scaryNightSound from '/assets/sounds/scary.mp3';
 import crowSound from '/assets/sounds/crow.mp3';
 import chatterSound from '/assets/sounds/chatter.mp3';
 import bowlSound from '/assets/sounds/bowl.mp3';
@@ -30,10 +27,13 @@ import { StopAll } from './components/StopAll/StopAll';
 import { config } from './ref/random.config';
 import { RandomSnapGenerator } from './components/RandomSnapGenerator/RandomSnapGenerator';
 import { Timer } from './components/timer/Timer';
+import { cacheManager } from './utils/cacheManager';
+import localforage from 'localforage';
 
 function App() {
-  const { stopAll } = useContext(Context);
+  const { stopAll, cachedAudio, setCachedAudios } = useContext(Context);
   const [opacity, setOpacity] = useState(1);
+  const [cachedPlayers, setCachedPlayers] = useState({});
   const [title, setTitle] = useState(
     <>
       Ambient <i className="fa-solid fa-compass-drafting"></i> Architect
@@ -53,6 +53,36 @@ function App() {
       }, 500);
     }, 3000);
     return () => clearTimeout(timer);
+  }, []);
+
+  //Cache ------------------------
+  useEffect(() => {
+    const fetchData = async () => {
+      const cachedObj = cachedPlayers;
+
+      let missing = false;
+
+      for (const { title } of config) {
+        if (title === 'whiteNoise' || title === 'music') continue;
+
+        const cached = await localforage.getItem(title);
+        cachedObj[title] = cached;
+
+        if (!cached) {
+          missing = true;
+        }
+      }
+
+      // S’il manque des sons => on les décode + stocke
+      if (missing) {
+        const decodedSounds = await cacheManager.decodeSounds(config);
+        setCachedPlayers(decodedSounds);
+      } else {
+        setCachedPlayers(cachedObj);
+      }
+    };
+
+    fetchData();
   }, []);
 
   return (
@@ -80,87 +110,87 @@ function App() {
         <Player title={'whiteNoise'} custom="perlinNoise" stopAll={stopAll} />
         <Player
           title={'morning'}
-          sourcePath={birdWoodsSound}
+          sourcePath={localforage.getItem('morning')}
           custom="perlinNoise"
           stopAll={stopAll}
         />
         <Player
           title={'fire'}
-          sourcePath={fireSound}
+          sourcePath={cachedPlayers}
           custom="perlinNoise"
           stopAll={stopAll}
         />
         <Player
           title={'lake'}
-          sourcePath={lakeSound}
+          sourcePath={cachedPlayers.lakeSound}
           custom="perlinNoise"
           speed={true}
           stopAll={stopAll}
         />
         <Player
           title={'ocean'}
-          sourcePath={oceanSound}
+          sourcePath={cachedPlayers.oceanSound}
           custom="perlinNoise"
           speed={true}
           stopAll={stopAll}
         />
         <Player
           title={'lightRain'}
-          sourcePath={lightRainSound}
+          sourcePath={cachedPlayers.lightRainSound}
           custom="perlinNoise"
           stopAll={stopAll}
         />
         <Player
           title={'rain'}
-          sourcePath={rainSound}
+          sourcePath={cachedPlayers.rainSound}
           custom="perlinNoise"
           speed={true}
           stopAll={stopAll}
         />
         <Player
           title={'wind'}
-          sourcePath={windSound}
+          sourcePath={cachedPlayers.windSound}
           custom="perlinNoise"
           speed={true}
           stopAll={stopAll}
         />
         <Player
           title={'thunder'}
-          sourcePath={thunderSound}
+          sourcePath={cachedPlayers.thunderSound}
           custom="perlinNoise"
           speed={true}
           stopAll={stopAll}
         />
         <Player
           title={'train'}
-          sourcePath={trainSound}
+          sourcePath={cachedPlayers.trainSound}
           custom="perlinNoise"
           speed={true}
           stopAll={stopAll}
         />
         <Player
           title={'night'}
-          sourcePath={nightSound}
+          sourcePath={cachedPlayers.nightSound}
           custom="perlinNoise"
           speed={true}
           stopAll={stopAll}
         />
         <Player
           title={'scary'}
-          sourcePath={scaryNightSound}
+          sourcePath={cachedPlayers.scaryNightSound}
           custom="perlinNoise"
           speed={true}
           stopAll={stopAll}
         />
         <Player
           title={'crow'}
-          sourcePath={crowSound}
+          sourcePath={cachedPlayers.crowSound}
           custom="perlinNoise"
           stopAll={stopAll}
         />
         <Player
           title={'chatter'}
-          sourcePath={chatterSound}
+          sourcePath={cachedPlayers.chatterSound}
           speed={true}
           stopAll={stopAll}
         />
@@ -171,7 +201,11 @@ function App() {
           speed={true}
           stopAll={stopAll}
         />
-        <Player title={'bowl'} sourcePath={bowlSound} stopAll={stopAll} />
+        <Player
+          title={'bowl'}
+          sourcePath={cachedPlayers.bowlSound}
+          stopAll={stopAll}
+        />
       </main>
       <Notification />
     </>
