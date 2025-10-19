@@ -31,9 +31,9 @@ import { cacheManager } from './utils/cacheManager';
 import localforage from 'localforage';
 
 function App() {
-  const { stopAll, cachedAudio, setCachedAudios } = useContext(Context);
+  const { stopAll, cachedAudios, setCachedAudios } = useContext(Context);
   const [opacity, setOpacity] = useState(1);
-  const [cachedPlayers, setCachedPlayers] = useState({});
+  const [cachedPlayers, setCachedPlayers] = useState(null);
   const [title, setTitle] = useState(
     <>
       Ambient <i className="fa-solid fa-compass-drafting"></i> Architect
@@ -53,36 +53,6 @@ function App() {
       }, 500);
     }, 3000);
     return () => clearTimeout(timer);
-  }, []);
-
-  //Cache ------------------------
-  useEffect(() => {
-    const fetchData = async () => {
-      const cachedObj = cachedPlayers;
-
-      let missing = false;
-
-      for (const { title } of config) {
-        if (title === 'whiteNoise' || title === 'music') continue;
-
-        const cached = await localforage.getItem(title);
-        cachedObj[title] = cached;
-
-        if (!cached) {
-          missing = true;
-        }
-      }
-
-      // S’il manque des sons => on les décode + stocke
-      if (missing) {
-        const decodedSounds = await cacheManager.decodeSounds(config);
-        setCachedPlayers(decodedSounds);
-      } else {
-        setCachedPlayers(cachedObj);
-      }
-    };
-
-    fetchData();
   }, []);
 
   return (
@@ -108,104 +78,108 @@ function App() {
       <SavedSnaps />
       <main>
         <Player title={'whiteNoise'} custom="perlinNoise" stopAll={stopAll} />
-        <Player
-          title={'morning'}
-          sourcePath={localforage.getItem('morning')}
-          custom="perlinNoise"
-          stopAll={stopAll}
-        />
-        <Player
-          title={'fire'}
-          sourcePath={cachedPlayers}
-          custom="perlinNoise"
-          stopAll={stopAll}
-        />
-        <Player
-          title={'lake'}
-          sourcePath={cachedPlayers.lakeSound}
-          custom="perlinNoise"
-          speed={true}
-          stopAll={stopAll}
-        />
-        <Player
-          title={'ocean'}
-          sourcePath={cachedPlayers.oceanSound}
-          custom="perlinNoise"
-          speed={true}
-          stopAll={stopAll}
-        />
-        <Player
-          title={'lightRain'}
-          sourcePath={cachedPlayers.lightRainSound}
-          custom="perlinNoise"
-          stopAll={stopAll}
-        />
-        <Player
-          title={'rain'}
-          sourcePath={cachedPlayers.rainSound}
-          custom="perlinNoise"
-          speed={true}
-          stopAll={stopAll}
-        />
-        <Player
-          title={'wind'}
-          sourcePath={cachedPlayers.windSound}
-          custom="perlinNoise"
-          speed={true}
-          stopAll={stopAll}
-        />
-        <Player
-          title={'thunder'}
-          sourcePath={cachedPlayers.thunderSound}
-          custom="perlinNoise"
-          speed={true}
-          stopAll={stopAll}
-        />
-        <Player
-          title={'train'}
-          sourcePath={cachedPlayers.trainSound}
-          custom="perlinNoise"
-          speed={true}
-          stopAll={stopAll}
-        />
-        <Player
-          title={'night'}
-          sourcePath={cachedPlayers.nightSound}
-          custom="perlinNoise"
-          speed={true}
-          stopAll={stopAll}
-        />
-        <Player
-          title={'scary'}
-          sourcePath={cachedPlayers.scaryNightSound}
-          custom="perlinNoise"
-          speed={true}
-          stopAll={stopAll}
-        />
-        <Player
-          title={'crow'}
-          sourcePath={cachedPlayers.crowSound}
-          custom="perlinNoise"
-          stopAll={stopAll}
-        />
-        <Player
-          title={'chatter'}
-          sourcePath={cachedPlayers.chatterSound}
-          speed={true}
-          stopAll={stopAll}
-        />
-        <Player
-          title={'music'}
-          sourcePath={'apiSearch'}
-          custom={true}
-          speed={true}
-          stopAll={stopAll}
-        />
-        <Player
-          title={'bowl'}
-          sourcePath={cachedPlayers.bowlSound}
-          stopAll={stopAll}
-        />
+        {cachedAudios && (
+          <>
+            <Player
+              title={'morning'}
+              sourcePath={cachedAudios.morning}
+              custom="perlinNoise"
+              stopAll={stopAll}
+            />
+            <Player
+              title={'fire'}
+              sourcePath={cachedAudios.fire}
+              custom="perlinNoise"
+              stopAll={stopAll}
+            />
+            <Player
+              title={'lake'}
+              sourcePath={cachedAudios.lake}
+              custom="perlinNoise"
+              speed={true}
+              stopAll={stopAll}
+            />
+            <Player
+              title={'ocean'}
+              sourcePath={cachedAudios.ocean}
+              custom="perlinNoise"
+              speed={true}
+              stopAll={stopAll}
+            />
+            <Player
+              title={'lightRain'}
+              sourcePath={cachedAudios.lightRain}
+              custom="perlinNoise"
+              stopAll={stopAll}
+            />
+            <Player
+              title={'rain'}
+              sourcePath={cachedAudios.heavyRain}
+              custom="perlinNoise"
+              speed={true}
+              stopAll={stopAll}
+            />
+            <Player
+              title={'wind'}
+              sourcePath={cachedAudios.wind}
+              custom="perlinNoise"
+              speed={true}
+              stopAll={stopAll}
+            />
+            <Player
+              title={'thunder'}
+              sourcePath={cachedAudios.thunder}
+              custom="perlinNoise"
+              speed={true}
+              stopAll={stopAll}
+            />
+            <Player
+              title={'train'}
+              sourcePath={cachedAudios.train}
+              custom="perlinNoise"
+              speed={true}
+              stopAll={stopAll}
+            />
+            <Player
+              title={'night'}
+              sourcePath={cachedAudios.night}
+              custom="perlinNoise"
+              speed={true}
+              stopAll={stopAll}
+            />
+            <Player
+              title={'scary'}
+              sourcePath={cachedAudios.scary}
+              custom="perlinNoise"
+              speed={true}
+              stopAll={stopAll}
+            />
+            <Player
+              title={'crow'}
+              sourcePath={cachedAudios.crow}
+              custom="perlinNoise"
+              stopAll={stopAll}
+            />
+            <Player
+              title={'chatter'}
+              sourcePath={cachedAudios.chatter}
+              speed={true}
+              stopAll={stopAll}
+            />
+            <Player
+              title={'music'}
+              sourcePath={'apiSearch'}
+              custom={true}
+              speed={true}
+              stopAll={stopAll}
+            />
+            <Player
+              title={'bowl'}
+              sourcePath={cachedAudios.bowl}
+              stopAll={stopAll}
+            />
+          </>
+        )}
       </main>
       <Notification />
     </>

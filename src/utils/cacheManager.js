@@ -1,8 +1,14 @@
 import localforage from 'localforage';
 
+const decodedCache = new Map(); // RAM cache: { title -> AudioBuffer }
+
 export const cacheManager = {
+  // -------------------------------
+  // 1. Préchargement & mise en cache
+  // -------------------------------
   async decodeSounds(config, audioCtx) {
-    const context = audioCtx || new (window.AudioContext || window.webkitAudioContext)();
+    const context =
+      audioCtx || new (window.AudioContext || window.webkitAudioContext)();
     const decodedSounds = [];
 
     for (const { title } of config) {
@@ -11,16 +17,30 @@ export const cacheManager = {
       const url = `/assets/sounds/${title}.mp3`;
 
       try {
-        const response = await fetch(url);
-        const originalBuffer = await response.arrayBuffer();
+        // Récupère depuis le cache
+        let arrayBuffer = await localforage.getItem(title);
 
-        // ✅ Clone l’ArrayBuffer AVANT décodage
-        const bufferForCache = originalBuffer.slice(0);
-        const audioBuffer = await context.decodeAudioData(originalBuffer);
+        if (!arrayBuffer) {
+          // Sinon fetch depuis le réseau
+          const response = await fetch(url);
+          arrayBuffer = await response.arrayBuffer();
 
-        // ✅ On stocke le clone, pas celui utilisé pour le décodage
-        await this.setCache(title, bufferForCache);
-        console.log(`${title} successfully set in cache`);
+          // Stocke en cache (ArrayBuffer brut)
+          await localforage.setItem(title, arrayBuffer);
+          console.log(`${title} stored in IndexedDB`);
+        } else {
+          console.log(`${title} loaded from IndexedDB`);
+        }
+
+        // Décodage UNE SEULE FOIS
+        let audioBuffer;
+        if (decodedCache.has(title)) {
+          audioBuffer = decodedCache.get(title);
+        } else {
+          audioBuffer = await context.decodeAudioData(arrayBuffer.slice(0));
+          decodedCache.set(title, audioBuffer);
+          console.log(`${title} decoded and stored in RAM cache`);
+        }
 
         decodedSounds.push({ title, audioBuffer });
       } catch (error) {
@@ -31,7 +51,24 @@ export const cacheManager = {
     return decodedSounds;
   },
 
-  async setCache(title, arrayBuffer) {
-    await localforage.setItem(title, arrayBuffer);
+  // -------------------------------
+  // 2. Récupération d'un son décodé
+  // -------------------------------
+  async getDecodedBuffer(title, audioCtx) {
+    const context =
+      audioCtx || new (window.AudioContext || window.webkitAudioContext)();
+
+    // Déjà en RAM
+    if (decodedCache.has(title)) {
+      return decodedCache.get(title);
+    }
+
+    // Sinon depuis IndexedDB
+    const arrayBuffer = await localforage.getItem(title);
+    if (!arrayBuffer) return null;
+
+    const audioBuffer = await context.decodeAudioData(arrayBuffer.slice(0));
+    decodedCache.set(title, audioBuffer);
+    return audioBuffer;
   },
 };

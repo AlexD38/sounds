@@ -6,16 +6,7 @@ import { soundTools } from '../../utils/modulateSound.tools';
 import { perlinNoise, SearchThatSound } from '../../utils/utils';
 import { PlayerTitle } from '../PlayerTitle/PlayerTitle';
 import './styles.css'; // Import local styles
-
-function getRMS(audioBuffer) {
-  const channelData = audioBuffer.getChannelData(0); // Use the first channel
-  let sumOfSquares = 0;
-  for (let i = 0; i < channelData.length; i++) {
-    sumOfSquares += channelData[i] * channelData[i];
-  }
-  const meanSquare = sumOfSquares / channelData.length;
-  return Math.sqrt(meanSquare);
-}
+import { cacheManager } from '../../utils/cacheManager';
 
 function Player({ title, sourcePath, custom, speed, stopAll }) {
   const {
@@ -77,15 +68,31 @@ function Player({ title, sourcePath, custom, speed, stopAll }) {
       return;
     }
 
-    const replaySound = () => {
-      if (!audioCtxRef.current) {
-        return;
+    const replaySound = async () => {
+      if (!audioCtxRef.current) return;
+
+      // Récupère les paramètres depuis la ref
+      const { custom, volValue, filterValue, playbackRate } = paramsRef.current;
+
+      try {
+        // ⚡ Récupère l'AudioBuffer décodé depuis le cache
+        const audioBuffer = await cacheManager.getDecodedBuffer(
+          'chatter',
+          audioCtxRef.current
+        );
+        if (!audioBuffer) return;
+
+        // ⚡ Joue le son
+        playFromSource(
+          audioBuffer,
+          custom,
+          volValue,
+          filterValue,
+          playbackRate
+        );
+      } catch (err) {
+        console.error('Erreur lors du replay du son :', err);
       }
-      // Utilise les paramètres depuis la ref
-      const { sourcePath, custom, volValue, filterValue, playbackRate } =
-        paramsRef.current;
-      // playFromSource arrête l'ancienne source et en joue une nouvelle
-      playFromSource(sourcePath, custom, volValue, filterValue, playbackRate);
     };
 
     // Le premier son est joué par le `onClick`. On lance la répétition.
@@ -331,85 +338,63 @@ function Player({ title, sourcePath, custom, speed, stopAll }) {
       startPerlinModulation(0.5, newVol);
     }
   }
+
   // PLAY FROM SOURCE ------------------------------
   async function playFromSource(
-    sourcePath,
+    sourcePathOrBuffer, // Peut être : AudioBuffer / ArrayBuffer / string
     custom,
     newVol = volValue,
     newFilter = filterValue,
     newSpeed = playbackRate
   ) {
     try {
-      // Crée un nouveau contexte audio si nécessaire
+      // ✅ Assurer l’existence du contexte audio
       if (!audioCtxRef.current) {
         audioCtxRef.current = new (window.AudioContext ||
           window.webkitAudioContext)();
       }
       const audioCtx = audioCtxRef.current;
 
-      if (sourcePath == 'apiSearch') {
-        setIsLoading(true);
-        refresh();
-        return;
-      }
+      let audioBuffer;
 
-      // Crée le limiteur s'il n'existe pas
-      if (!limiterNodeRef.current) {
-        const limiter = audioCtx.createDynamicsCompressor();
-        limiter.threshold.setValueAtTime(-2, audioCtx.currentTime);
-        limiter.knee.setValueAtTime(0, audioCtx.currentTime);
-        limiter.ratio.setValueAtTime(20, audioCtx.currentTime);
-        limiter.attack.setValueAtTime(0.005, audioCtx.currentTime);
-        limiter.release.setValueAtTime(0.05, audioCtx.currentTime);
-        limiterNodeRef.current = limiter;
-      }
-      const limiter = limiterNodeRef.current;
+      // ✅ 1. Si c’est déjà un AudioBuffer
+      if (sourcePathOrBuffer instanceof AudioBuffer) {
+        audioBuffer = sourcePathOrBuffer;
 
-      let arrayBuffer;
+        // ✅ 2. Si c’est un ArrayBuffer brut → décodage
+      } else if (sourcePathOrBuffer instanceof ArrayBuffer) {
+        audioBuffer = await audioCtx.decodeAudioData(
+          sourcePathOrBuffer.slice(0)
+        );
 
-      if (typeof sourcePath === 'string') {
-        const response = await fetch(sourcePath);
-        if (!response.ok)
-          throw new Error('Fichier introuvable ou inaccessible');
-        arrayBuffer = await response.arrayBuffer();
+        // ✅ 3. Si c’est un chemin (string) → fetch + décodage
+      } else if (typeof sourcePathOrBuffer === 'string') {
+        const response = await fetch(sourcePathOrBuffer);
+        const arrayBuffer = await response.arrayBuffer();
+        audioBuffer = await audioCtx.decodeAudioData(arrayBuffer);
       } else {
-        arrayBuffer = sourcePath;
-      }
-
-      if (!arrayBuffer || arrayBuffer.byteLength === 0) {
-        console.error('Source path is invalid or ArrayBuffer is empty.');
-        setIsLoading(false);
+        console.error(
+          'playFromSource: besoin d’un AudioBuffer, ArrayBuffer ou string (URL)!'
+        );
         return;
       }
 
-      // Décode les données audio
-
-      // Normalisation du volume
-      console.log('sourcePath: ', sourcePath);
-      const rms = getRMS(sourcePath);
-      const targetRMS = 0.18;
-      const newNormalizationFactor = rms > 0 ? targetRMS / rms : 1;
-      normalizationFactorRef.current = newNormalizationFactor;
-
-      // Stop l'ancienne source si elle existe
+      // ✅ Stopper l’ancienne source si elle existe
       if (sourceNodeRef.current) {
         try {
           sourceNodeRef.current.stop();
         } catch (e) {}
       }
 
-      // Crée un BufferSource pour lire le buffer décodé
-      const bufferSource = audioCtx.createBufferSource();
-      bufferSource.buffer = audioBuffer;
-      bufferSource.loop = title !== 'bowl';
-      bufferSource.playbackRate.value = newSpeed;
+      // BufferSource
+      const sourceNode = audioCtx.createBufferSource();
+      sourceNode.buffer = audioBuffer;
+      sourceNode.loop = title !== 'bowl';
+      sourceNode.playbackRate.setValueAtTime(newSpeed, audioCtx.currentTime);
 
       // Gain
       const gainNode = audioCtx.createGain();
-      let finalGain = newVol * newNormalizationFactor;
-      if (!isFinite(finalGain)) {
-        finalGain = newVol;
-      }
+      const finalGain = isFinite(newVol) ? newVol : volValue;
       gainNode.gain.setValueAtTime(finalGain, audioCtx.currentTime);
 
       // Filtre
@@ -417,24 +402,23 @@ function Player({ title, sourcePath, custom, speed, stopAll }) {
       filter.type = 'lowpass';
       filter.frequency.setValueAtTime(newFilter, audioCtx.currentTime);
 
-      // Connexions : source → filtre → gain → limiter → destination
-      bufferSource.connect(filter);
+      // Chaînage
+      sourceNode.connect(filter);
       filter.connect(gainNode);
-      gainNode.connect(limiter);
-      limiter.connect(audioCtx.destination);
+      gainNode.connect(audioCtx.destination);
 
-      // Démarre la lecture
+      // Start
+      sourceNode.start();
 
-      bufferSource.start();
-
-      // Stocke les références
-      sourceNodeRef.current = bufferSource;
+      // Refs
+      sourceNodeRef.current = sourceNode;
       gainNodeRef.current = gainNode;
       filterRef.current = filter;
-      // Ici aussi, perlin activé
+
       if (custom === 'perlinNoise') {
         startPerlinModulation(0.5, finalGain);
       }
+
       setIsLoading(false);
     } catch (err) {
       console.error('Erreur lors de la lecture du fichier :', err);

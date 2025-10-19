@@ -18,47 +18,36 @@ export function ContextProvider({ children }) {
   const [playingSnap, setPlayingSnap] = useState(null);
   const [stopAll, setStopAll] = useState(false);
   const [randomSnap, setRandomSnap] = useState(null);
-  const [cachedAudios, setCachedAudios] = useState({});
+  const [cachedAudios, setCachedAudios] = useState(null);
 
-  // Cache des sons
+  //Cache ------------------------
   useEffect(() => {
     const fetchData = async () => {
-      const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-      let cachedObj = {};
+      const cachedObj = {};
+
+      let missing = false;
 
       for (const { title } of config) {
         if (title === 'whiteNoise' || title === 'music') continue;
 
         const cached = await localforage.getItem(title);
-        if (cached) {
-          try {
-            const audioBuffer = await audioCtx.decodeAudioData(cached);
-            cachedObj[title] = audioBuffer;
-          } catch (error) {
-            console.error(`Error decoding cached audio for ${title}:`, error);
-            await localforage.removeItem(title);
-          }
+        cachedObj[title] = cached;
+
+        if (!cached) {
+          missing = true;
         }
       }
 
-      const missingTitles = config
-        .map(c => c.title)
-        .filter(
-          title =>
-            title !== 'whiteNoise' && title !== 'music' && !cachedObj[title]
-        );
-
-      if (missingTitles.length > 0) {
-        const decodedSounds = await cacheManager.decodeSounds(
-          config.filter(c => missingTitles.includes(c.title)),
-          audioCtx
-        );
-        decodedSounds.forEach(({ title, audioBuffer }) => {
-          cachedObj[title] = audioBuffer;
-        });
+      if (missing) {
+        const decodedSounds = await cacheManager.decodeSounds(config);
+        const soundsObject = decodedSounds.reduce((obj, sound) => {
+          obj[sound.title] = sound.audioBuffer;
+          return obj;
+        }, {});
+        setCachedAudios(soundsObject);
+      } else {
+        setCachedAudios(cachedObj);
       }
-
-      setCachedAudios(cachedObj);
     };
 
     fetchData();
