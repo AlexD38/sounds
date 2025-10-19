@@ -77,7 +77,7 @@ function Player({ title, sourcePath, custom, speed, stopAll }) {
       try {
         // ⚡ Récupère l'AudioBuffer décodé depuis le cache
         const audioBuffer = await cacheManager.getDecodedBuffer(
-          'chatter',
+          title,
           audioCtxRef.current
         );
         if (!audioBuffer) return;
@@ -111,8 +111,6 @@ function Player({ title, sourcePath, custom, speed, stopAll }) {
 
     if (stopAll) {
       if (isPlaying) {
-        fadeOutAndStop(1);
-      } else {
         stop();
       }
       return;
@@ -146,15 +144,13 @@ function Player({ title, sourcePath, custom, speed, stopAll }) {
         setIsPlaying(true);
       } else {
         if (isPlaying) {
-          fadeOutAndStop();
+          stop();
         } else {
           stop();
         }
       }
     } else {
       if (isPlaying) {
-        fadeOutAndStop();
-      } else {
         stop();
       }
     }
@@ -278,7 +274,7 @@ function Player({ title, sourcePath, custom, speed, stopAll }) {
   ) {
     if (isPlaying && event?.target?.dataset?.stop) {
       registerPlayerSituation(title, { isPlaying: false });
-      fadeOutAndStop();
+      stop();
       return;
     }
     if (isPlaying) {
@@ -434,30 +430,6 @@ function Player({ title, sourcePath, custom, speed, stopAll }) {
     } catch (err) {
       console.error('Erreur lors de la lecture du fichier :', err);
     }
-  }
-
-  // FADE OUT AND STOP ------------------------------------
-  function fadeOutAndStop(fadeDuration) {
-    if (
-      !gainNodeRef.current ||
-      !audioCtxRef.current ||
-      audioCtxRef.current.state === 'closed' ||
-      !isPlaying
-    ) {
-      stop(); // Fallback for safety
-      return;
-    }
-
-    const now = audioCtxRef.current.currentTime;
-    const fadeOutTime = fadeDuration || 0.2; // Default to 1.5 seconds
-
-    gainNodeRef.current.gain.linearRampToValueAtTime(0.0001, now + fadeOutTime);
-
-    stopPerlinModulation();
-
-    setTimeout(() => {
-      stop();
-    }, fadeOutTime * 1000);
   }
 
   // STOP -------------------------------------------------
@@ -684,7 +656,7 @@ function Player({ title, sourcePath, custom, speed, stopAll }) {
             <div className="btn-container">
               {isPlaying && (
                 <>
-                  <button onClick={fadeOutAndStop} data-stop={true}>
+                  <button onClick={stop} data-stop={true}>
                     <i
                       className="fa-solid fa-pause playing"
                       data-stop={true}
