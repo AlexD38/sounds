@@ -24,6 +24,12 @@ export const config = [
     category: 'Soundscapes',
   },
   {
+    title: 'lake',
+    apiSuggestions: ['ocean', 'waves', 'sea'],
+    titleSuggestions: ['lake', 'waves'],
+    category: 'Soundscapes',
+  },
+  {
     title: 'lightRain',
     apiSuggestions: ['light rain', 'drizzle', 'sprinkle'],
     titleSuggestions: ['rain', 'drizzle', 'rainy'],
@@ -51,6 +57,12 @@ export const config = [
     title: 'night',
     apiSuggestions: ['night', 'crickets', 'owl'],
     titleSuggestions: ['night', 'midnight'],
+    category: 'Soundscapes',
+  },
+  {
+    title: 'wind',
+    apiSuggestions: [],
+    titleSuggestions: ['wind'],
     category: 'Soundscapes',
   },
   {

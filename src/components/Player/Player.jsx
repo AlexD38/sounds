@@ -2,11 +2,11 @@ import { useContext, useEffect, useRef, useState } from 'react';
 import '../../App.css';
 import { Context } from '../../context/context';
 import { config } from '../../ref/random.config';
+import { cacheManager } from '../../utils/cacheManager';
 import { soundTools } from '../../utils/modulateSound.tools';
 import { perlinNoise, SearchThatSound } from '../../utils/utils';
 import { PlayerTitle } from '../PlayerTitle/PlayerTitle';
 import './styles.css'; // Import local styles
-import { cacheManager } from '../../utils/cacheManager';
 
 function Player({ title, sourcePath, custom, speed, stopAll }) {
   const {
