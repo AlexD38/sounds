@@ -1,39 +1,19 @@
-import { useRef, useState, useContext, useEffect } from 'react';
+import { useContext, useEffect, useState } from 'react';
 import './App.css';
 import Player from './components/Player/Player';
 import { Context } from './context/context';
-import villageSound from '/assets/sounds/village.mp3';
-import oceanSound from '/assets/sounds/ocean.mp3';
-import lightRainSound from '/assets/sounds/light-rain.mp3';
-import rainSound from '/assets/sounds/rain.mp3';
-import fireSound from '/assets/sounds/fire.mp3';
-import thunderSound from '/assets/sounds/thunder.mp3';
-import trainSound from '/assets/sounds/train.mp3';
-import nightSound from '/assets/sounds/night.mp3';
-import scaryNightSound from '/assets/sounds/scary.mp3';
-import crowSound from '/assets/sounds/crow.mp3';
-import chatterSound from '/assets/sounds/chatter.mp3';
-import bowlSound from '/assets/sounds/bowl.mp3';
-import windSound from '/assets/sounds/wind.mp3';
-import lakeSound from '/assets/sounds/lake.mp3';
-import birdWoodsSound from '/assets/sounds/birdWoods.mp3';
 
 import { SaveSnapshotMix } from './components/SaveSnapshotMix/SaveSnapshotMix';
 import { Notification } from './components/notification/notification';
 
-import Stretcher from './strecther/Stretcher';
+import { RandomSnapGenerator } from './components/RandomSnapGenerator/RandomSnapGenerator';
 import { SavedSnaps } from './components/SavedSnaps/SavedSnaps';
 import { StopAll } from './components/StopAll/StopAll';
-import { config } from './ref/random.config';
-import { RandomSnapGenerator } from './components/RandomSnapGenerator/RandomSnapGenerator';
 import { Timer } from './components/timer/Timer';
-import { cacheManager } from './utils/cacheManager';
-import localforage from 'localforage';
 
 function App() {
-  const { stopAll, cachedAudios, setCachedAudios } = useContext(Context);
+  const { stopAll, cachedAudios } = useContext(Context);
   const [opacity, setOpacity] = useState(1);
-  const [cachedPlayers, setCachedPlayers] = useState(null);
   const [title, setTitle] = useState(
     <>
       Ambient <i className="fa-solid fa-compass-drafting"></i> Architect
