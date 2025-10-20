@@ -14,7 +14,7 @@ import { config } from './ref/random.config';
 import { Loader } from './components/Loader/Loader';
 
 function App() {
-  const { stopAll, cachedAudios, isReady } = useContext(Context);
+  const { stopAll, cachedAudios, isReady, savedSnaps } = useContext(Context);
   const [opacity, setOpacity] = useState(1);
   const [loaderPerc, setLoaderPerc] = useState(0);
   const [title, setTitle] = useState(
@@ -67,7 +67,7 @@ function App() {
         speed={true}
       /> */}
           {/* <Stretcher source={windows} custom="perlinNoise" /> */}
-          <SavedSnaps />
+          {savedSnaps.size > 0 && <SavedSnaps />}
           <main>
             <>
               <Player

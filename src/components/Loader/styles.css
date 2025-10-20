@@ -29,6 +29,7 @@
   border-radius: 50%;
   position: relative;
   animation: rotate 1s linear infinite;
+  margin: 2rem;
 }
 .loader::before {
   content: '';

@@ -366,15 +366,9 @@ function Player({ title, sourcePath, custom, speed, stopAll }) {
         // ✅ 3. Si c’est un chemin (string) → fetch + décodage
       } else if (sourcePath === 'apiSearch') {
         const playerConfig = config.find(x => x.title == title);
-        const category = playerConfig.category;
-        const additionalApiParams = playerConfig.additionalApiFields || null;
         const arrayOfQuery = playerConfig.apiSuggestions;
         const randomIndex = Math.floor(Math.random() * arrayOfQuery.length);
-        const { obj } = await SearchThatSound(
-          arrayOfQuery[randomIndex],
-          category,
-          additionalApiParams
-        );
+        const { obj } = await SearchThatSound(arrayOfQuery[randomIndex]);
 
         const response = await fetch(obj.url);
         const arrayBuffer = await response.arrayBuffer();
