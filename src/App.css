@@ -173,6 +173,7 @@ i {
 @media (max-width: 768px) {
   body {
     padding-top: 3rem;
+    gap: 3rem;
   }
   .logo {
     left: 50%;
