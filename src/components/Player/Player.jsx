@@ -132,7 +132,7 @@ function Player({ title, sourcePath, custom, speed, stopAll }) {
     const playerState = loadedSnap.players.find(p => p.playerTitle === title);
 
     if (playerState) {
-      if (playerState.isPlaying) {
+      if (playerState.isPlaying === true) {
         setStopAll(false);
         const volume = playerState.volume ?? 1.5;
         const filter = playerState.filter ?? 1800;
