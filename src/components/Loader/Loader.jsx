@@ -5,9 +5,9 @@ export const Loader = ({ perc }) => {
     <>
       {perc < 100 && (
         <div className="loader-container">
-          <i className="fa-solid fa-spinner loader"></i>
+          {/* <i className="fa-solid fa-spinner loader"></i> */}
 
-          <span> Loading sounds...{perc.toFixed(0)} %</span>
+          {/* <span> Loading sounds...{perc.toFixed(0)} %</span> */}
         </div>
       )}
     </>
