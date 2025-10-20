@@ -1,0 +1,22 @@
+@keyframes rotate {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.loader-container {
+  font-size: 1.5rem;
+  color: #faeab1;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  gap: 1rem;
+}
+.loader {
+  font-size: 3rem;
+  animation: rotate 2s linear infinite;
+}

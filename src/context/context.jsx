@@ -19,34 +19,28 @@ export function ContextProvider({ children }) {
   const [stopAll, setStopAll] = useState(false);
   const [randomSnap, setRandomSnap] = useState(null);
   const [cachedAudios, setCachedAudios] = useState(null);
+  const [isReady, setIsReady] = useState([]);
 
   //Cache ------------------------
   useEffect(() => {
+    const processSound = async ({ title }) => {
+      if (title === 'whiteNoise' || title === 'music') return;
+
+      try {
+        const audioBuffer = await cacheManager.decodeSound({ title });
+        if (audioBuffer) {
+          setCachedAudios(prev => ({ ...prev, [title]: audioBuffer }));
+          setIsReady(prev => [...prev, title]);
+        }
+      } catch (error) {
+        console.error(`Failed to process sound: ${title}`, error);
+      }
+    };
+
     const fetchData = async () => {
-      const cachedObj = {};
-
-      let missing = false;
-
       for (const { title } of config) {
         if (title === 'whiteNoise' || title === 'music') continue;
-
-        const cached = await localforage.getItem(title);
-        cachedObj[title] = cached;
-
-        if (!cached) {
-          missing = true;
-        }
-      }
-
-      if (missing) {
-        const decodedSounds = await cacheManager.decodeSounds(config);
-        const soundsObject = decodedSounds.reduce((obj, sound) => {
-          obj[sound.title] = sound.audioBuffer;
-          return obj;
-        }, {});
-        setCachedAudios(soundsObject);
-      } else {
-        setCachedAudios(cachedObj);
+        processSound({ title });
       }
     };
 
@@ -149,6 +143,7 @@ export function ContextProvider({ children }) {
       setRandomSnap,
       cachedAudios,
       setCachedAudios,
+      isReady,
     }),
     [
       theme,

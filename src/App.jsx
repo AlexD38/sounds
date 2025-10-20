@@ -10,10 +10,13 @@ import { RandomSnapGenerator } from './components/RandomSnapGenerator/RandomSnap
 import { SavedSnaps } from './components/SavedSnaps/SavedSnaps';
 import { StopAll } from './components/StopAll/StopAll';
 import { Timer } from './components/timer/Timer';
+import { config } from './ref/random.config';
+import { Loader } from './components/Loader/Loader';
 
 function App() {
-  const { stopAll, cachedAudios } = useContext(Context);
+  const { stopAll, cachedAudios, isReady } = useContext(Context);
   const [opacity, setOpacity] = useState(1);
+  const [loaderPerc, setLoaderPerc] = useState(0);
   const [title, setTitle] = useState(
     <>
       Ambient <i className="fa-solid fa-compass-drafting"></i> Architect
@@ -35,6 +38,12 @@ function App() {
     return () => clearTimeout(timer);
   }, []);
 
+  useEffect(() => {
+    const readyToDIsplay = [...new Set(isReady)];
+    const percentage = ((readyToDIsplay.length + 2) / config.length) * 100;
+    setLoaderPerc(percentage);
+  }, [isReady]);
+
   return (
     <>
       <h1
@@ -43,125 +52,160 @@ function App() {
       >
         {title}
       </h1>
-      <StopAll />
-      <SaveSnapshotMix />
-      <Timer />
-      <RandomSnapGenerator />
-      {/* <SearchSound /> */}
-      {/* <Player
+      {loaderPerc < 100 && <Loader perc={loaderPerc} />}
+      {loaderPerc == 100 && (
+        <>
+          <StopAll />
+          <SaveSnapshotMix />
+          <Timer />
+          <RandomSnapGenerator />
+          {/* <SearchSound /> */}
+          {/* <Player
         title={'random'}
         sourcePath={'apiSearch'}
         custom={true}
         speed={true}
       /> */}
-      {/* <Stretcher source={windows} custom="perlinNoise" /> */}
-      <SavedSnaps />
-      <main>
-        <Player title={'whiteNoise'} custom="perlinNoise" stopAll={stopAll} />
-        {cachedAudios && (
-          <>
-            <Player
-              title={'morning'}
-              sourcePath={cachedAudios.morning}
-              custom="perlinNoise"
-              stopAll={stopAll}
-            />
-            <Player
-              title={'fire'}
-              sourcePath={cachedAudios.fire}
-              custom="perlinNoise"
-              stopAll={stopAll}
-            />
-            <Player
-              title={'lake'}
-              sourcePath={cachedAudios.lake}
-              custom="perlinNoise"
-              speed={true}
-              stopAll={stopAll}
-            />
-            <Player
-              title={'ocean'}
-              sourcePath={cachedAudios.ocean}
-              custom="perlinNoise"
-              speed={true}
-              stopAll={stopAll}
-            />
-            <Player
-              title={'lightRain'}
-              sourcePath={cachedAudios.lightRain}
-              custom="perlinNoise"
-              stopAll={stopAll}
-            />
-            <Player
-              title={'rain'}
-              sourcePath={cachedAudios.heavyRain}
-              custom="perlinNoise"
-              speed={true}
-              stopAll={stopAll}
-            />
-            <Player
-              title={'wind'}
-              sourcePath={cachedAudios.wind}
-              custom="perlinNoise"
-              speed={true}
-              stopAll={stopAll}
-            />
-            <Player
-              title={'thunder'}
-              sourcePath={cachedAudios.thunder}
-              custom="perlinNoise"
-              speed={true}
-              stopAll={stopAll}
-            />
-            <Player
-              title={'train'}
-              sourcePath={cachedAudios.train}
-              custom="perlinNoise"
-              speed={true}
-              stopAll={stopAll}
-            />
-            <Player
-              title={'night'}
-              sourcePath={cachedAudios.night}
-              custom="perlinNoise"
-              speed={true}
-              stopAll={stopAll}
-            />
-            <Player
-              title={'scary'}
-              sourcePath={cachedAudios.scary}
-              custom="perlinNoise"
-              speed={true}
-              stopAll={stopAll}
-            />
-            <Player
-              title={'crow'}
-              sourcePath={cachedAudios.crow}
-              custom="perlinNoise"
-              stopAll={stopAll}
-            />
-            <Player
-              title={'chatter'}
-              sourcePath={cachedAudios.chatter}
-              speed={true}
-              stopAll={stopAll}
-            />
-            <Player
-              title={'music'}
-              sourcePath={'apiSearch'}
-              custom={true}
-              speed={true}
-              stopAll={stopAll}
-            />
-            <Player
-              title={'bowl'}
-              sourcePath={cachedAudios.bowl}
-              stopAll={stopAll}
-            />
-          </>
-        )}
-      </main>
-      <Notification />
+          {/* <Stretcher source={windows} custom="perlinNoise" /> */}
+          <SavedSnaps />
+          <main>
+            <>
+              <Player
+                title={'whiteNoise'}
+                custom="perlinNoise"
+                stopAll={stopAll}
+              />
+              {isReady.includes('morning') && (
+                <Player
+                  title={'morning'}
+                  sourcePath={cachedAudios.morning}
+                  custom="perlinNoise"
+                  stopAll={stopAll}
+                />
+              )}
+              {isReady.includes('fire') && (
+                <Player
+                  title={'fire'}
+                  sourcePath={cachedAudios.fire}
+                  custom="perlinNoise"
+                  stopAll={stopAll}
+                />
+              )}
+              {isReady.includes('lake') && (
+                <Player
+                  title={'lake'}
+                  sourcePath={cachedAudios.lake}
+                  custom="perlinNoise"
+                  speed={true}
+                  stopAll={stopAll}
+                />
+              )}
+              {isReady.includes('ocean') && (
+                <Player
+                  title={'ocean'}
+                  sourcePath={cachedAudios.ocean}
+                  custom="perlinNoise"
+                  speed={true}
+                  stopAll={stopAll}
+                />
+              )}
+              {isReady.includes('lightRain') && (
+                <Player
+                  title={'lightRain'}
+                  sourcePath={cachedAudios.lightRain}
+                  custom="perlinNoise"
+                  stopAll={stopAll}
+                />
+              )}
+              {isReady.includes('heavyRain') && (
+                <Player
+                  title={'rain'}
+                  sourcePath={cachedAudios.heavyRain}
+                  custom="perlinNoise"
+                  speed={true}
+                  stopAll={stopAll}
+                />
+              )}
+              {isReady.includes('wind') && (
+                <Player
+                  title={'wind'}
+                  sourcePath={cachedAudios.wind}
+                  custom="perlinNoise"
+                  speed={true}
+                  stopAll={stopAll}
+                />
+              )}
+              {isReady.includes('thunder') && (
+                <Player
+                  title={'thunder'}
+                  sourcePath={cachedAudios.thunder}
+                  custom="perlinNoise"
+                  speed={true}
+                  stopAll={stopAll}
+                />
+              )}
+              {isReady.includes('train') && (
+                <Player
+                  title={'train'}
+                  sourcePath={cachedAudios.train}
+                  custom="perlinNoise"
+                  speed={true}
+                  stopAll={stopAll}
+                />
+              )}
+              {isReady.includes('night') && (
+                <Player
+                  title={'night'}
+                  sourcePath={cachedAudios.night}
+                  custom="perlinNoise"
+                  speed={true}
+                  stopAll={stopAll}
+                />
+              )}
+              {isReady.includes('scary') && (
+                <Player
+                  title={'scary'}
+                  sourcePath={cachedAudios.scary}
+                  custom="perlinNoise"
+                  speed={true}
+                  stopAll={stopAll}
+                />
+              )}
+              {isReady.includes('crow') && (
+                <Player
+                  title={'crow'}
+                  sourcePath={cachedAudios.crow}
+                  custom="perlinNoise"
+                  stopAll={stopAll}
+                />
+              )}
+              {isReady.includes('chatter') && (
+                <Player
+                  title={'chatter'}
+                  sourcePath={cachedAudios.chatter}
+                  speed={true}
+                  stopAll={stopAll}
+                />
+              )}
+              <Player
+                title={'music'}
+                sourcePath={'apiSearch'}
+                custom={true}
+                speed={true}
+                stopAll={stopAll}
+              />
+              {isReady.includes('bowl') && (
+                <Player
+                  title={'bowl'}
+                  sourcePath={cachedAudios.bowl}
+                  stopAll={stopAll}
+                />
+              )}
+            </>
+          </main>
+          <Notification />
+        </>
+      )}
     </>
   );
 }
