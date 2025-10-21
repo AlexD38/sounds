@@ -1,24 +1,49 @@
 const token = import.meta.env.VITE_API_KEY;
+const apiCache = new Map();
 
 export const SearchThatSound = async query => {
+  if (apiCache.has(query)) {
+    return apiCache.get(query);
+  }
+
   let url = `https://freesound.org/apiv2/sounds/${query}?token=${token}`;
 
-  const response = await fetch(url);
+  try {
+    const response = await fetch(url);
+    if (!response.ok) {
+      // Si la réponse est une erreur (4xx, 5xx), on lève une exception
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+    const datas = await response.json();
 
-  let datas = await response.json();
-  const previewUrl = datas.previews['preview-lq-mp3'];
+    // Vérification que les données nécessaires sont présentes
+    if (!datas.previews || !datas.previews['preview-lq-mp3']) {
+      console.error('Preview URL not found in API response for query:', query);
+      // On retourne un objet vide ou on gère l'erreur autrement
+      return { obj: {} };
+    }
 
-  const mp3Preview = `${previewUrl}?token=${token}`;
+    const previewUrl = datas.previews['preview-lq-mp3'];
+    const mp3Preview = `${previewUrl}?token=${token}`;
 
-  const obj = {
-    url: mp3Preview,
-    title: datas.name,
-    image: datas.images['spectral_bw_l'],
-    tags: datas.category,
-    similar: datas.similar_sounds,
-    author: datas.username,
-  };
-  return { obj };
+    const obj = {
+      url: mp3Preview,
+      title: datas.name,
+      image: datas.images ? datas.images['spectral_bw_l'] : '',
+      tags: datas.category,
+      similar: datas.similar_sounds,
+      author: datas.username,
+    };
+
+    const result = { obj };
+    apiCache.set(query, result); // Met en cache le résultat
+
+    return result;
+  } catch (error) {
+    console.error('Error in SearchThatSound:', error);
+    // En cas d'erreur réseau ou autre, on retourne un objet vide pour éviter de planter
+    return { obj: {} };
+  }
 };
 // Petit générateur Perlin 1D
 export function perlinNoise(x) {
@@ -63,3 +88,16 @@ const p = new Array(512).fill(0).map((_, i) => {
   ];
   return perm[i % 256];
 });
+
+export const makePlaylist = arrayOfIds => {
+  // Create a copy to avoid modifying the original array from the config
+  const shuffled = [...arrayOfIds];
+
+  // Shuffle the array using the Fisher-Yates algorithm
+  for (let i = shuffled.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+  }
+
+  return shuffled;
+};

@@ -20,6 +20,7 @@ export function ContextProvider({ children }) {
   const [randomSnap, setRandomSnap] = useState(null);
   const [cachedAudios, setCachedAudios] = useState(null);
   const [isReady, setIsReady] = useState([]);
+  const [playlist, setPlaylist] = useState([]);
 
   //Cache ------------------------
   useEffect(() => {
@@ -144,6 +145,8 @@ export function ContextProvider({ children }) {
       cachedAudios,
       setCachedAudios,
       isReady,
+      playlist,
+      setPlaylist,
     }),
     [
       theme,
@@ -157,6 +160,7 @@ export function ContextProvider({ children }) {
       stopAll,
       randomSnap,
       cachedAudios,
+      playlist,
     ]
   );
 

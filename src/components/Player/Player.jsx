@@ -4,7 +4,7 @@ import { Context } from '../../context/context';
 import { config } from '../../ref/random.config';
 import { cacheManager } from '../../utils/cacheManager';
 import { soundTools } from '../../utils/modulateSound.tools';
-import { perlinNoise, SearchThatSound } from '../../utils/utils';
+import { makePlaylist, perlinNoise, SearchThatSound } from '../../utils/utils';
 import { PlayerTitle } from '../PlayerTitle/PlayerTitle';
 import './styles.css'; // Import local styles
 
@@ -18,6 +18,8 @@ function Player({ title, sourcePath, custom, speed, stopAll }) {
     setStopAll,
     randomSnap,
     setNotification,
+    playlist,
+    setPlaylist,
   } = useContext(Context);
 
   const [filterValue, setFilterValue] = useState(1800);
@@ -259,6 +261,13 @@ function Player({ title, sourcePath, custom, speed, stopAll }) {
     }
   };
 
+  const initAudioContext = () => {
+    if (!audioCtxRef.current) {
+      audioCtxRef.current = new (window.AudioContext ||
+        window.webkitAudioContext)();
+    }
+  };
+
   // PLAY ----------------------------------------
   async function play(
     event,
@@ -268,6 +277,12 @@ function Player({ title, sourcePath, custom, speed, stopAll }) {
     newFilter = filterValue,
     newSpeed = playbackRate
   ) {
+    // Initialize and resume AudioContext on user gesture
+    initAudioContext();
+    if (audioCtxRef.current.state === 'suspended') {
+      await audioCtxRef.current.resume();
+    }
+
     if (isPlaying && event?.target?.dataset?.stop) {
       registerPlayerSituation(title, { isPlaying: false });
       stop();
@@ -291,30 +306,30 @@ function Player({ title, sourcePath, custom, speed, stopAll }) {
       return;
     }
 
-    if (audioCtxRef.current) return;
+    if (audioCtxRef.current) {
+      const { gainNode, audioCtx, noiseSource } =
+        soundTools.noise.createWhiteNoise(audioCtxRef, noiseSourceRef);
 
-    const { gainNode, audioCtx, noiseSource } =
-      soundTools.noise.createWhiteNoise(audioCtxRef, noiseSourceRef);
+      gainNode.gain.setValueAtTime(newVol, audioCtx.currentTime);
+      gainNodeRef.current = gainNode;
 
-    gainNode.gain.setValueAtTime(newVol, audioCtx.currentTime);
-    gainNodeRef.current = gainNode;
+      const filter = audioCtx.createBiquadFilter();
+      filter.type = 'lowpass';
+      filter.frequency.setValueAtTime(newFilter, audioCtx.currentTime);
+      filterRef.current = filter;
 
-    const filter = audioCtx.createBiquadFilter();
-    filter.type = 'lowpass';
-    filter.frequency.setValueAtTime(newFilter, audioCtx.currentTime);
-    filterRef.current = filter;
+      // Chaînage avec le limiteur
+      filter.connect(gainNode);
+      gainNode.connect(audioCtx.destination);
 
-    // Chaînage avec le limiteur
-    filter.connect(gainNode);
-    gainNode.connect(audioCtx.destination);
+      noiseSource.connect(filter);
+      noiseSource.start();
+      setIsLoading(false);
 
-    noiseSource.connect(filter);
-    noiseSource.start();
-    setIsLoading(false);
-
-    // Ici aussi, si bruit blanc + perlin activé
-    if (custom === 'perlinNoise') {
-      startPerlinModulation(0.5, newVol);
+      // Ici aussi, si bruit blanc + perlin activé
+      if (custom === 'perlinNoise') {
+        startPerlinModulation(0.5, newVol);
+      }
     }
   }
 
@@ -324,94 +339,158 @@ function Player({ title, sourcePath, custom, speed, stopAll }) {
     custom,
     newVol = volValue,
     newFilter = filterValue,
-    newSpeed = playbackRate
+    newSpeed = playbackRate,
+    noApiNeeded
   ) {
+    const audioCtx = audioCtxRef.current;
+    if (!audioCtx) {
+      console.error("AudioContext not initialized. Cannot play sound.");
+      return;
+    }
+
+    const MAX_FILE_SIZE = 15 * 1024 * 1024; // 15 MB
+
+    let audioBuffer;
+
     try {
-      // ✅ Assurer l’existence du contexte audio
-      if (!audioCtxRef.current) {
-        audioCtxRef.current = new (window.AudioContext ||
-          window.webkitAudioContext)();
-      }
-      const audioCtx = audioCtxRef.current;
-
-      let audioBuffer;
-
-      // ✅ 1. Si c’est déjà un AudioBuffer
       if (sourcePathOrBuffer instanceof AudioBuffer) {
         audioBuffer = sourcePathOrBuffer;
-
-        // ✅ 2. Si c’est un ArrayBuffer brut → décodage
+      } else if (noApiNeeded) {
+        const response = await fetch(sourcePathOrBuffer);
+        if (!response.ok) {
+          throw new Error(
+            `Audio fetch failed: ${response.status} ${response.statusText}`
+          );
+        }
+        const size = response.headers.get('content-length');
+        if (size && parseInt(size, 10) > MAX_FILE_SIZE) {
+          const track = playlist.find(t => t.url === sourcePathOrBuffer);
+          const trackId = track ? track.id : 'unknown';
+          throw new Error(
+            `Sound ID ${trackId} is too large (> ${MAX_FILE_SIZE / 1024 / 1024}MB)`
+          );
+        }
+        const arrayBuffer = await response.arrayBuffer();
+        audioBuffer = await audioCtx.decodeAudioData(arrayBuffer);
       } else if (sourcePathOrBuffer instanceof ArrayBuffer) {
+        if (sourcePathOrBuffer.byteLength > MAX_FILE_SIZE) {
+          throw new Error(`File too large to play (> ${MAX_FILE_SIZE / 1024 / 1024}MB)`);
+        }
         audioBuffer = await audioCtx.decodeAudioData(
           sourcePathOrBuffer.slice(0)
         );
-
-        // ✅ 3. Si c’est un chemin (string) → fetch + décodage
       } else if (sourcePath === 'apiSearch') {
         const playerConfig = config.find(x => x.title == title);
-        const arrayOfQuery = playerConfig.apiSuggestions;
-        const randomIndex = Math.floor(Math.random() * arrayOfQuery.length);
-        const { obj } = await SearchThatSound(arrayOfQuery[randomIndex]);
+        const arrayOfId = playerConfig.apiSuggestions;
+        const playlistOfIds = makePlaylist(arrayOfId);
+        const playlist = [];
 
-        const response = await fetch(obj.url);
+        for (let i = 0; i < playlistOfIds.length; i++) {
+          const soundId = playlistOfIds[i];
+          const { obj } = await SearchThatSound(soundId);
+          playlist.push({
+            id: soundId,
+            title: obj.title,
+            author: obj.author,
+            url: obj.url,
+            isCurrent: i === 0,
+          });
+        }
+
+        setPlaylist(playlist);
+
+        const firstTrack = playlist.find(p => p.isCurrent);
+        if (!firstTrack) {
+          throw new Error("Could not find first track in playlist.");
+        }
+
+        const response = await fetch(firstTrack.url);
+        if (!response.ok) {
+          throw new Error(
+            `Audio fetch failed for apiSearch: ${response.status} ${
+              response.statusText
+            }`
+          );
+        }
+        const size = response.headers.get('content-length');
+        if (size && parseInt(size, 10) > MAX_FILE_SIZE) {
+          throw new Error(
+            `Sound ID ${firstTrack.id} is too large (> ${
+              MAX_FILE_SIZE / 1024 / 1024
+            }MB)`
+          );
+        }
         const arrayBuffer = await response.arrayBuffer();
         audioBuffer = await audioCtx.decodeAudioData(arrayBuffer);
+
         setNotification({
-          message: `Now playing "${obj.title}" by ${obj.author}`,
+          message: `Now playing "${firstTrack.title}" by ${
+            firstTrack.author
+          }`,
         });
         setTimeout(() => {
           setNotification(null);
         }, 3000);
       } else {
-        console.error(
-          'playFromSource: besoin d’un AudioBuffer, ArrayBuffer ou string (URL)!'
-        );
-        return;
+        throw new Error(`Invalid source type: ${typeof sourcePathOrBuffer}`);
       }
 
-      // ✅ Stopper l’ancienne source si elle existe
+      // Stop and clean up previous source if it exists
       if (sourceNodeRef.current) {
+        sourceNodeRef.current.onended = null;
         try {
           sourceNodeRef.current.stop();
         } catch (e) {}
+        sourceNodeRef.current.disconnect();
       }
+      if (filterRef.current) filterRef.current.disconnect();
+      if (gainNodeRef.current) gainNodeRef.current.disconnect();
 
-      // BufferSource
+      // Create new audio graph
       const sourceNode = audioCtx.createBufferSource();
       sourceNode.buffer = audioBuffer;
       sourceNode.loop = title !== 'bowl';
       sourceNode.playbackRate.setValueAtTime(newSpeed, audioCtx.currentTime);
 
-      // Gain
-      const gainNode = audioCtx.createGain();
-      const finalGain = isFinite(newVol) ? newVol : volValue;
-      gainNode.gain.setValueAtTime(finalGain, audioCtx.currentTime);
+      if (sourcePath === 'apiSearch') {
+        sourceNode.onended = () => {
+          if (sourceNode.loop === false) {
+            refresh();
+          }
+        };
+      }
 
-      // Filtre
+      const gainNode = audioCtx.createGain();
+      gainNode.gain.setValueAtTime(
+        isFinite(newVol) ? newVol : volValue,
+        audioCtx.currentTime
+      );
+
       const filter = audioCtx.createBiquadFilter();
       filter.type = 'lowpass';
       filter.frequency.setValueAtTime(newFilter, audioCtx.currentTime);
 
-      // Chaînage
       sourceNode.connect(filter);
       filter.connect(gainNode);
       gainNode.connect(audioCtx.destination);
 
-      // Start
       sourceNode.start();
 
-      // Refs
       sourceNodeRef.current = sourceNode;
       gainNodeRef.current = gainNode;
       filterRef.current = filter;
 
       if (custom === 'perlinNoise') {
-        startPerlinModulation(0.5, finalGain);
+        startPerlinModulation(0.5, isFinite(newVol) ? newVol : volValue);
       }
 
       setIsLoading(false);
-    } catch (err) {
-      console.error('Erreur lors de la lecture du fichier :', err);
+    } catch (error) {
+      console.error(`[${title}] FATAL ERROR in playFromSource:`, error);
+      setNotification({ message: error.message });
+      setTimeout(() => setNotification(null), 5000);
+      setIsLoading(false);
+      setIsPlaying(false);
     }
   }
 
@@ -423,8 +502,23 @@ function Player({ title, sourcePath, custom, speed, stopAll }) {
     if (loadASnap) {
       setLoadASnap(false);
     }
+
+    // Stop and disconnect the main sound source
+    if (sourceNodeRef.current) {
+      sourceNodeRef.current.onended = null; // Prevent onended from firing on manual stop
+      try {
+        sourceNodeRef.current.stop();
+      } catch (e) {
+        // stop() can throw if already stopped or not started
+      }
+      sourceNodeRef.current.disconnect();
+      sourceNodeRef.current = null;
+    }
+
     if (noiseSourceRef.current) {
-      noiseSourceRef.current.stop();
+      try {
+        noiseSourceRef.current.stop();
+      } catch (e) {}
       noiseSourceRef.current.disconnect();
       noiseSourceRef.current = null;
     }
@@ -441,10 +535,8 @@ function Player({ title, sourcePath, custom, speed, stopAll }) {
       clearInterval(modulatorIntervalRef.current);
       modulatorIntervalRef.current = null;
     }
-    if (audioCtxRef.current) {
-      audioCtxRef.current.close();
-      audioCtxRef.current = null;
-    }
+
+    // We no longer close the audio context here to allow reuse
   }
 
   // STEREO ------------------------------------------------
@@ -503,21 +595,41 @@ function Player({ title, sourcePath, custom, speed, stopAll }) {
   // REFRESH -----------------------------------------------
   const refresh = async () => {
     setIsLoading(true);
-    const playerConfig = config.find(x => x.title == title);
-    const category = playerConfig.category;
-    const additionalApiParams = playerConfig.additionalApiFields || null;
-    const arrayOfQuery = playerConfig.apiSuggestions;
-    const randomIndex = Math.floor(Math.random() * arrayOfQuery.length);
-    const { obj } = await SearchThatSound(
-      arrayOfQuery[randomIndex],
-      category,
-      additionalApiParams
-    );
 
-    setCustomSound(obj);
-    setIsLoading(true);
-    stop();
-    playFromSource(obj.url, null, volValue, filterValue, playbackRate);
+    const currentIndex = playlist.findIndex(x => x.isCurrent);
+    if (currentIndex === -1) {
+      setIsLoading(false);
+      return; // Or handle error
+    }
+
+    const nextIndex = (currentIndex + 1) % playlist.length; // Loop back to start
+
+    const updatedPlaylist = playlist.map((track, index) => ({
+      ...track,
+      isCurrent: index === nextIndex,
+    }));
+
+    setPlaylist(updatedPlaylist);
+
+    const nextTrack = updatedPlaylist[nextIndex];
+
+    setNotification({
+      message: `Now playing "${nextTrack.title}" by ${nextTrack.author}`,
+    });
+    setTimeout(() => {
+      setNotification(null);
+    }, 3000);
+
+    setCustomSound(nextTrack);
+    stop(); // stop() is async, but we don't wait for it
+    playFromSource(
+      nextTrack.url,
+      null,
+      volValue,
+      filterValue,
+      playbackRate,
+      true
+    );
     setIsPlaying(true);
     setIsLoading(false);
   };
