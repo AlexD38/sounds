@@ -12,10 +12,11 @@ export const SearchThatSound = async query => {
 
   const obj = {
     url: mp3Preview,
-    title: query,
+    title: datas.name,
     image: datas.images['spectral_bw_l'],
     tags: datas.category,
     similar: datas.similar_sounds,
+    author: datas.username,
   };
   return { obj };
 };

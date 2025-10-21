@@ -17,6 +17,7 @@ function Player({ title, sourcePath, custom, speed, stopAll }) {
     playingSnap,
     setStopAll,
     randomSnap,
+    setNotification,
   } = useContext(Context);
 
   const [filterValue, setFilterValue] = useState(1800);
@@ -355,6 +356,12 @@ function Player({ title, sourcePath, custom, speed, stopAll }) {
         const response = await fetch(obj.url);
         const arrayBuffer = await response.arrayBuffer();
         audioBuffer = await audioCtx.decodeAudioData(arrayBuffer);
+        setNotification({
+          message: `Now playing "${obj.title}" by ${obj.author}`,
+        });
+        setTimeout(() => {
+          setNotification(null);
+        }, 3000);
       } else {
         console.error(
           'playFromSource: besoin d’un AudioBuffer, ArrayBuffer ou string (URL)!'
