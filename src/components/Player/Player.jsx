@@ -10,7 +10,6 @@ import './styles.css'; // Import local styles
 
 function Player({ title, sourcePath, custom, speed, stopAll }) {
   const {
-    snapshotMix,
     registerPlayerSituation,
     savedSnaps,
     loadASnap,
@@ -18,7 +17,6 @@ function Player({ title, sourcePath, custom, speed, stopAll }) {
     playingSnap,
     setStopAll,
     randomSnap,
-    setRandomSnap,
   } = useContext(Context);
 
   const [filterValue, setFilterValue] = useState(1800);
@@ -35,14 +33,11 @@ function Player({ title, sourcePath, custom, speed, stopAll }) {
   const gainNodeRef = useRef(null);
   const filterRef = useRef(null);
   const modulatorIntervalRef = useRef(null);
-  const limiterNodeRef = useRef(null); // Ajout de la ref pour le limiteur
   const normalizationFactorRef = useRef(1);
 
   const stereoNodesRef = useRef(null);
-  const token = import.meta.env.VITE_API_KEY;
 
-  const { customSound, setCustomSound, currentInput, setCurrentInput } =
-    useContext(Context);
+  const { setCustomSound } = useContext(Context);
 
   // On stocke les paramètres dans des refs pour y accéder dans le setInterval sans redéclencher l'effet
   const paramsRef = useRef({
@@ -300,18 +295,6 @@ function Player({ title, sourcePath, custom, speed, stopAll }) {
     const { gainNode, audioCtx, noiseSource } =
       soundTools.noise.createWhiteNoise(audioCtxRef, noiseSourceRef);
 
-    // Création du limiteur pour le bruit blanc
-    if (!limiterNodeRef.current) {
-      const limiter = audioCtx.createDynamicsCompressor();
-      limiter.threshold.setValueAtTime(-2, audioCtx.currentTime);
-      limiter.knee.setValueAtTime(0, audioCtx.currentTime);
-      limiter.ratio.setValueAtTime(20, audioCtx.currentTime);
-      limiter.attack.setValueAtTime(0.005, audioCtx.currentTime);
-      limiter.release.setValueAtTime(0.05, audioCtx.currentTime);
-      limiterNodeRef.current = limiter;
-    }
-    const limiter = limiterNodeRef.current;
-
     gainNode.gain.setValueAtTime(newVol, audioCtx.currentTime);
     gainNodeRef.current = gainNode;
 
@@ -322,8 +305,7 @@ function Player({ title, sourcePath, custom, speed, stopAll }) {
 
     // Chaînage avec le limiteur
     filter.connect(gainNode);
-    gainNode.connect(limiter);
-    limiter.connect(audioCtx.destination);
+    gainNode.connect(audioCtx.destination);
 
     noiseSource.connect(filter);
     noiseSource.start();
@@ -447,11 +429,7 @@ function Player({ title, sourcePath, custom, speed, stopAll }) {
       gainNodeRef.current.disconnect();
       gainNodeRef.current = null;
     }
-    // Déconnexion du limiteur
-    if (limiterNodeRef.current) {
-      limiterNodeRef.current.disconnect();
-      limiterNodeRef.current = null;
-    }
+
     if (modulatorIntervalRef.current) {
       clearInterval(modulatorIntervalRef.current);
       modulatorIntervalRef.current = null;
