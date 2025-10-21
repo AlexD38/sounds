@@ -58,7 +58,12 @@ export const SaveSnapshotMix = () => {
       {showInput && (
         <div className="snapshot-title-container">
           <h3>Name your snapshot : </h3>
-          <input className="snapshot-title-input" type="text" ref={inputRef} />
+          <input
+            className="snapshot-title-input"
+            type="text"
+            ref={inputRef}
+            autoFocus={true}
+          />
           <div className="snapshot-footer-container">
             <button onClick={handleSaveSnapshot}>Save</button>
             <button onClick={() => setShowInput(false)}>Cancel</button>

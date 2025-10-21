@@ -30,6 +30,7 @@ main {
   flex-wrap: wrap;
   gap: 1rem;
   max-width: 70%;
+  padding-top: 3rem;
 }
 
 .logo {
