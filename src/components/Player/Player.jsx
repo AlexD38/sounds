@@ -38,6 +38,12 @@ function Player({ title, sourcePath, custom, speed, stopAll }) {
   const modulatorIntervalRef = useRef(null);
   const normalizationFactorRef = useRef(1);
 
+  // Ref to hold the latest playlist state for the onended handler
+  const playlistRef = useRef(playlist);
+  useEffect(() => {
+    playlistRef.current = playlist;
+  }, [playlist]);
+
   const stereoNodesRef = useRef(null);
 
   const { setCustomSound } = useContext(Context);
@@ -344,7 +350,7 @@ function Player({ title, sourcePath, custom, speed, stopAll }) {
   ) {
     const audioCtx = audioCtxRef.current;
     if (!audioCtx) {
-      console.error("AudioContext not initialized. Cannot play sound.");
+      console.error('AudioContext not initialized. Cannot play sound.');
       return;
     }
 
@@ -367,14 +373,18 @@ function Player({ title, sourcePath, custom, speed, stopAll }) {
           const track = playlist.find(t => t.url === sourcePathOrBuffer);
           const trackId = track ? track.id : 'unknown';
           throw new Error(
-            `Sound ID ${trackId} is too large (> ${MAX_FILE_SIZE / 1024 / 1024}MB)`
+            `Sound ID ${trackId} is too large (> ${
+              MAX_FILE_SIZE / 1024 / 1024
+            }MB)`
           );
         }
         const arrayBuffer = await response.arrayBuffer();
         audioBuffer = await audioCtx.decodeAudioData(arrayBuffer);
       } else if (sourcePathOrBuffer instanceof ArrayBuffer) {
         if (sourcePathOrBuffer.byteLength > MAX_FILE_SIZE) {
-          throw new Error(`File too large to play (> ${MAX_FILE_SIZE / 1024 / 1024}MB)`);
+          throw new Error(
+            `File too large to play (> ${MAX_FILE_SIZE / 1024 / 1024}MB)`
+          );
         }
         audioBuffer = await audioCtx.decodeAudioData(
           sourcePathOrBuffer.slice(0)
@@ -401,15 +411,13 @@ function Player({ title, sourcePath, custom, speed, stopAll }) {
 
         const firstTrack = playlist.find(p => p.isCurrent);
         if (!firstTrack) {
-          throw new Error("Could not find first track in playlist.");
+          throw new Error('Could not find first track in playlist.');
         }
 
         const response = await fetch(firstTrack.url);
         if (!response.ok) {
           throw new Error(
-            `Audio fetch failed for apiSearch: ${response.status} ${
-              response.statusText
-            }`
+            `Audio fetch failed for apiSearch: ${response.status} ${response.statusText}`
           );
         }
         const size = response.headers.get('content-length');
@@ -424,9 +432,7 @@ function Player({ title, sourcePath, custom, speed, stopAll }) {
         audioBuffer = await audioCtx.decodeAudioData(arrayBuffer);
 
         setNotification({
-          message: `Now playing "${firstTrack.title}" by ${
-            firstTrack.author
-          }`,
+          message: `Now playing "${firstTrack.title}" by ${firstTrack.author}`,
         });
         setTimeout(() => {
           setNotification(null);
@@ -449,7 +455,7 @@ function Player({ title, sourcePath, custom, speed, stopAll }) {
       // Create new audio graph
       const sourceNode = audioCtx.createBufferSource();
       sourceNode.buffer = audioBuffer;
-      sourceNode.loop = title !== 'bowl';
+      sourceNode.loop = sourcePath !== 'apiSearch' && title !== 'bowl';
       sourceNode.playbackRate.setValueAtTime(newSpeed, audioCtx.currentTime);
 
       if (sourcePath === 'apiSearch') {
@@ -594,17 +600,22 @@ function Player({ title, sourcePath, custom, speed, stopAll }) {
 
   // REFRESH -----------------------------------------------
   const refresh = async () => {
-    setIsLoading(true);
+    const currentPlaylist = playlistRef.current;
+    const currentIndex = currentPlaylist.findIndex(x => x.isCurrent);
 
-    const currentIndex = playlist.findIndex(x => x.isCurrent);
     if (currentIndex === -1) {
-      setIsLoading(false);
-      return; // Or handle error
+      // This can happen if the playlist is empty or state is weird
+      return;
     }
 
-    const nextIndex = (currentIndex + 1) % playlist.length; // Loop back to start
+    // Resume context if it was suspended (e.g., tab was inactive)
+    if (audioCtxRef.current && audioCtxRef.current.state === 'suspended') {
+      await audioCtxRef.current.resume();
+    }
 
-    const updatedPlaylist = playlist.map((track, index) => ({
+    const nextIndex = (currentIndex + 1) % currentPlaylist.length; // Loop back to start
+
+    const updatedPlaylist = currentPlaylist.map((track, index) => ({
       ...track,
       isCurrent: index === nextIndex,
     }));
@@ -621,8 +632,10 @@ function Player({ title, sourcePath, custom, speed, stopAll }) {
     }, 3000);
 
     setCustomSound(nextTrack);
-    stop(); // stop() is async, but we don't wait for it
-    playFromSource(
+
+    // No longer calling stop(). playFromSource handles the transition.
+    // isPlaying state remains true.
+    await playFromSource(
       nextTrack.url,
       null,
       volValue,
@@ -630,8 +643,6 @@ function Player({ title, sourcePath, custom, speed, stopAll }) {
       playbackRate,
       true
     );
-    setIsPlaying(true);
-    setIsLoading(false);
   };
 
   return (
@@ -764,7 +775,7 @@ function Player({ title, sourcePath, custom, speed, stopAll }) {
                   )}
                   {sourcePath == 'apiSearch' && (
                     <button onClick={refresh}>
-                      <i className="fa-solid fa-arrows-rotate playing"></i>{' '}
+                      <i className="fa-solid fa-forward playing"></i>{' '}
                     </button>
                   )}
                 </>
