@@ -95,7 +95,6 @@ export const config = [
     apiSuggestions: ['chatter', 'people', 'crowd'],
     titleSuggestions: ['breath', 'bowl'],
     category: 'Soundscapes',
-    speed: true,
   },
   {
     title: 'book',

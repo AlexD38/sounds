@@ -73,3 +73,57 @@
     opacity: 0;
   }
 }
+
+/* Player Animation Styles */
+.player-container {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  min-width: 9rem;
+  min-height: 5rem;
+  padding: 1rem;
+  border-radius: 1rem;
+  filter: contrast(50%);
+  cursor: pointer;
+  transition: all 0.4s cubic-bezier(0.25, 0.8, 0.25, 1), filter 0.8s ease;
+  overflow: hidden;
+}
+
+.player-container:hover {
+  background-color: #ffffff09;
+  transition: all 0.3s ease;
+}
+
+.player-container:hover i {
+  transition: all 0.2s ease 0.1s;
+  color: #faeab1;
+}
+
+.player-container.is-playing {
+  min-height: 18rem;
+  min-width: 12rem;
+  filter: contrast(100%);
+  background-color: #ffffff09;
+}
+
+.player-container.is-playing h3,
+.player-container.is-playing i {
+  color: #faeab1;
+}
+
+/* CSSTransition styles */
+.fade-enter {
+  opacity: 0;
+}
+.fade-enter-active {
+  opacity: 1;
+  transition: opacity 700ms ease-in-out;
+}
+.fade-exit {
+  opacity: 1;
+}
+.fade-exit-active {
+  opacity: 0;
+  transition: opacity 200ms ease-in;
+}

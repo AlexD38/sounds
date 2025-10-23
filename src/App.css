@@ -61,30 +61,8 @@ main {
 
 /* ------------------COMP CSS------------------------- */
 
-.player-container {
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  min-width: 9rem;
-  padding: 1rem;
-  align-items: center;
-  border-radius: 1rem;
-  filter: contrast(50%);
-  transition: all 0.3s ease;
-  transition: all 0.3s ease;
-  cursor: pointer;
-}
 i {
   color: #34656d;
-}
-.player-container:hover {
-  background-color: #ffffff09;
-  color: #faeab1;
-  transition: all 0.3s ease;
-}
-.player-container:hover i {
-  color: #faeab1;
-  transition: all 0.5s ease;
 }
 
 .main-container {
@@ -154,14 +132,7 @@ i {
 .playing {
   color: #faeab1;
 }
-.is-playing {
-  filter: contrast(100%);
-  transition: all 0.8s ease;
-}
-.expand {
-  background-color: #ffffff09;
-  transition: all 0.3s ease;
-}
+
 .title {
   font-size: 2.5rem;
 }

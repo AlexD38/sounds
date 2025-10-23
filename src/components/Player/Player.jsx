@@ -1,4 +1,5 @@
 import { useContext, useEffect, useRef, useState } from 'react';
+import { CSSTransition } from 'react-transition-group';
 import '../../App.css';
 import { Context } from '../../context/context';
 import { config } from '../../ref/random.config';
@@ -37,6 +38,7 @@ function Player({ title, sourcePath, custom, speed, stopAll }) {
   const filterRef = useRef(null);
   const modulatorIntervalRef = useRef(null);
   const normalizationFactorRef = useRef(1);
+  const nodeRef = useRef(null);
 
   // Ref to hold the latest playlist state for the onended handler
   const playlistRef = useRef(playlist);
@@ -648,16 +650,12 @@ function Player({ title, sourcePath, custom, speed, stopAll }) {
   return (
     <div
       data-stop={true}
-      className={
-        isPlaying
-          ? ' player-container is-playing playing expand'
-          : 'player-container'
-      }
+      className={isPlaying ? 'player-container is-playing' : 'player-container'}
       onClick={event =>
         play(event, sourcePath, custom, volValue, filterValue, playbackRate)
       }
     >
-      <h3 className={isPlaying ? 'playing' : ''}>
+      <h3>
         <PlayerTitle title={title} isPlaying={isPlaying} />
       </h3>
       {title == 'bowl' && isPlaying && (
@@ -665,46 +663,34 @@ function Player({ title, sourcePath, custom, speed, stopAll }) {
           (on repeat every {(bowlInterval / 1000).toFixed(1)}s)
         </span>
       )}
-      {isPlaying &&
-        (isLoading ? (
-          <i className="fa-solid fa-spinner loader"></i>
-        ) : (
-          <div className="main-container">
-            {isPlaying && (
+      <CSSTransition
+        in={isPlaying}
+        timeout={{ enter: 0, exit: 0 }}
+        classNames="fade"
+        unmountOnExit
+        nodeRef={nodeRef}
+      >
+        <div ref={nodeRef} className="main-container">
+          {isLoading ? (
+            <i className="fa-solid fa-spinner loader"></i>
+          ) : (
+            <>
               <div className="sliders-container">
                 <div className="sliders-labels">
                   <span>
-                    <i
-                      className={
-                        isPlaying
-                          ? 'fa-solid fa-filter playing'
-                          : 'fa-solid fa-filter'
-                      }
-                    ></i>
+                    <i className="fa-solid fa-filter"></i>
                   </span>
-                  {title === 'bowl' && isPlaying && (
+                  {title === 'bowl' && (
                     <span>
-                      <i className="fa-solid fa-clock playing"></i>
+                      <i className="fa-solid fa-clock"></i>
                     </span>
                   )}
                   <span>
-                    <i
-                      className={
-                        isPlaying
-                          ? 'fa-solid fa-volume-high playing'
-                          : 'fa-solid fa-volume-high'
-                      }
-                    ></i>
+                    <i className="fa-solid fa-volume-high"></i>
                   </span>
                   {speed && (
                     <span>
-                      <i
-                        className={
-                          isPlaying
-                            ? 'fa-solid fa-gauge-high playing'
-                            : 'fa-solid fa-gauge-high'
-                        }
-                      ></i>
+                      <i className="fa-solid fa-gauge-high"></i>
                     </span>
                   )}
                 </div>
@@ -718,7 +704,7 @@ function Player({ title, sourcePath, custom, speed, stopAll }) {
                     onChange={handleFilterValue}
                     value={filterValue}
                   />
-                  {title === 'bowl' && isPlaying && (
+                  {title === 'bowl' && (
                     <>
                       <input
                         className="interval-range"
@@ -753,36 +739,32 @@ function Player({ title, sourcePath, custom, speed, stopAll }) {
                   )}
                 </div>
               </div>
-            )}
 
-            <div className="btn-container">
-              {isPlaying && (
+              <div className="btn-container">
                 <>
                   <button onClick={stop} data-stop={true}>
-                    <i
-                      className="fa-solid fa-pause playing"
-                      data-stop={true}
-                    ></i>
+                    <i className="fa-solid fa-pause" data-stop={true}></i>
                   </button>
                   {title !== 'bowl' && (
                     <button onClick={toggleStereoEffect}>
                       <i
                         className={`fa-solid ${
                           isStereo ? 'fa-check-double' : 'fa-check'
-                        } playing`}
+                        }`}
                       ></i>
                     </button>
                   )}
                   {sourcePath == 'apiSearch' && (
                     <button onClick={refresh}>
-                      <i className="fa-solid fa-forward playing"></i>{' '}
+                      <i className="fa-solid fa-forward"></i>{' '}
                     </button>
                   )}
                 </>
-              )}
-            </div>
-          </div>
-        ))}
+              </div>
+            </>
+          )}
+        </div>
+      </CSSTransition>
     </div>
   );
 }
