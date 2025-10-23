@@ -90,6 +90,18 @@ export const config = [
     category: 'Soundscapes',
   },
   {
+    title: 'book',
+    apiSuggestions: ['reading', 'book'],
+    titleSuggestions: ['book'],
+    category: 'Soundscapes',
+  },
+  {
+    title: 'writing',
+    apiSuggestions: ['writing', 'feather'],
+    titleSuggestions: ['feather'],
+    category: 'Soundscapes',
+  },
+  {
     title: 'music',
     apiSuggestions: [
       501199, 750021, 746982, 706660, 706660, 524327, 747495, 745762, 745828,

@@ -7,6 +7,26 @@
   }
 }
 
+.quote-container {
+  /* border: 1px solid red; */
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: flex-end;
+  text-align: right;
+  width: 50vw;
+  margin: 0;
+  margin-top: 2rem;
+}
+.quote {
+  font-size: 1.5rem;
+  margin: 0;
+}
+.author {
+  font-style: italic;
+  font-weight: 300;
+}
+
 .loader-container {
   font-size: 1.5rem;
   color: #faeab1;
@@ -62,5 +82,15 @@
   }
   100% {
     clip-path: polygon(50% 50%, 0 0, 100% 0, 100% 100%, 0 100%, 0 0);
+  }
+}
+@media (max-width: 768px) {
+  .quote-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+  }
+  .quote {
+    text-align: center;
   }
 }

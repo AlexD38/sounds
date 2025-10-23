@@ -52,7 +52,7 @@ function App() {
       >
         {title}
       </h1>
-      {loaderPerc < 100 && <Loader perc={loaderPerc} />}
+      {loaderPerc < 100 && <Loader perc={loaderPerc} quote={true} />}
       {loaderPerc == 100 && (
         <>
           <StopAll />
@@ -89,6 +89,22 @@ function App() {
                   sourcePath={cachedAudios.fire}
                   custom="perlinNoise"
                   stopAll={stopAll}
+                />
+              )}
+              {isReady.includes('book') && (
+                <Player
+                  title={'book'}
+                  sourcePath={cachedAudios.book}
+                  stopAll={stopAll}
+                />
+              )}
+              {isReady.includes('writing') && (
+                <Player
+                  title={'writing'}
+                  sourcePath={cachedAudios.writing}
+                  custom="perlinNoise"
+                  stopAll={stopAll}
+                  speed={true}
                 />
               )}
               {isReady.includes('lake') && (
@@ -139,7 +155,6 @@ function App() {
                 <Player
                   title={'thunder'}
                   sourcePath={cachedAudios.thunder}
-                  custom="perlinNoise"
                   speed={true}
                   stopAll={stopAll}
                 />
@@ -166,7 +181,6 @@ function App() {
                 <Player
                   title={'scary'}
                   sourcePath={cachedAudios.scary}
-                  custom="perlinNoise"
                   speed={true}
                   stopAll={stopAll}
                 />
@@ -175,7 +189,6 @@ function App() {
                 <Player
                   title={'crow'}
                   sourcePath={cachedAudios.crow}
-                  custom="perlinNoise"
                   stopAll={stopAll}
                 />
               )}

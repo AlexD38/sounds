@@ -27,11 +27,11 @@
 }
 
 @media (max-width: 768px) {
-  .logo {
+  /* .logo {
     position: relative;
     margin: 0 auto;
     margin-bottom: 3rem;
-  }
+  } */
   .stop-all-container {
     top: 9rem;
   }

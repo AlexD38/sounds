@@ -40,8 +40,13 @@ export function ContextProvider({ children }) {
 
     const fetchData = async () => {
       for (const { title } of config) {
+        console.log('#'.repeat(20));
+        console.log('processing : ', title);
         if (title === 'whiteNoise' || title === 'music') continue;
-        processSound({ title });
+        await processSound({ title });
+        console.log('processed !');
+        console.log('#'.repeat(20));
+        console.log('\n');
       }
     };
 
