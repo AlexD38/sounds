@@ -22,12 +22,14 @@ export const config = [
     apiSuggestions: ['ocean', 'waves', 'sea'],
     titleSuggestions: ['ocean', 'sea', 'beach', 'lake', 'waves'],
     category: 'Soundscapes',
+    speed: true,
   },
   {
     title: 'lake',
     apiSuggestions: ['ocean', 'waves', 'sea'],
     titleSuggestions: ['lake', 'waves'],
     category: 'Soundscapes',
+    speed: true,
   },
   {
     title: 'lightRain',
@@ -40,18 +42,21 @@ export const config = [
     apiSuggestions: ['rain', 'heavy rain', 'storm'],
     titleSuggestions: ['rainy', 'heavy rain', 'rain'],
     category: 'Soundscapes',
+    speed: true,
   },
   {
     title: 'thunder',
     apiSuggestions: ['thunder', 'thunderstorm', 'lightning'],
     titleSuggestions: ['thunder', 'stormy'],
     category: 'Soundscapes',
+    speed: true,
   },
   {
     title: 'train',
     apiSuggestions: ['train', 'railroad', 'subway'],
     titleSuggestions: ['train', 'railroad', 'subway', 'voyage', 'journey'],
     category: 'Soundscapes',
+    speed: true,
   },
   {
     title: 'night',
@@ -64,6 +69,7 @@ export const config = [
     apiSuggestions: [],
     titleSuggestions: ['wind'],
     category: 'Soundscapes',
+    speed: true,
   },
   {
     title: 'scary',
@@ -82,24 +88,28 @@ export const config = [
     apiSuggestions: ['chatter', 'people', 'crowd'],
     titleSuggestions: ['chatter', 'crowd', 'ambience'],
     category: 'Soundscapes',
+    speed: true,
   },
   {
     title: 'bowl',
     apiSuggestions: ['chatter', 'people', 'crowd'],
     titleSuggestions: ['breath', 'bowl'],
     category: 'Soundscapes',
+    speed: true,
   },
   {
     title: 'book',
     apiSuggestions: ['reading', 'book'],
     titleSuggestions: ['book'],
     category: 'Soundscapes',
+    speed: true,
   },
   {
     title: 'writing',
     apiSuggestions: ['writing', 'feather'],
     titleSuggestions: ['feather'],
     category: 'Soundscapes',
+    speed: true,
   },
   {
     title: 'music',

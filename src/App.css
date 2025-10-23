@@ -88,7 +88,7 @@ i {
 }
 
 .main-container {
-  padding: 1rem;
+  /* padding: 1rem; */
   width: fit-content;
   display: flex;
   flex-direction: column;
@@ -102,16 +102,17 @@ i {
   justify-content: center;
   align-items: center;
   gap: 0.5rem;
-  margin-top: 3rem;
+  margin-top: 1rem;
 }
 .sliders-container {
   display: flex;
   justify-content: flex-start;
   flex-direction: row;
   align-items: center;
-  gap: 1rem;
+  gap: 0.5rem;
   min-width: 70%;
   position: relative;
+  margin: 1rem 0;
 }
 
 .sliders-labels {
@@ -120,8 +121,7 @@ i {
   justify-content: center;
   align-items: center;
   width: 20%;
-  height: 100%;
-  gap: 2rem;
+  gap: 1rem;
 }
 .sliders-labels * {
   font-size: 1.2rem;

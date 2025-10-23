@@ -80,7 +80,7 @@ export const RandomSnapGenerator = () => {
     setLoadASnap(true);
     setPlayingSnap(finalTitle);
     setNotification({
-      message: `Now Playing auto generated :  "${finalTitle}"`,
+      message: `Now Playing auto generated playlist`,
     });
     setStopAll(false);
 

@@ -25,8 +25,6 @@ export function ContextProvider({ children }) {
   //Cache ------------------------
   useEffect(() => {
     const processSound = async ({ title }) => {
-      if (title === 'whiteNoise' || title === 'music') return;
-
       try {
         const audioBuffer = await cacheManager.decodeSound({ title });
         if (audioBuffer) {
@@ -40,13 +38,8 @@ export function ContextProvider({ children }) {
 
     const fetchData = async () => {
       for (const { title } of config) {
-        console.log('#'.repeat(20));
-        console.log('processing : ', title);
-        if (title === 'whiteNoise' || title === 'music') continue;
-        await processSound({ title });
-        console.log('processed !');
-        console.log('#'.repeat(20));
-        console.log('\n');
+        if (title == 'whiteNoise' || title == 'music') continue;
+        processSound({ title });
       }
     };
 

@@ -16,7 +16,7 @@ export const PlayerTitle = ({ title, isPlaying }) => {
     iconLabel = 'water';
   } else if (title === 'lightRain') {
     iconLabel = 'umbrella';
-  } else if (title === 'rain') {
+  } else if (title === 'heavyRain') {
     iconLabel = 'cloud-rain';
   } else if (title === 'thunder') {
     iconLabel = 'cloud-bolt';
