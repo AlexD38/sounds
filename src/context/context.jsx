@@ -21,6 +21,24 @@ export function ContextProvider({ children }) {
   const [cachedAudios, setCachedAudios] = useState(null);
   const [isReady, setIsReady] = useState([]);
   const [playlist, setPlaylist] = useState([]);
+  const [zenQuote, setZenQuote] = useState(null);
+
+  // QUOTE ---------------------------------------------------------
+  useEffect(() => {
+    const fetchQuote = async () => {
+      try {
+        const response = await fetch(
+          'https://quoteslate.vercel.app/api/quotes/random'
+        );
+        const data = await response.json();
+        setZenQuote(data);
+      } catch (error) {
+        console.error('Erreur de chargement de la citation :', error);
+      }
+    };
+
+    fetchQuote();
+  }, []);
 
   //Cache ------------------------
   useEffect(() => {
@@ -145,6 +163,7 @@ export function ContextProvider({ children }) {
       isReady,
       playlist,
       setPlaylist,
+      zenQuote,
     }),
     [
       theme,

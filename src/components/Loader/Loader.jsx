@@ -1,26 +1,9 @@
-import { useEffect, useState } from 'react';
+import { useContext, useEffect, useState } from 'react';
 import './styles.css';
+import { Context } from '../../context/context';
 
 export const Loader = ({ perc, quote }) => {
-  const [zenQuote, setZenQuote] = useState(null);
-
-  useEffect(() => {
-    if (!quote) return; // n'appelle l'API que si 'quote' est vrai
-
-    const fetchQuote = async () => {
-      try {
-        const response = await fetch(
-          'https://quoteslate.vercel.app/api/quotes/random'
-        );
-        const data = await response.json();
-        setZenQuote(data);
-      } catch (error) {
-        console.error('Erreur de chargement de la citation :', error);
-      }
-    };
-
-    fetchQuote();
-  }, [quote]); // <-- dépendance pour relancer si 'quote' change
+  const { zenQuote } = useContext(Context);
 
   return (
     <>
