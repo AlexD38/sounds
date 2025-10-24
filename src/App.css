@@ -158,3 +158,36 @@ i {
     top: 10rem;
   }
 }
+
+.pwa-install-button {
+  position: fixed;
+  top: 1rem;
+  right: 1rem;
+  background-color: #34656d;
+  color: #faeab1;
+  border: none;
+  padding: 0.5rem 1rem;
+  border-radius: 5px;
+  cursor: pointer;
+  z-index: 1000;
+  transition: all 0.3s ease-in-out;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.pwa-install-button > i {
+  color: #faeab1;
+  transition: all 0.3s ease-in-out;
+}
+
+.pwa-install-button:hover {
+  transition: all 0.3s ease-in-out;
+  background-color: #faeab1;
+  color: #34656d;
+}
+.pwa-install-button:hover > i {
+  transition: all 0.3s ease-in-out;
+  color: #34656d;
+}

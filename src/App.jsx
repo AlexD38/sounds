@@ -22,6 +22,35 @@ function App() {
       Ambient <i className="fa-solid fa-compass-drafting"></i> Architect
     </>
   );
+  const [installPromptEvent, setInstallPromptEvent] = useState(null);
+
+  useEffect(() => {
+    const handleBeforeInstallPrompt = event => {
+      event.preventDefault();
+      setInstallPromptEvent(event);
+    };
+
+    window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
+
+    return () => {
+      window.removeEventListener(
+        'beforeinstallprompt',
+        handleBeforeInstallPrompt
+      );
+    };
+  }, []);
+
+  const handleInstallClick = () => {
+    if (installPromptEvent) {
+      installPromptEvent.prompt();
+      installPromptEvent.userChoice.then(choiceResult => {
+        if (choiceResult.outcome === 'accepted') {
+          console.log('User accepted the install prompt');
+        }
+        setInstallPromptEvent(null);
+      });
+    }
+  };
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -59,6 +88,11 @@ function App() {
           <SaveSnapshotMix />
           <Timer />
           <RandomSnapGenerator />
+          {installPromptEvent && (
+            <button className="pwa-install-button" onClick={handleInstallClick}>
+              <i class="fa-solid fa-puzzle-piece"></i>Installer l'application
+            </button>
+          )}
           {/* <SearchSound /> */}
           {/* <Stretcher source={windows} custom="perlinNoise" /> */}
           {savedSnaps.size > 0 && <SavedSnaps />}
