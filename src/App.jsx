@@ -90,7 +90,8 @@ function App() {
           <RandomSnapGenerator />
           {installPromptEvent && (
             <button className="pwa-install-button" onClick={handleInstallClick}>
-              <i class="fa-solid fa-puzzle-piece"></i>Installer l'application
+              <i className="fa-solid fa-puzzle-piece"></i>Installer
+              l'application
             </button>
           )}
           {/* <SearchSound /> */}
