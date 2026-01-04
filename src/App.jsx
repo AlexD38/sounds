@@ -12,6 +12,8 @@ import { StopAll } from './components/StopAll/StopAll';
 import { Timer } from './components/timer/Timer';
 import { config } from './ref/random.config';
 import { Loader } from './components/Loader/Loader';
+import Stretcher from './strecther/Stretcher';
+import chopinSound from '/assets/sounds/stretch.mp3';
 
 function App() {
   const { stopAll, cachedAudios, isReady, savedSnaps } = useContext(Context);
@@ -95,7 +97,7 @@ function App() {
             </button>
           )}
           {/* <SearchSound /> */}
-          {/* <Stretcher source={windows} custom="perlinNoise" /> */}
+          <Stretcher source={chopinSound} custom="perlinNoise" />
           {savedSnaps.size > 0 && <SavedSnaps />}
           <main>
             <>

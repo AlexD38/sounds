@@ -148,19 +148,6 @@ export default function Stretcher({ source }) {
           <button onClick={handleStop}>Stop</button>
         </>
       )}
-      <div style={{ marginTop: 15 }}>
-        <label htmlFor="filterFreq">Low-pass Freq: {filterValue} Hz</label>
-        <input
-          type="range"
-          id="filterFreq"
-          min="100"
-          max="5000"
-          step="10"
-          value={filterValue}
-          onChange={handleFilterValue}
-          style={{ width: '100%' }}
-        />
-      </div>
     </div>
   );
 }
