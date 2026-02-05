@@ -169,7 +169,7 @@ i {
   padding: 0.5rem 1rem;
   border-radius: 5px;
   cursor: pointer;
-  z-index: 1000;
+  z-index: 3;
   transition: all 0.3s ease-in-out;
   display: flex;
   justify-content: center;

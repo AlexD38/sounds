@@ -6,6 +6,7 @@
   color: #334443;
   padding: 1rem 0.6rem;
   border-radius: 0.5rem;
+  z-index: 99999;
 }
 
 .notif-icon {
