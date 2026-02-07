@@ -42,6 +42,14 @@ export const PlayerTitle = ({ title, isPlaying }) => {
     iconLabel = 'bell';
   } else if (title == 'wind') {
     iconLabel = 'wind';
+  } else if (title == 'cat') {
+    iconLabel = 'paw';
+  } else if (title == 'forest') {
+    iconLabel = 'tree';
+  } else if (title == 'home') {
+    iconLabel = 'house-chimney';
+  } else if (title == 'city') {
+    iconLabel = 'city';
   } else {
     return title;
   }

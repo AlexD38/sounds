@@ -111,6 +111,34 @@ export const config = [
     speed: true,
   },
   {
+    title: 'cat',
+    apiSuggestions: ['purring', 'cat'],
+    titleSuggestions: ['cat'],
+    category: 'Soundscapes',
+    speed: true,
+  },
+  {
+    title: 'forest',
+    apiSuggestions: ['forest', 'srping'],
+    titleSuggestions: ['tree'],
+    category: 'Soundscapes',
+    speed: true,
+  },
+  {
+    title: 'city',
+    apiSuggestions: ['street', 'city'],
+    titleSuggestions: ['city'],
+    category: 'Soundscapes',
+    speed: true,
+  },
+  {
+    title: 'home',
+    apiSuggestions: ['home', 'cosy'],
+    titleSuggestions: ['cosy'],
+    category: 'Soundscapes',
+    speed: true,
+  },
+  {
     title: 'music',
     apiSuggestions: [
       501199, 750021, 746982, 706660, 706660, 524327, 747495, 745762, 745828,

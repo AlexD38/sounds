@@ -29,7 +29,7 @@ main {
   align-items: center;
   flex-wrap: wrap;
   gap: 1rem;
-  max-width: 70%;
+  max-width: 80%;
   padding-top: 3rem;
 }
 
@@ -156,6 +156,9 @@ i {
   }
   .snapshot-saver {
     top: 10rem;
+  }
+  .player-container {
+    min-width: none;
   }
 }
 
