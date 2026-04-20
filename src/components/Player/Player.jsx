@@ -28,7 +28,7 @@ function Player({ title, sourcePath, custom, speed, stopAll }) {
   const [isPlaying, setIsPlaying] = useState(false);
   const [playbackRate, setPlaybackRate] = useState(1);
   const [isStereo, setIsStereo] = useState(false);
-  const [isLoading, setIsLoading] = useState(true);
+  const [isLoading, setIsLoading] = useState(false);
   const [reverbValue, setReverbValue] = useState(0.3); // 0 to 1 (wet level)
   const [reverbDuration, setReverbDuration] = useState(2.5); // seconds
   const [indicatorText, setIndicatorText] = useState('');
@@ -37,6 +37,7 @@ function Player({ title, sourcePath, custom, speed, stopAll }) {
   const [bowlInterval, setBowlInterval] = useState(5000);
 
   const audioCtxRef = useRef(null);
+  const audioBufferRef = useRef(null);
   const sourceNodeRef = useRef(null);
   const noiseSourceRef = useRef(null);
   const gainNodeRef = useRef(null);
@@ -406,72 +407,70 @@ function Player({ title, sourcePath, custom, speed, stopAll }) {
   ) {
     const audioCtx = initAudioContext();
     if (audioCtx.state === 'suspended') await audioCtx.resume();
-    setIsLoading(true);
 
     try {
-      let a;
+      let audioBuffer = audioBufferRef.current;
 
-      // 1. OBTENTION DE L'INSTANCE AUDIO (soit Bruit Blanc, soit API, soit Fichier)
-      if (title === 'whiteNoise' || (!source && !custom)) {
-        // Génération du bruit blanc via un tableau PCM pour audio.js
-        const sr = audioCtx.sampleRate;
-        const len = sr * 2; // 2 secondes de boucle
-        const data = new Float32Array(len);
-        let lastOut = 0.0;
-        for (let i = 0; i < len; i++) {
-          const white = Math.random() * 2 - 1;
-          data[i] = (lastOut + 0.02 * white) / 1.02;
-          lastOut = data[i];
-          data[i] *= 3.5;
-        }
-        // On crée une instance audio.js à partir des données brutes
-        a = Audio.from([data], { sampleRate: sr });
-      } else {
-        let audioSource = source;
-        if (source === 'apiSearch') {
-          const playerConfig = config.find(x => x.title === title);
-          const playlistOfIds = makePlaylist(playerConfig.apiSuggestions);
-          const newPlaylist = [];
+      // Si on n'a pas encore le buffer en cache, on le charge
+      if (!audioBuffer) {
+        setIsLoading(true);
 
-          for (let i = 0; i < playlistOfIds.length; i++) {
-            const { obj } = await SearchThatSound(playlistOfIds[i]);
-            newPlaylist.push({
-              id: playlistOfIds[i],
-              title: obj.title,
-              author: obj.author,
-              url: obj.url,
-              isCurrent: i === 0,
-            });
+        // 1. OBTENTION DE L'INSTANCE AUDIO (soit Bruit Blanc, soit API, soit Fichier)
+        if (title === 'whiteNoise' || (!source && !custom)) {
+          // Génération du bruit blanc via un tableau PCM
+          const sr = audioCtx.sampleRate;
+          const len = sr * 2; // 2 secondes de boucle
+          const data = new Float32Array(len);
+          let lastOut = 0.0;
+          for (let i = 0; i < len; i++) {
+            const white = Math.random() * 2 - 1;
+            data[i] = (lastOut + 0.02 * white) / 1.02;
+            lastOut = data[i];
+            data[i] *= 3.5;
           }
-          setPlaylist(newPlaylist);
-          const firstTrack = newPlaylist.find(p => p.isCurrent);
-          audioSource = firstTrack.url;
-          setNotification({
-            message: `Now playing "${firstTrack.title}" by ${firstTrack.author}`,
-          });
-          setTimeout(() => setNotification(null), 3000);
+          audioBuffer = audioCtx.createBuffer(1, len, sr);
+          audioBuffer.copyToChannel(data, 0);
+        } else {
+          let audioSource = source;
+          if (source === 'apiSearch') {
+            const playerConfig = config.find(x => x.title === title);
+            const playlistOfIds = makePlaylist(playerConfig.apiSuggestions);
+            const newPlaylist = [];
+
+            for (let i = 0; i < playlistOfIds.length; i++) {
+              const { obj } = await SearchThatSound(playlistOfIds[i]);
+              newPlaylist.push({
+                id: playlistOfIds[i],
+                title: obj.title,
+                author: obj.author,
+                url: obj.url,
+                isCurrent: i === 0,
+              });
+            }
+            setPlaylist(newPlaylist);
+            const firstTrack = newPlaylist.find(p => p.isCurrent);
+            audioSource = firstTrack.url;
+            setNotification({
+              message: `Now playing "${firstTrack.title}" by ${firstTrack.author}`,
+            });
+            setTimeout(() => setNotification(null), 3000);
+          }
+
+          if (!audioSource) {
+            throw new Error('No audio source provided');
+          }
+
+          // Chargement et décodage standard
+          const response = await fetch(audioSource);
+          const arrayBuffer = await response.arrayBuffer();
+          audioBuffer = await audioCtx.decodeAudioData(arrayBuffer);
         }
 
-        if (!audioSource) {
-          throw new Error('No audio source provided');
+        // On met en cache pour la prochaine fois (sauf si c'est du bruit blanc régénéré ou API dynamique)
+        if (source !== 'apiSearch') {
+          audioBufferRef.current = audioBuffer;
         }
-
-        // Chargement standard via audio.js
-        a = await Audio(audioSource);
       }
-
-      // 2. TRAITEMENT COMMUN (Décodage et préparation du buffer)
-      const pcm = await a.read();
-      if (!pcm || !pcm.length || !pcm[0].length) {
-        throw new Error('Audio data is empty or invalid');
-      }
-
-      const audioBuffer = audioCtx.createBuffer(
-        pcm.length,
-        pcm[0].length,
-        a.sampleRate
-      );
-      pcm.forEach((ch, i) => audioBuffer.copyToChannel(ch, i));
 
       // 3. NETTOYAGE DES ANCIENS NOEUDS
       if (sourceNodeRef.current) {

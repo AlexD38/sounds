@@ -11,12 +11,10 @@ import { SavedSnaps } from './components/SavedSnaps/SavedSnaps';
 import { StopAll } from './components/StopAll/StopAll';
 import { Timer } from './components/timer/Timer';
 import { config } from './ref/random.config';
-import { Loader } from './components/Loader/Loader';
 
 function App() {
-  const { stopAll, cachedAudios, isReady, savedSnaps } = useContext(Context);
+  const { stopAll, savedSnaps } = useContext(Context);
   const [opacity, setOpacity] = useState(1);
-  const [loaderPerc, setLoaderPerc] = useState(0);
   const [title, setTitle] = useState(
     <>
       Ambient <i className="fa-solid fa-compass-drafting"></i> Architect
@@ -67,12 +65,6 @@ function App() {
     return () => clearTimeout(timer);
   }, []);
 
-  useEffect(() => {
-    const readyToDIsplay = [...new Set(isReady)];
-    const percentage = ((readyToDIsplay.length + 2) / config.length) * 100;
-    setLoaderPerc(percentage);
-  }, [isReady]);
-
   return (
     <>
       <h1
@@ -81,54 +73,51 @@ function App() {
       >
         {title}
       </h1>
-      {loaderPerc < 100 && <Loader perc={loaderPerc} quote={true} />}
-      {loaderPerc >= 100 && (
+      <StopAll />
+      <SaveSnapshotMix />
+      <Timer />
+      <RandomSnapGenerator />
+      {installPromptEvent && (
+        <button className="pwa-install-button" onClick={handleInstallClick}>
+          <i className="fa-solid fa-puzzle-piece"></i>Installer
+          l'application
+        </button>
+      )}
+      {/* <SearchSound /> */}
+      {/* <Stretcher source={windows} custom="perlinNoise" /> */}
+      {savedSnaps.size > 0 && <SavedSnaps />}
+      <main>
         <>
-          <StopAll />
-          <SaveSnapshotMix />
-          <Timer />
-          <RandomSnapGenerator />
-          {installPromptEvent && (
-            <button className="pwa-install-button" onClick={handleInstallClick}>
-              <i className="fa-solid fa-puzzle-piece"></i>Installer
-              l'application
-            </button>
-          )}
-          {/* <SearchSound /> */}
-          {/* <Stretcher source={windows} custom="perlinNoise" /> */}
-          {savedSnaps.size > 0 && <SavedSnaps />}
-          <main>
-            <>
-              {config.map(player =>
-                cachedAudios[player.title] ? (
-                  <Player
-                    key={player.title}
-                    title={player.title}
-                    sourcePath={cachedAudios[player.title]}
-                    custom="perlinNoise"
-                    stopAll={stopAll}
-                    speed={player.speed || false} // si besoin
-                  />
-                ) : null
-              )}
+          {config.map(player => {
+            if (player.title === 'whiteNoise' || player.title === 'music')
+              return null;
+            return (
               <Player
-                title={'whiteNoise'}
+                key={player.title}
+                title={player.title}
+                sourcePath={`assets/sounds/${player.title}.mp3`}
                 custom="perlinNoise"
                 stopAll={stopAll}
+                speed={player.speed || false}
               />
+            );
+          })}
+          <Player
+            title={'whiteNoise'}
+            custom="perlinNoise"
+            stopAll={stopAll}
+          />
 
-              <Player
-                title={'music'}
-                sourcePath={'apiSearch'}
-                custom={true}
-                speed={true}
-                stopAll={stopAll}
-              />
-            </>
-          </main>
-          <Notification />
+          <Player
+            title={'music'}
+            sourcePath={'apiSearch'}
+            custom={true}
+            speed={true}
+            stopAll={stopAll}
+          />
         </>
-      )}
+      </main>
+      <Notification />
     </>
   );
 }

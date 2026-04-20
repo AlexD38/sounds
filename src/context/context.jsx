@@ -42,26 +42,9 @@ export function ContextProvider({ children }) {
 
   //Cache ------------------------
   useEffect(() => {
-    const processSound = async ({ title }) => {
-      try {
-        const audioBuffer = await cacheManager.decodeSound({ title });
-        if (audioBuffer) {
-          setCachedAudios(prev => ({ ...prev, [title]: audioBuffer }));
-          setIsReady(prev => [...prev, title]);
-        }
-      } catch (error) {
-        console.error(`Failed to process sound: ${title}`, error);
-      }
-    };
-
-    const fetchData = async () => {
-      for (const { title } of config) {
-        if (title == 'whiteNoise' || title == 'music') continue;
-        processSound({ title });
-      }
-    };
-
-    fetchData();
+    // On ne pré-charge plus rien au démarrage pour économiser les ressources sur mobile.
+    // Le chargement se fera à la demande dans le composant Player.
+    setCachedAudios({});
   }, []);
 
   // Load snaps from localforage on initial mount
