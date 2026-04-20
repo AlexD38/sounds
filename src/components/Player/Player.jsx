@@ -412,9 +412,9 @@ function Player({ title, sourcePath, custom, speed, stopAll }) {
       let audioBuffer;
 
       // Handle white noise fallback if no source and not custom (except for noise cases)
-      if (!source && !custom) {
+      if (title === 'whiteNoise' || (!source && !custom)) {
         const { gainNode, noiseSource } = soundTools.noise.createWhiteNoise(
-          audioCtxRef,
+          audioCtx,
           noiseSourceRef
         );
         noiseSourceRef.current = noiseSource;
@@ -463,9 +463,17 @@ function Player({ title, sourcePath, custom, speed, stopAll }) {
       }
 
       // Use audio.js to load and decode
-      const a = await Audio(audioSource);
+      if (!audioSource) {
+        throw new Error('No audio source provided');
+      }
 
+      const a = await Audio(audioSource);
       const pcm = await a.read();
+
+      if (!pcm || !pcm.length || !pcm[0].length) {
+        throw new Error('Audio data is empty or invalid');
+      }
+
       audioBuffer = audioCtx.createBuffer(
         pcm.length,
         pcm[0].length,

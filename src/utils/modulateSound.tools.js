@@ -47,10 +47,7 @@ export const soundTools = {
   },
   Stretcher: {},
   noise: {
-    createWhiteNoise(audioCtxRef, noiseSourceRef) {
-      const audioCtx = new window.AudioContext();
-      audioCtxRef.current = audioCtx;
-
+    createWhiteNoise(audioCtx, noiseSourceRef) {
       const bufferSize = 2 * audioCtx.sampleRate;
       const noiseBuffer = audioCtx.createBuffer(
         1,
@@ -73,7 +70,7 @@ export const soundTools = {
       noiseSourceRef.current = noiseSource;
 
       const gainNode = audioCtx.createGain();
-      return { gainNode, audioCtx, noiseSource };
+      return { gainNode, noiseSource };
     },
   },
 };
