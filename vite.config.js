@@ -43,6 +43,9 @@ export default defineConfig({
       'audio-buffer': 'audio-buffer',
     },
   },
+  build: {
+    target: 'es2022',
+  },
   optimizeDeps: {
     // On exclut ces packages du pré-bundling pour éviter les erreurs d'analyse statique
     exclude: ['audio', 'audio-buffer'],
