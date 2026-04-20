@@ -29,4 +29,19 @@ export default defineConfig({
       },
     }),
   ],
+  define: {
+    // On définit globalThis.AudioBuffer pour que le package 'audio'
+    // ne tente pas de faire l'import dynamique de 'audio-buffer'
+    'globalThis.AudioBuffer': 'window.AudioBuffer',
+  },
+  resolve: {
+    alias: {
+      // Sécurité supplémentaire : on redirige l'import vers le package installé
+      'audio-buffer': 'audio-buffer',
+    },
+  },
+  optimizeDeps: {
+    // On exclut ces packages du pré-bundling pour éviter les erreurs d'analyse statique
+    exclude: ['audio', 'audio-buffer'],
+  },
 });

@@ -1,9 +1,9 @@
+import Audio from 'audio';
 import { useContext, useEffect, useRef, useState } from 'react';
 import { CSSTransition } from 'react-transition-group';
 import '../../App.css';
 import { Context } from '../../context/context';
 import { config } from '../../ref/random.config';
-import { cacheManager } from '../../utils/cacheManager';
 import { soundTools } from '../../utils/modulateSound.tools';
 import { makePlaylist, perlinNoise, SearchThatSound } from '../../utils/utils';
 import { PlayerTitle } from '../PlayerTitle/PlayerTitle';
@@ -29,6 +29,11 @@ function Player({ title, sourcePath, custom, speed, stopAll }) {
   const [playbackRate, setPlaybackRate] = useState(1);
   const [isStereo, setIsStereo] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
+  const [reverbValue, setReverbValue] = useState(0.3); // 0 to 1 (wet level)
+  const [reverbDuration, setReverbDuration] = useState(2.5); // seconds
+  const [indicatorText, setIndicatorText] = useState('');
+  const [showIndicator, setShowIndicator] = useState(false);
+  const indicatorTimerRef = useRef(null);
   const [bowlInterval, setBowlInterval] = useState(5000);
 
   const audioCtxRef = useRef(null);
@@ -36,8 +41,9 @@ function Player({ title, sourcePath, custom, speed, stopAll }) {
   const noiseSourceRef = useRef(null);
   const gainNodeRef = useRef(null);
   const filterRef = useRef(null);
+  const reverbNodeRef = useRef(null);
+  const reverbGainNodeRef = useRef(null);
   const modulatorIntervalRef = useRef(null);
-  const normalizationFactorRef = useRef(1);
   const nodeRef = useRef(null);
 
   // Ref to hold the latest playlist state for the onended handler
@@ -50,6 +56,16 @@ function Player({ title, sourcePath, custom, speed, stopAll }) {
 
   const { setCustomSound } = useContext(Context);
 
+  // Fonction pour afficher l'indicateur de valeur temporairement
+  const triggerIndicator = text => {
+    setIndicatorText(text);
+    setShowIndicator(true);
+    if (indicatorTimerRef.current) clearTimeout(indicatorTimerRef.current);
+    indicatorTimerRef.current = setTimeout(() => {
+      setShowIndicator(false);
+    }, 1000);
+  };
+
   // On stocke les paramètres dans des refs pour y accéder dans le setInterval sans redéclencher l'effet
   const paramsRef = useRef({
     volValue,
@@ -57,6 +73,8 @@ function Player({ title, sourcePath, custom, speed, stopAll }) {
     playbackRate,
     sourcePath,
     custom,
+    reverbValue,
+    reverbDuration,
   });
 
   useEffect(() => {
@@ -66,8 +84,33 @@ function Player({ title, sourcePath, custom, speed, stopAll }) {
       playbackRate,
       sourcePath,
       custom,
+      reverbValue,
+      reverbDuration,
     };
-  });
+  }, [
+    volValue,
+    filterValue,
+    playbackRate,
+    sourcePath,
+    custom,
+    reverbValue,
+    reverbDuration,
+  ]);
+
+  // Génère une réponse impulsionnelle synthétique pour la reverb
+  const createImpulseResponse = (audioCtx, duration = 2.5, decay = 2.0) => {
+    const sampleRate = audioCtx.sampleRate;
+    const length = sampleRate * duration;
+    const impulse = audioCtx.createBuffer(2, length, sampleRate);
+    for (let i = 0; i < 2; i++) {
+      const channelData = impulse.getChannelData(i);
+      for (let j = 0; j < length; j++) {
+        channelData[j] =
+          (Math.random() * 2 - 1) * Math.pow(1 - j / length, decay);
+      }
+    }
+    return impulse;
+  };
 
   useEffect(() => {
     if (title !== 'bowl' || !isPlaying) {
@@ -78,19 +121,12 @@ function Player({ title, sourcePath, custom, speed, stopAll }) {
       if (!audioCtxRef.current) return;
 
       // Récupère les paramètres depuis la ref
-      const { custom, volValue, filterValue, playbackRate } = paramsRef.current;
+      const { sourcePath, custom, volValue, filterValue, playbackRate } =
+        paramsRef.current;
 
       try {
-        // ⚡ Récupère l'AudioBuffer décodé depuis le cache
-        const audioBuffer = await cacheManager.getDecodedBuffer(
-          title,
-          audioCtxRef.current
-        );
-        if (!audioBuffer) return;
-
-        // ⚡ Joue le son
-        playFromSource(
-          audioBuffer,
+        await playFromSource(
+          sourcePath,
           custom,
           volValue,
           filterValue,
@@ -226,8 +262,6 @@ function Player({ title, sourcePath, custom, speed, stopAll }) {
       setLoadASnap(false);
     }
 
-    const totalGain = value * normalizationFactorRef.current;
-
     if (custom === 'perlinNoise' && isPlaying) {
       if (value === 0) {
         stopPerlinModulation();
@@ -239,16 +273,66 @@ function Player({ title, sourcePath, custom, speed, stopAll }) {
           );
         }
       } else {
-        startPerlinModulation(0.5, totalGain);
+        startPerlinModulation(0.5, value);
       }
     } else {
       if (gainNodeRef.current && audioCtxRef.current) {
+        // Linear crossfade master volume
+        const dryLevel = sourcePath === 'apiSearch' ? 1 - reverbValue : 1;
         gainNodeRef.current.gain.setTargetAtTime(
-          totalGain,
+          value * dryLevel,
           audioCtxRef.current.currentTime,
           0.01
         );
+
+        if (reverbGainNodeRef.current) {
+          reverbGainNodeRef.current.gain.setTargetAtTime(
+            value * reverbValue,
+            audioCtxRef.current.currentTime,
+            0.01
+          );
+        }
       }
+    }
+  };
+
+  // REVERB ----------------------------------------
+  const handleReverbValue = e => {
+    const value = parseFloat(e?.currentTarget?.value || e);
+    setReverbValue(value);
+    triggerIndicator(`Reverb: ${Math.round(value * 100)}%`);
+
+    if (audioCtxRef.current) {
+      const audioCtx = audioCtxRef.current;
+      const now = audioCtx.currentTime;
+
+      // Update dry/wet mix
+      if (gainNodeRef.current) {
+        gainNodeRef.current.gain.setTargetAtTime(
+          volValue * (1 - value),
+          now,
+          0.01
+        );
+      }
+      if (reverbGainNodeRef.current) {
+        reverbGainNodeRef.current.gain.setTargetAtTime(
+          volValue * value,
+          now,
+          0.01
+        );
+      }
+    }
+  };
+
+  const handleReverbDuration = e => {
+    const value = parseFloat(e?.currentTarget?.value || e);
+    setReverbDuration(value);
+    triggerIndicator(`Room: ${value.toFixed(1)}s`);
+
+    if (audioCtxRef.current && reverbNodeRef.current) {
+      // Régénère le buffer de reverb en direct
+      const newBuffer = createImpulseResponse(audioCtxRef.current, value);
+      reverbNodeRef.current.buffer = newBuffer;
     }
   };
 
@@ -271,9 +355,11 @@ function Player({ title, sourcePath, custom, speed, stopAll }) {
 
   const initAudioContext = () => {
     if (!audioCtxRef.current) {
-      audioCtxRef.current = new (window.AudioContext ||
-        window.webkitAudioContext)();
+      audioCtxRef.current = new (
+        window.AudioContext || window.webkitAudioContext
+      )();
     }
+    return audioCtxRef.current;
   };
 
   // PLAY ----------------------------------------
@@ -286,9 +372,9 @@ function Player({ title, sourcePath, custom, speed, stopAll }) {
     newSpeed = playbackRate
   ) {
     // Initialize and resume AudioContext on user gesture
-    initAudioContext();
-    if (audioCtxRef.current.state === 'suspended') {
-      await audioCtxRef.current.resume();
+    const audioCtx = initAudioContext();
+    if (audioCtx.state === 'suspended') {
+      await audioCtx.resume();
     }
 
     if (isPlaying && event?.target?.dataset?.stop) {
@@ -308,142 +394,85 @@ function Player({ title, sourcePath, custom, speed, stopAll }) {
       speed: newSpeed,
     });
 
-    if (sourcePath) {
-      await playFromSource(sourcePath, custom, newVol, newFilter, newSpeed);
-
-      return;
-    }
-
-    if (audioCtxRef.current) {
-      const { gainNode, audioCtx, noiseSource } =
-        soundTools.noise.createWhiteNoise(audioCtxRef, noiseSourceRef);
-
-      gainNode.gain.setValueAtTime(newVol, audioCtx.currentTime);
-      gainNodeRef.current = gainNode;
-
-      const filter = audioCtx.createBiquadFilter();
-      filter.type = 'lowpass';
-      filter.frequency.setValueAtTime(newFilter, audioCtx.currentTime);
-      filterRef.current = filter;
-
-      // Chaînage avec le limiteur
-      filter.connect(gainNode);
-      gainNode.connect(audioCtx.destination);
-
-      noiseSource.connect(filter);
-      noiseSource.start();
-      setIsLoading(false);
-
-      // Ici aussi, si bruit blanc + perlin activé
-      if (custom === 'perlinNoise') {
-        startPerlinModulation(0.5, newVol);
-      }
-    }
+    await playFromSource(sourcePath, custom, newVol, newFilter, newSpeed);
   }
 
-  // PLAY FROM SOURCE ------------------------------
   async function playFromSource(
-    sourcePathOrBuffer, // Peut être : AudioBuffer / ArrayBuffer / string
+    source,
     custom,
     newVol = volValue,
     newFilter = filterValue,
-    newSpeed = playbackRate,
-    noApiNeeded
+    newSpeed = playbackRate
   ) {
-    const audioCtx = audioCtxRef.current;
-    if (!audioCtx) {
-      console.error('AudioContext not initialized. Cannot play sound.');
-      return;
-    }
-
-    const MAX_FILE_SIZE = 15 * 1024 * 1024; // 15 MB
-
-    let audioBuffer;
+    const audioCtx = initAudioContext();
+    if (audioCtx.state === 'suspended') await audioCtx.resume();
+    setIsLoading(true);
 
     try {
-      if (sourcePathOrBuffer instanceof AudioBuffer) {
-        audioBuffer = sourcePathOrBuffer;
-      } else if (noApiNeeded) {
-        const response = await fetch(sourcePathOrBuffer);
-        if (!response.ok) {
-          throw new Error(
-            `Audio fetch failed: ${response.status} ${response.statusText}`
-          );
-        }
-        const size = response.headers.get('content-length');
-        if (size && parseInt(size, 10) > MAX_FILE_SIZE) {
-          const track = playlist.find(t => t.url === sourcePathOrBuffer);
-          const trackId = track ? track.id : 'unknown';
-          throw new Error(
-            `Sound ID ${trackId} is too large (> ${
-              MAX_FILE_SIZE / 1024 / 1024
-            }MB)`
-          );
-        }
-        const arrayBuffer = await response.arrayBuffer();
-        audioBuffer = await audioCtx.decodeAudioData(arrayBuffer);
-      } else if (sourcePathOrBuffer instanceof ArrayBuffer) {
-        if (sourcePathOrBuffer.byteLength > MAX_FILE_SIZE) {
-          throw new Error(
-            `File too large to play (> ${MAX_FILE_SIZE / 1024 / 1024}MB)`
-          );
-        }
-        audioBuffer = await audioCtx.decodeAudioData(
-          sourcePathOrBuffer.slice(0)
+      let audioBuffer;
+
+      // Handle white noise fallback if no source and not custom (except for noise cases)
+      if (!source && !custom) {
+        const { gainNode, noiseSource } = soundTools.noise.createWhiteNoise(
+          audioCtxRef,
+          noiseSourceRef
         );
-      } else if (sourcePath === 'apiSearch') {
-        const playerConfig = config.find(x => x.title == title);
-        const arrayOfId = playerConfig.apiSuggestions;
-        const playlistOfIds = makePlaylist(arrayOfId);
-        const playlist = [];
+        noiseSourceRef.current = noiseSource;
+
+        const filter = audioCtx.createBiquadFilter();
+        filter.type = 'lowpass';
+        filter.frequency.setValueAtTime(newFilter, audioCtx.currentTime);
+        filterRef.current = filter;
+
+        gainNode.gain.setValueAtTime(newVol, audioCtx.currentTime);
+        gainNodeRef.current = gainNode;
+
+        noiseSource.connect(filter);
+        filter.connect(gainNode);
+        gainNode.connect(audioCtx.destination);
+
+        noiseSource.start();
+        if (custom === 'perlinNoise') startPerlinModulation(0.5, newVol);
+        setIsLoading(false);
+        return;
+      }
+
+      let audioSource = source;
+      if (source === 'apiSearch') {
+        const playerConfig = config.find(x => x.title === title);
+        const playlistOfIds = makePlaylist(playerConfig.apiSuggestions);
+        const newPlaylist = [];
 
         for (let i = 0; i < playlistOfIds.length; i++) {
-          const soundId = playlistOfIds[i];
-          const { obj } = await SearchThatSound(soundId);
-          playlist.push({
-            id: soundId,
+          const { obj } = await SearchThatSound(playlistOfIds[i]);
+          newPlaylist.push({
+            id: playlistOfIds[i],
             title: obj.title,
             author: obj.author,
             url: obj.url,
             isCurrent: i === 0,
           });
         }
-
-        setPlaylist(playlist);
-
-        const firstTrack = playlist.find(p => p.isCurrent);
-        if (!firstTrack) {
-          throw new Error('Could not find first track in playlist.');
-        }
-
-        const response = await fetch(firstTrack.url);
-        if (!response.ok) {
-          throw new Error(
-            `Audio fetch failed for apiSearch: ${response.status} ${response.statusText}`
-          );
-        }
-        const size = response.headers.get('content-length');
-        if (size && parseInt(size, 10) > MAX_FILE_SIZE) {
-          throw new Error(
-            `Sound ID ${firstTrack.id} is too large (> ${
-              MAX_FILE_SIZE / 1024 / 1024
-            }MB)`
-          );
-        }
-        const arrayBuffer = await response.arrayBuffer();
-        audioBuffer = await audioCtx.decodeAudioData(arrayBuffer);
-
+        setPlaylist(newPlaylist);
+        const firstTrack = newPlaylist.find(p => p.isCurrent);
+        audioSource = firstTrack.url;
         setNotification({
           message: `Now playing "${firstTrack.title}" by ${firstTrack.author}`,
         });
-        setTimeout(() => {
-          setNotification(null);
-        }, 3000);
-      } else {
-        throw new Error(`Invalid source type: ${typeof sourcePathOrBuffer}`);
+        setTimeout(() => setNotification(null), 3000);
       }
 
-      // Stop and clean up previous source if it exists
+      // Use audio.js to load and decode
+      const a = await Audio(audioSource);
+
+      const pcm = await a.read();
+      audioBuffer = audioCtx.createBuffer(
+        pcm.length,
+        pcm[0].length,
+        a.sampleRate
+      );
+      pcm.forEach((ch, i) => audioBuffer.copyToChannel(ch, i));
+
       if (sourceNodeRef.current) {
         sourceNodeRef.current.onended = null;
         try {
@@ -453,26 +482,23 @@ function Player({ title, sourcePath, custom, speed, stopAll }) {
       }
       if (filterRef.current) filterRef.current.disconnect();
       if (gainNodeRef.current) gainNodeRef.current.disconnect();
+      if (reverbNodeRef.current) reverbNodeRef.current.disconnect();
+      if (reverbGainNodeRef.current) reverbGainNodeRef.current.disconnect();
 
-      // Create new audio graph
       const sourceNode = audioCtx.createBufferSource();
       sourceNode.buffer = audioBuffer;
-      sourceNode.loop = sourcePath !== 'apiSearch' && title !== 'bowl';
+      sourceNode.loop = source !== 'apiSearch' && title !== 'bowl';
       sourceNode.playbackRate.setValueAtTime(newSpeed, audioCtx.currentTime);
 
-      if (sourcePath === 'apiSearch') {
+      if (source === 'apiSearch') {
         sourceNode.onended = () => {
-          if (sourceNode.loop === false) {
-            refresh();
-          }
+          if (!sourceNode.loop) refresh();
         };
       }
 
       const gainNode = audioCtx.createGain();
-      gainNode.gain.setValueAtTime(
-        isFinite(newVol) ? newVol : volValue,
-        audioCtx.currentTime
-      );
+      const dryLevel = source === 'apiSearch' ? 1 - reverbValue : 1;
+      gainNode.gain.setValueAtTime(newVol * dryLevel, audioCtx.currentTime);
 
       const filter = audioCtx.createBiquadFilter();
       filter.type = 'lowpass';
@@ -482,19 +508,33 @@ function Player({ title, sourcePath, custom, speed, stopAll }) {
       filter.connect(gainNode);
       gainNode.connect(audioCtx.destination);
 
-      sourceNode.start();
+      // Reverb path for API sounds
+      if (source === 'apiSearch') {
+        const reverbNode = audioCtx.createConvolver();
+        reverbNode.buffer = createImpulseResponse(audioCtx, reverbDuration);
+        const reverbGainNode = audioCtx.createGain();
+        reverbGainNode.gain.setValueAtTime(
+          newVol * reverbValue,
+          audioCtx.currentTime
+        );
 
+        filter.connect(reverbNode);
+        reverbNode.connect(reverbGainNode);
+        reverbGainNode.connect(audioCtx.destination);
+
+        reverbNodeRef.current = reverbNode;
+        reverbGainNodeRef.current = reverbGainNode;
+      }
+
+      sourceNode.start();
       sourceNodeRef.current = sourceNode;
       gainNodeRef.current = gainNode;
       filterRef.current = filter;
 
-      if (custom === 'perlinNoise') {
-        startPerlinModulation(0.5, isFinite(newVol) ? newVol : volValue);
-      }
-
+      if (custom === 'perlinNoise') startPerlinModulation(0.5, newVol);
       setIsLoading(false);
     } catch (error) {
-      console.error(`[${title}] FATAL ERROR in playFromSource:`, error);
+      console.error(`[${title}] Error in playFromSource:`, error);
       setNotification({ message: error.message });
       setTimeout(() => setNotification(null), 5000);
       setIsLoading(false);
@@ -537,6 +577,14 @@ function Player({ title, sourcePath, custom, speed, stopAll }) {
     if (gainNodeRef.current) {
       gainNodeRef.current.disconnect();
       gainNodeRef.current = null;
+    }
+    if (reverbNodeRef.current) {
+      reverbNodeRef.current.disconnect();
+      reverbNodeRef.current = null;
+    }
+    if (reverbGainNodeRef.current) {
+      reverbGainNodeRef.current.disconnect();
+      reverbGainNodeRef.current = null;
     }
 
     if (modulatorIntervalRef.current) {
@@ -675,6 +723,11 @@ function Player({ title, sourcePath, custom, speed, stopAll }) {
             <i className="fa-solid fa-spinner loader"></i>
           ) : (
             <>
+              <div
+                className={`value-indicator ${showIndicator ? 'visible' : ''}`}
+              >
+                {indicatorText}
+              </div>
               <div className="sliders-container">
                 <div className="sliders-labels">
                   <span>
@@ -684,6 +737,16 @@ function Player({ title, sourcePath, custom, speed, stopAll }) {
                     <span>
                       <i className="fa-solid fa-clock"></i>
                     </span>
+                  )}
+                  {sourcePath === 'apiSearch' && (
+                    <>
+                      <span>
+                        <i className="fa-solid fa-cloud"></i>
+                      </span>
+                      <span>
+                        <i className="fa-solid fa-arrows-left-right-to-line"></i>
+                      </span>
+                    </>
                   )}
                   <span>
                     <i className="fa-solid fa-volume-high"></i>
@@ -717,6 +780,28 @@ function Player({ title, sourcePath, custom, speed, stopAll }) {
                       />
                     </>
                   )}
+                  {sourcePath === 'apiSearch' && (
+                    <>
+                      <input
+                        className="reverb-range"
+                        type="range"
+                        min="0"
+                        max="0.8"
+                        step="0.01"
+                        value={reverbValue}
+                        onChange={handleReverbValue}
+                      />
+                      <input
+                        className="reverb-duration-range"
+                        type="range"
+                        min="0.1"
+                        max="10"
+                        step="0.1"
+                        value={reverbDuration}
+                        onChange={handleReverbDuration}
+                      />
+                    </>
+                  )}
                   <input
                     className="vol-range"
                     type="range"
@@ -741,25 +826,23 @@ function Player({ title, sourcePath, custom, speed, stopAll }) {
               </div>
 
               <div className="btn-container">
-                <>
-                  <button onClick={stop} data-stop={true}>
-                    <i className="fa-solid fa-pause" data-stop={true}></i>
+                <button onClick={stop} data-stop={true}>
+                  <i className="fa-solid fa-pause" data-stop={true}></i>
+                </button>
+                {title !== 'bowl' && (
+                  <button onClick={toggleStereoEffect}>
+                    <i
+                      className={`fa-solid ${
+                        isStereo ? 'fa-check-double' : 'fa-check'
+                      }`}
+                    ></i>
                   </button>
-                  {title !== 'bowl' && (
-                    <button onClick={toggleStereoEffect}>
-                      <i
-                        className={`fa-solid ${
-                          isStereo ? 'fa-check-double' : 'fa-check'
-                        }`}
-                      ></i>
-                    </button>
-                  )}
-                  {sourcePath == 'apiSearch' && (
-                    <button onClick={refresh}>
-                      <i className="fa-solid fa-forward"></i>{' '}
-                    </button>
-                  )}
-                </>
+                )}
+                {sourcePath === 'apiSearch' && (
+                  <button onClick={refresh}>
+                    <i className="fa-solid fa-forward"></i>{' '}
+                  </button>
+                )}
               </div>
             </>
           )}
