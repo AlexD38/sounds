@@ -33,7 +33,6 @@ export const soundTools = {
           audioCtxRef.current.currentTime,
           0.05
         );
-        console.log('Perlin modulation → value:', newGain.toFixed(2));
 
         t += speed;
       }, 50);

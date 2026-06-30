@@ -5,16 +5,10 @@ import './styles.css'; // Import local styles
 
 export const RandomSnapGenerator = () => {
   const {
-    customSound,
-    setCustomSound,
-    savedSnaps,
-    stopAll,
     setStopAll,
     setPlayingSnap,
     setLoadASnap,
     setNotification,
-    setSavedSnaps,
-    randomSnap,
     setRandomSnap,
   } = useContext(Context);
   const generateRandomSnap = () => {

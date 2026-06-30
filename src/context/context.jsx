@@ -1,10 +1,15 @@
 import { createContext, useEffect, useMemo, useState } from 'react';
 import localforage from 'localforage';
-import { cacheManager } from '../utils/cacheManager';
-import { config } from '../ref/random.config';
 
 // Crée le contexte
+// eslint-disable-next-line react-refresh/only-export-components
 export const Context = createContext();
+
+const toSavedSnapsMap = data => {
+  if (data instanceof Map) return data;
+  if (Array.isArray(data)) return new Map(data);
+  return new Map();
+};
 
 // Crée le provider
 export function ContextProvider({ children }) {
@@ -19,7 +24,6 @@ export function ContextProvider({ children }) {
   const [stopAll, setStopAll] = useState(false);
   const [randomSnap, setRandomSnap] = useState(null);
   const [cachedAudios, setCachedAudios] = useState(null);
-  const [isReady, setIsReady] = useState([]);
   const [playlist, setPlaylist] = useState([]);
   const [zenQuote, setZenQuote] = useState(null);
 
@@ -30,6 +34,7 @@ export function ContextProvider({ children }) {
         const response = await fetch(
           'https://quoteslate.vercel.app/api/quotes/random'
         );
+        if (!response.ok) return;
         const data = await response.json();
         setZenQuote(data);
       } catch (error) {
@@ -52,17 +57,20 @@ export function ContextProvider({ children }) {
     const getSavedSnaps = async () => {
       const previouslySavedSnaps = await localforage.getItem('savedSnapshots');
       if (previouslySavedSnaps) {
-        setSavedSnaps(previouslySavedSnaps);
+        setSavedSnaps(toSavedSnapsMap(previouslySavedSnaps));
       }
     };
 
     getSavedSnaps();
-  }, []); // Empty dependency array ensures this runs only once
+  }, []);
 
   // Function to update state and persist to localforage
   const updateAndPersistSavedSnaps = async newSnaps => {
     setSavedSnaps(newSnaps);
-    await localforage.setItem('savedSnapshots', newSnaps);
+    await localforage.setItem(
+      'savedSnapshots',
+      Array.from(newSnaps.entries())
+    );
   };
 
   const registerPlayerSituation = (title, obj) => {
@@ -73,49 +81,6 @@ export function ContextProvider({ children }) {
       newSnapshotMix.set(title, updatedPlayerData);
       return newSnapshotMix;
     });
-  };
-
-  const saveSnapshot = async () => {
-    // On transforme le Map en données sérialisables uniquement
-    const serializableMap = new Map();
-
-    if (snapshotMix.size === 0) {
-      setNotification({
-        message: 'There is nothing to save',
-      });
-      setTimeout(() => {
-        setNotification(null);
-      }, 3000);
-      return;
-    } else {
-      let IsSavable = false;
-      for (const [key, value] of snapshotMix) {
-        if (value.isPlaying) {
-          IsSavable = true;
-        }
-      }
-      if (!IsSavable) {
-        setNotification({
-          message: 'You cannot save a snapshot if no player is On',
-        });
-        setTimeout(() => {
-          setNotification(null);
-        }, 3000);
-        return;
-      }
-    }
-
-    snapshotMix.forEach((key, value) => {
-      // On extrait seulement les propriétés utilisables
-      serializableMap.set(key, value);
-    });
-
-    // await localforage.setItem('snapshot', serializableMap);
-    setNotification({ message: 'Successfully saved snapshot' });
-
-    setTimeout(() => {
-      setNotification(null);
-    }, 3000);
   };
 
   const providerValue = useMemo(
@@ -130,7 +95,6 @@ export function ContextProvider({ children }) {
       registerPlayerSituation,
       notification,
       setNotification,
-      saveSnapshot,
       setSavedSnaps: updateAndPersistSavedSnaps,
       savedSnaps,
       loadASnap,
@@ -143,7 +107,6 @@ export function ContextProvider({ children }) {
       setRandomSnap,
       cachedAudios,
       setCachedAudios,
-      isReady,
       playlist,
       setPlaylist,
       zenQuote,
@@ -161,6 +124,7 @@ export function ContextProvider({ children }) {
       randomSnap,
       cachedAudios,
       playlist,
+      zenQuote,
     ]
   );
 

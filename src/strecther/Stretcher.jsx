@@ -4,17 +4,13 @@ import PaulStretch from 'paulstretch';
 export default function Stretcher({ source }) {
   const [status, setStatus] = useState('Idle');
   const [filterValue, setFilterValue] = useState(1500);
-  const filterRef = useRef(null);
   const [progress, setProgress] = useState(0);
   const [error, setError] = useState(null);
-  const [filterFreq, setFilterFreq] = useState(500); // Initial frequency for the filter
 
-  // Refs for Web Audio API objects
   const audioContextRef = useRef(null);
   const sourceNodeRef = useRef(null);
   const filterNodeRef = useRef(null);
 
-  // Initialize AudioContext and PaulStretch instance
   const [ps] = useState(() => {
     const audioContext = new (window.AudioContext ||
       window.webkitAudioContext)();
@@ -22,37 +18,36 @@ export default function Stretcher({ source }) {
 
     const filter = audioContext.createBiquadFilter();
     filter.type = 'lowpass';
-    filter.frequency.value = filterFreq;
+    filter.frequency.value = 1500;
     filterNodeRef.current = filter;
-
-    // Connect filter to destination
     filter.connect(audioContext.destination);
 
     return new PaulStretch({
       stretchFactor: 25,
       windowSize: 4,
-      // audioContext: audioContext,
     });
   });
 
   const handleFilterValue = e => {
     const value = parseFloat(e.currentTarget.value);
     setFilterValue(value);
-    if (filterRef.current && audioCtxRef.current) {
-      filterRef.current.frequency.setTargetAtTime(
+    if (filterNodeRef.current && audioContextRef.current) {
+      filterNodeRef.current.frequency.setTargetAtTime(
         value,
-        audioCtxRef.current.currentTime,
+        audioContextRef.current.currentTime,
         0.1
       );
     }
   };
-  // Effect for cleanup
+
   useEffect(() => {
     return () => {
       if (sourceNodeRef.current) {
         try {
           sourceNodeRef.current.stop();
-        } catch (e) {}
+        } catch {
+          // stop() can throw if already stopped
+        }
       }
       if (
         audioContextRef.current &&
@@ -63,16 +58,6 @@ export default function Stretcher({ source }) {
     };
   }, []);
 
-  // Update filter frequency when state changes
-  useEffect(() => {
-    if (filterNodeRef.current) {
-      filterNodeRef.current.frequency.setValueAtTime(
-        filterFreq,
-        audioContextRef.current.currentTime
-      );
-    }
-  }, [filterFreq]);
-
   const handlePlay = async () => {
     if (!source) {
       setError('No audio source provided.');
@@ -80,9 +65,9 @@ export default function Stretcher({ source }) {
     }
 
     try {
-      // Ensure AudioContext is running
-      if (audioContextRef.current.state === 'suspended') {
-        await audioContextRef.current.resume();
+      const audioContext = audioContextRef.current;
+      if (audioContext.state === 'suspended') {
+        await audioContext.resume();
       }
 
       setStatus('Loading audio...');
@@ -92,22 +77,19 @@ export default function Stretcher({ source }) {
       const stretchedBuffer = await ps.stretch(audioBuffer, p => {
         setProgress(p);
       });
-      console.log(stretchedBuffer);
 
-      // Stop any existing source
       if (sourceNodeRef.current) {
         try {
           sourceNodeRef.current.stop();
-        } catch (e) {}
+        } catch {
+          // stop() can throw if already stopped
+        }
       }
 
-      const audioContext = new (window.AudioContext ||
-        window.webkitAudioContext)();
-
       const newSource = audioContext.createBufferSource();
-      newSource.buffer = stretchedBuffer; // direct, pas de decode
+      newSource.buffer = stretchedBuffer;
       sourceNodeRef.current = newSource;
-      newSource.connect(audioContext.destination);
+      newSource.connect(filterNodeRef.current);
       newSource.start();
 
       setStatus('Playing');

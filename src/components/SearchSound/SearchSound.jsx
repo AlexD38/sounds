@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect, useContext } from 'react';
+import React, { useState, useRef, useContext } from 'react';
 import './style.css';
 import { Context } from '../../context/context';
 import { SearchThatSound } from '../../utils/utils';
@@ -6,7 +6,7 @@ export default function SearchSound() {
   const [expanded, setExpanded] = useState(false);
   const [searchBtnDisplayed, setSearchBtnDisplayed] = useState(false);
   const inputRef = useRef(null);
-  const { customSound, setCustomSound, setCurrentInput } = useContext(Context);
+  const { setCustomSound, setCurrentInput } = useContext(Context);
 
   const handleSearch = async () => {
     const query = inputRef.current.value;

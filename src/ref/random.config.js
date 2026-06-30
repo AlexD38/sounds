@@ -119,7 +119,7 @@ export const config = [
   },
   {
     title: 'forest',
-    apiSuggestions: ['forest', 'srping'],
+    apiSuggestions: ['forest', 'spring'],
     titleSuggestions: ['tree'],
     category: 'Soundscapes',
     speed: true,

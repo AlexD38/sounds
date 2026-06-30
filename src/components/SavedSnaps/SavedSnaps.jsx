@@ -22,7 +22,7 @@ export const SavedSnaps = () => {
   }, [savedSnaps]);
 
   const handleLoadSavedSnap = (e, snapTitle) => {
-    setRandomSnap(false);
+    setRandomSnap(null);
     if (e.target.dataset.id) {
       return;
     }

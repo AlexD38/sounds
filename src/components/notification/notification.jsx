@@ -21,7 +21,7 @@ export const Notification = () => {
         setIconLabel('moon');
       }
       if (notification.message.includes('minutes')) {
-        setIconLabel('stopwatchx');
+        setIconLabel('stopwatch');
       }
     }
   }, [notification]);

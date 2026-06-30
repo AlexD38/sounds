@@ -16,6 +16,11 @@ export const Timer = () => {
 
   const handleValidate = () => {
     const minutes = Number(minutesRef.current.value);
+    if (!Number.isFinite(minutes) || minutes <= 0) {
+      setNotification({ message: 'Please enter a valid number of minutes.' });
+      setTimeout(() => setNotification(null), 3000);
+      return;
+    }
     setRemainingTime(minutes * 60);
 
     setNotification({
@@ -35,13 +40,13 @@ export const Timer = () => {
 
       return () => clearInterval(intervalId);
     } else if (countDown && remainingTime === 0) {
-      console.log('remainingTime: ', remainingTime);
       setCountDown(false);
       setStopAll(true);
       setNotification({ message: `Goodnight... and don't let the bugs bite` });
       setTimeout(() => setNotification(null), 3000);
       // 👉 ici tu mets l'action à exécuter quand ça s'arrête
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [countDown, remainingTime]);
 
   const formatTime = time => {

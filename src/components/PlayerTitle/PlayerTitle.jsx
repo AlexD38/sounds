@@ -8,7 +8,7 @@ export const PlayerTitle = ({ title, isPlaying }) => {
     iconLabel = 'fire';
   } else if (title === 'village') {
     iconLabel = 'house';
-  } else if (title === 'srping') {
+  } else if (title === 'spring') {
     iconLabel = 'seedling';
   } else if (title === 'ocean') {
     iconLabel = 'house-tsunami';

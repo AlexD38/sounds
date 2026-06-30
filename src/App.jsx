@@ -13,7 +13,11 @@ import { Timer } from './components/timer/Timer';
 import { config } from './ref/random.config';
 
 function App() {
-  const { stopAll, savedSnaps } = useContext(Context);
+  const { stopAll, savedSnaps: rawSavedSnaps } = useContext(Context);
+  const savedSnaps =
+    rawSavedSnaps instanceof Map
+      ? rawSavedSnaps
+      : new Map(rawSavedSnaps ?? []);
   const [opacity, setOpacity] = useState(1);
   const [title, setTitle] = useState(
     <>
@@ -95,7 +99,7 @@ function App() {
               <Player
                 key={player.title}
                 title={player.title}
-                sourcePath={`assets/sounds/${player.title}.mp3`}
+                sourcePath={`/assets/sounds/${player.title}.mp3`}
                 custom="perlinNoise"
                 stopAll={stopAll}
                 speed={player.speed || false}

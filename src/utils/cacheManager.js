@@ -15,6 +15,9 @@ export const cacheManager = {
       if (!arrayBuffer) {
         // Sinon fetch depuis le réseau
         const response = await fetch(url);
+        if (!response.ok) {
+          throw new Error(`Failed to fetch ${title} (${response.status})`);
+        }
         arrayBuffer = await response.arrayBuffer();
 
         // Stocke en cache (ArrayBuffer brut)

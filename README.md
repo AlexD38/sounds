@@ -41,7 +41,15 @@ Pour lancer le projet en local, suivez ces étapes :
     npm install
     ```
 
-3.  **Lancez le serveur de développement :**
+3.  **Configurez la clé API Freesound (optionnel, pour le player « music ») :**
+
+    ```bash
+    cp .env.example .env
+    ```
+
+    Renseignez `VITE_API_KEY` avec votre token Freesound.
+
+4.  **Lancez le serveur de développement :**
     ```bash
     npm run dev
     ```

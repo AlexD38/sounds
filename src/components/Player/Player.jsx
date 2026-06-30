@@ -1,10 +1,8 @@
-import Audio from 'audio';
 import { useContext, useEffect, useRef, useState } from 'react';
 import { CSSTransition } from 'react-transition-group';
 import '../../App.css';
 import { Context } from '../../context/context';
 import { config } from '../../ref/random.config';
-import { soundTools } from '../../utils/modulateSound.tools';
 import { makePlaylist, perlinNoise, SearchThatSound } from '../../utils/utils';
 import { PlayerTitle } from '../PlayerTitle/PlayerTitle';
 import './styles.css'; // Import local styles
@@ -54,8 +52,23 @@ function Player({ title, sourcePath, custom, speed, stopAll }) {
   }, [playlist]);
 
   const stereoNodesRef = useRef(null);
+  const savedSnapsRef = useRef(savedSnaps);
+  const randomSnapRef = useRef(randomSnap);
+  const isPlayingRef = useRef(isPlaying);
 
   const { setCustomSound } = useContext(Context);
+
+  useEffect(() => {
+    savedSnapsRef.current = savedSnaps;
+  }, [savedSnaps]);
+
+  useEffect(() => {
+    randomSnapRef.current = randomSnap;
+  }, [randomSnap]);
+
+  useEffect(() => {
+    isPlayingRef.current = isPlaying;
+  }, [isPlaying]);
 
   // Fonction pour afficher l'indicateur de valeur temporairement
   const triggerIndicator = text => {
@@ -144,28 +157,38 @@ function Player({ title, sourcePath, custom, speed, stopAll }) {
     return () => {
       clearInterval(intervalId);
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isPlaying, title, bowlInterval]);
 
   useEffect(() => {
-    if (sourcePath == 'apiSearch') {
+    if (sourcePath === 'apiSearch') {
       handleFilterValue(350);
       handlePlaybackRateChange(0.7);
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
-    if (stopAll) {
-      if (isPlaying) {
-        stop();
-      }
+  useEffect(() => {
+    if (stopAll && isPlayingRef.current) {
+      stop();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [stopAll]);
+
+  useEffect(() => {
+    if (!loadASnap || stopAll) {
       return;
     }
-    if (!savedSnaps || !loadASnap) {
-      return;
-    }
 
-    let loadedSnap = savedSnaps.get(playingSnap);
+    const snaps =
+      savedSnapsRef.current instanceof Map
+        ? savedSnapsRef.current
+        : new Map(savedSnapsRef.current ?? []);
 
-    if (randomSnap) {
-      loadedSnap = randomSnap.get(playingSnap);
+    let loadedSnap = snaps.get(playingSnap);
+
+    if (randomSnapRef.current instanceof Map) {
+      loadedSnap = randomSnapRef.current.get(playingSnap);
     }
 
     if (!loadedSnap) {
@@ -174,30 +197,20 @@ function Player({ title, sourcePath, custom, speed, stopAll }) {
 
     const playerState = loadedSnap.players.find(p => p.playerTitle === title);
 
-    if (playerState) {
-      if (playerState.isPlaying === true) {
-        setStopAll(false);
-        const volume = playerState.volume ?? 1.5;
-        const filter = playerState.filter ?? 1800;
-        const speed = playerState.speed ?? 1;
-        setFilterValue(filter);
-        setVolValue(volume);
-        setPlaybackRate(speed);
-        play(null, sourcePath, custom, volume, filter, speed);
-        setIsPlaying(true);
-      } else {
-        if (isPlaying) {
-          stop();
-        } else {
-          stop();
-        }
-      }
-    } else {
-      if (isPlaying) {
-        stop();
-      }
+    if (playerState?.isPlaying === true) {
+      setStopAll(false);
+      const volume = playerState.volume ?? 1.5;
+      const filter = playerState.filter ?? 1800;
+      const speed = playerState.speed ?? 1;
+      setFilterValue(filter);
+      setVolValue(volume);
+      setPlaybackRate(speed);
+      play(null, sourcePath, custom, volume, filter, speed);
+    } else if (isPlayingRef.current) {
+      stop();
     }
-  }, [savedSnaps, loadASnap, playingSnap, stopAll, isPlaying, isLoading]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [loadASnap, playingSnap, stopAll]);
 
   //  PERLIN --------------------------------------
   function startPerlinModulation(minGain = 0, maxGain = 1.5) {
@@ -403,12 +416,17 @@ function Player({ title, sourcePath, custom, speed, stopAll }) {
     custom,
     newVol = volValue,
     newFilter = filterValue,
-    newSpeed = playbackRate
+    newSpeed = playbackRate,
+    forceReload = false
   ) {
     const audioCtx = initAudioContext();
     if (audioCtx.state === 'suspended') await audioCtx.resume();
 
     try {
+      if (forceReload) {
+        audioBufferRef.current = null;
+      }
+
       let audioBuffer = audioBufferRef.current;
 
       // Si on n'a pas encore le buffer en cache, on le charge
@@ -439,14 +457,26 @@ function Player({ title, sourcePath, custom, speed, stopAll }) {
 
             for (let i = 0; i < playlistOfIds.length; i++) {
               const { obj } = await SearchThatSound(playlistOfIds[i]);
+              if (!obj?.url) continue;
               newPlaylist.push({
                 id: playlistOfIds[i],
                 title: obj.title,
                 author: obj.author,
                 url: obj.url,
-                isCurrent: i === 0,
+                isCurrent: newPlaylist.length === 0,
               });
             }
+
+            if (newPlaylist.length === 0) {
+              setNotification({
+                message: 'Could not load music from API. Check your API key.',
+              });
+              setTimeout(() => setNotification(null), 5000);
+              setIsLoading(false);
+              setIsPlaying(false);
+              return;
+            }
+
             setPlaylist(newPlaylist);
             const firstTrack = newPlaylist.find(p => p.isCurrent);
             audioSource = firstTrack.url;
@@ -462,6 +492,9 @@ function Player({ title, sourcePath, custom, speed, stopAll }) {
 
           // Chargement et décodage standard
           const response = await fetch(audioSource);
+          if (!response.ok) {
+            throw new Error(`Failed to load audio (${response.status})`);
+          }
           const arrayBuffer = await response.arrayBuffer();
           audioBuffer = await audioCtx.decodeAudioData(arrayBuffer);
         }
@@ -477,7 +510,9 @@ function Player({ title, sourcePath, custom, speed, stopAll }) {
         sourceNodeRef.current.onended = null;
         try {
           sourceNodeRef.current.stop();
-        } catch (e) {}
+        } catch {
+          // stop() can throw if already stopped
+        }
         sourceNodeRef.current.disconnect();
       }
       if (filterRef.current) filterRef.current.disconnect();
@@ -557,7 +592,7 @@ function Player({ title, sourcePath, custom, speed, stopAll }) {
       sourceNodeRef.current.onended = null; // Prevent onended from firing on manual stop
       try {
         sourceNodeRef.current.stop();
-      } catch (e) {
+      } catch {
         // stop() can throw if already stopped or not started
       }
       sourceNodeRef.current.disconnect();
@@ -567,7 +602,9 @@ function Player({ title, sourcePath, custom, speed, stopAll }) {
     if (noiseSourceRef.current) {
       try {
         noiseSourceRef.current.stop();
-      } catch (e) {}
+      } catch {
+        // stop() can throw if already stopped
+      }
       noiseSourceRef.current.disconnect();
       noiseSourceRef.current = null;
     }
@@ -684,8 +721,7 @@ function Player({ title, sourcePath, custom, speed, stopAll }) {
 
     setCustomSound(nextTrack);
 
-    // No longer calling stop(). playFromSource handles the transition.
-    // isPlaying state remains true.
+    audioBufferRef.current = null;
     await playFromSource(
       nextTrack.url,
       null,

@@ -27,7 +27,6 @@ export default function Slider({ min = 0, max = 100, height = 200 }) {
     const percentage = 1 - y / rect.height;
     const newValue = Math.round(min + percentage * (max - min));
     setValue(Math.max(min, Math.min(max, newValue)));
-    console.log(value);
   };
 
   useEffect(() => {
@@ -37,6 +36,7 @@ export default function Slider({ min = 0, max = 100, height = 200 }) {
       document.removeEventListener('mousemove', handleMouseMove);
       document.removeEventListener('mouseup', handleMouseUp);
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const thumbPosition = ((max - value) / (max - min)) * height;
