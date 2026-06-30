@@ -21,39 +21,26 @@ export const SavedSnaps = () => {
     }
   }, [savedSnaps]);
 
-  const handleLoadSavedSnap = (e, snapTitle) => {
+  const handleLoadSavedSnap = snapTitle => {
     setRandomSnap(null);
-    if (e.target.dataset.id) {
-      return;
-    }
     setStopAll(false);
     setPlayingSnap(snapTitle);
-
     setNotification({
       message: `Now playing "${snapTitle}"`,
     });
     setLoadASnap(true);
-
-    setTimeout(() => {
-      setNotification(null);
-    }, 3000);
+    setTimeout(() => setNotification(null), 3000);
   };
 
-  const handleDelSnap = e => {
+  const handleDelSnap = (e, snapTitle) => {
     e.stopPropagation();
-    const snapTitle = e.currentTarget.dataset.id;
-
     setNotification({
       message: `Successfully deleted  "${snapTitle}"`,
     });
-
     const updatedSnaps = new Map(savedSnaps);
     updatedSnaps.delete(snapTitle);
-
     setSavedSnaps(updatedSnaps);
-    setTimeout(() => {
-      setNotification(null);
-    }, 3000);
+    setTimeout(() => setNotification(null), 3000);
   };
 
   if (snapsToDisplay.length === 0) return null;
@@ -66,23 +53,25 @@ export const SavedSnaps = () => {
       </div>
       <div className="saved-snaps-container">
         {snapsToDisplay.map(snap => (
-          <div
-            className="saved-snap"
-            key={snap.title}
-            onClick={e => handleLoadSavedSnap(e, snap.title)}
-            role="button"
-            tabIndex={0}
-            onKeyDown={e => {
-              if (e.key === 'Enter') handleLoadSavedSnap(e, snap.title);
-            }}
-          >
-            {snap.title}
-            <i
+          <div className="saved-snap" key={snap.title}>
+            <button
+              type="button"
+              className="saved-snap__play"
+              onClick={() => handleLoadSavedSnap(snap.title)}
+              aria-label={`Play mix ${snap.title}`}
+            >
+              <i className="fa-solid fa-play saved-snap__play-icon" aria-hidden="true" />
+              <span className="saved-snap__label">{snap.title}</span>
+            </button>
+            <button
+              type="button"
+              className="saved-snap__delete"
               data-id={snap.title}
-              onClick={handleDelSnap}
-              className="fa-solid fa-xmark del-btn"
-              aria-label={`Delete ${snap.title}`}
-            />
+              onClick={e => handleDelSnap(e, snap.title)}
+              aria-label={`Delete mix ${snap.title}`}
+            >
+              <i className="fa-solid fa-xmark" aria-hidden="true" />
+            </button>
           </div>
         ))}
       </div>
