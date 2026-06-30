@@ -14,6 +14,7 @@ function App() {
       ? rawSavedSnaps
       : new Map(rawSavedSnaps ?? []);
   const [titleShort, setTitleShort] = useState(false);
+  const [headerOpacity, setHeaderOpacity] = useState(1);
   const [installPromptEvent, setInstallPromptEvent] = useState(null);
 
   useEffect(() => {
@@ -45,13 +46,41 @@ function App() {
     return () => clearTimeout(timer);
   }, []);
 
+  useEffect(() => {
+    const FADE_START = 8;
+    const FADE_END = 72;
+
+    const updateHeaderOpacity = () => {
+      const scrollY = window.scrollY;
+      if (scrollY <= FADE_START) {
+        setHeaderOpacity(1);
+        return;
+      }
+      if (scrollY >= FADE_END) {
+        setHeaderOpacity(0);
+        return;
+      }
+      setHeaderOpacity(1 - (scrollY - FADE_START) / (FADE_END - FADE_START));
+    };
+
+    updateHeaderOpacity();
+    window.addEventListener('scroll', updateHeaderOpacity, { passive: true });
+    return () => window.removeEventListener('scroll', updateHeaderOpacity);
+  }, []);
+
   const soundPlayers = config.filter(
     p => p.title !== 'whiteNoise' && p.title !== 'music'
   );
 
   return (
     <div className="app">
-      <header className="app-header">
+      <header
+        className="app-header"
+        style={{
+          opacity: headerOpacity,
+          pointerEvents: headerOpacity < 0.05 ? 'none' : 'auto',
+        }}
+      >
         <div className={`app-header__brand${titleShort ? ' app-header__brand--short' : ''}`}>
           {titleShort ? (
             <>
