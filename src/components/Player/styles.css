@@ -1,6 +1,8 @@
 /* ── Player card ── */
 .player-container {
   position: relative;
+  flex: 0 0 5.5rem;
+  width: 5.5rem;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -18,7 +20,8 @@
     border-color 0.3s ease,
     box-shadow 0.35s ease,
     transform 0.2s ease,
-    grid-column 0.35s ease;
+    flex-basis 0.35s ease,
+    width 0.35s ease;
   -webkit-tap-highlight-color: transparent;
 }
 
@@ -48,7 +51,9 @@
 }
 
 .player-container.is-playing {
-  grid-column: 1 / -1;
+  flex: 1 1 100%;
+  width: 100%;
+  max-width: 100%;
   min-height: auto;
   padding: 1.1rem 1rem 1rem;
   background: rgba(255, 255, 255, 0.06);
@@ -303,6 +308,11 @@
 }
 
 @media (min-width: 480px) {
+  .player-container {
+    flex: 0 0 6.5rem;
+    width: 6.5rem;
+  }
+
   .player-card__icon-wrap {
     width: 3.25rem;
     height: 3.25rem;
@@ -314,5 +324,12 @@
 
   .player-card__label {
     font-size: 0.7rem;
+  }
+}
+
+@media (min-width: 768px) {
+  .player-container {
+    flex: 0 0 7rem;
+    width: 7rem;
   }
 }
