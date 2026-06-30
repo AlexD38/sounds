@@ -32,12 +32,9 @@ export const SaveSnapshotMix = () => {
       setTimeout(() => setNotification(null), 3000);
       return;
     }
-    // 1. On crée une nouvelle Map
-    const updatedSnaps = new Map(savedSnaps);
-    // 2. On ajoute le nouveau snapshot
-    updatedSnaps.set(snapShotTitle, formattedSnapshot);
 
-    // 3. On utilise la fonction du contexte pour mettre à jour l'état et localforage
+    const updatedSnaps = new Map(savedSnaps);
+    updatedSnaps.set(snapShotTitle, formattedSnapshot);
     setSavedSnaps(updatedSnaps);
 
     setNotification({ message: `Snapshot "${snapShotTitle}" saved!` });
@@ -48,13 +45,15 @@ export const SaveSnapshotMix = () => {
 
   return (
     <>
-      <div
+      <button
+        type="button"
+        className="bar-action"
         onClick={() => setShowInput(true)}
-        className="snapshot-saver"
-        title="Save current mix for later..."
+        aria-label="Save current mix"
       >
-        <i className="fa-solid fa-floppy-disk"></i>
-      </div>
+        <i className="fa-solid fa-floppy-disk" aria-hidden="true" />
+        <span className="bar-action__label">Save</span>
+      </button>
       {showInput && (
         <div className="snapshot-title-container">
           <h3>Name your snapshot : </h3>

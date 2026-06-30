@@ -1,18 +1,13 @@
 import { useContext, useEffect, useRef, useState } from 'react';
-import './styles.css';
 import { Context } from '../../context/context';
 
 export const Timer = () => {
   const { setNotification, setStopAll } = useContext(Context);
-  const [userInput, setUserInput] = useState(false);
+  const [isOpen, setIsOpen] = useState(false);
   const minutesRef = useRef(null);
+  const wrapperRef = useRef(null);
   const [countDown, setCountDown] = useState(false);
   const [remainingTime, setRemainingTime] = useState(0);
-  const [stopCountDownBtn, setStopCountDownBtn] = useState(false);
-
-  const handleLaunchTimer = () => {
-    userInput ? setUserInput(false) : setUserInput(true);
-  };
 
   const handleValidate = () => {
     const minutes = Number(minutesRef.current.value);
@@ -22,12 +17,10 @@ export const Timer = () => {
       return;
     }
     setRemainingTime(minutes * 60);
-
     setNotification({
       message: `Sounds will stop in ${minutes} minutes`,
     });
-    setUserInput(false);
-
+    setIsOpen(false);
     setTimeout(() => setNotification(null), 3000);
     setCountDown(true);
   };
@@ -44,10 +37,22 @@ export const Timer = () => {
       setStopAll(true);
       setNotification({ message: `Goodnight... and don't let the bugs bite` });
       setTimeout(() => setNotification(null), 3000);
-      // 👉 ici tu mets l'action à exécuter quand ça s'arrête
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [countDown, remainingTime]);
+
+  useEffect(() => {
+    if (!isOpen) return;
+
+    const handleClickOutside = e => {
+      if (wrapperRef.current && !wrapperRef.current.contains(e.target)) {
+        setIsOpen(false);
+      }
+    };
+
+    document.addEventListener('pointerdown', handleClickOutside);
+    return () => document.removeEventListener('pointerdown', handleClickOutside);
+  }, [isOpen]);
 
   const formatTime = time => {
     const minutes = Math.floor(time / 60);
@@ -58,44 +63,63 @@ export const Timer = () => {
   };
 
   return (
-    <>
-      <div
-        className="timer-container"
-        onMouseEnter={() => setUserInput(true)}
-        onMouseLeave={() => setUserInput(false)}
+    <div className="bar-action-wrapper" ref={wrapperRef}>
+      <button
+        type="button"
+        className={`bar-action${isOpen || countDown ? ' bar-action--active' : ''}`}
+        onClick={() => setIsOpen(prev => !prev)}
+        aria-label="Sleep timer"
+        aria-expanded={isOpen}
       >
-        <i className="fa-solid fa-stopwatch" onClick={handleLaunchTimer}></i>
-        {userInput && (
-          <>
-            <input
-              className="timer-input"
-              defaultValue={20}
-              ref={minutesRef}
-              type="number"
-            ></input>
-            <i
-              className="fa-solid fa-check validate"
-              onClick={handleValidate}
-            ></i>
-          </>
+        <i className="fa-solid fa-stopwatch" aria-hidden="true" />
+        <span className="bar-action__label">Timer</span>
+        {countDown && (
+          <span className="bar-action__badge" aria-live="polite">
+            {formatTime(remainingTime)}
+          </span>
         )}
-      </div>
-      {countDown && (
-        <div
-          className="countdown"
-          onMouseEnter={() => setStopCountDownBtn(true)}
-          onMouseLeave={() => setStopCountDownBtn(false)}
-        >
-          <i className="fa-solid fa-stopwatch"></i>
-          {formatTime(remainingTime)}
-          {stopCountDownBtn && (
-            <i
-              className="fa-solid fa-xmark close-countdown"
-              onClick={() => setCountDown(false)}
-            ></i>
+      </button>
+      {isOpen && (
+        <div className="bar-popover" role="dialog" aria-label="Set timer">
+          {countDown ? (
+            <>
+              <span className="bar-popover__countdown">
+                {formatTime(remainingTime)}
+              </span>
+              <button
+                type="button"
+                className="bar-popover__cancel"
+                onClick={() => {
+                  setCountDown(false);
+                  setIsOpen(false);
+                }}
+                aria-label="Cancel timer"
+              >
+                <i className="fa-solid fa-xmark" aria-hidden="true" />
+              </button>
+            </>
+          ) : (
+            <>
+              <input
+                className="bar-popover__input"
+                defaultValue={20}
+                ref={minutesRef}
+                type="number"
+                min="1"
+                aria-label="Minutes"
+              />
+              <button
+                type="button"
+                className="bar-popover__confirm"
+                onClick={handleValidate}
+                aria-label="Start timer"
+              >
+                <i className="fa-solid fa-check" aria-hidden="true" />
+              </button>
+            </>
           )}
         </div>
       )}
-    </>
+    </div>
   );
 };

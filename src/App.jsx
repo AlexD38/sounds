@@ -3,13 +3,9 @@ import './App.css';
 import Player from './components/Player/Player';
 import { Context } from './context/context';
 
-import { SaveSnapshotMix } from './components/SaveSnapshotMix/SaveSnapshotMix';
 import { Notification } from './components/notification/notification';
-
-import { RandomSnapGenerator } from './components/RandomSnapGenerator/RandomSnapGenerator';
 import { SavedSnaps } from './components/SavedSnaps/SavedSnaps';
-import { StopAll } from './components/StopAll/StopAll';
-import { Timer } from './components/timer/Timer';
+import { BottomBar } from './components/BottomBar/BottomBar';
 import { config } from './ref/random.config';
 
 function App() {
@@ -77,18 +73,6 @@ function App() {
       >
         {title}
       </h1>
-      <StopAll />
-      <SaveSnapshotMix />
-      <Timer />
-      <RandomSnapGenerator />
-      {installPromptEvent && (
-        <button className="pwa-install-button" onClick={handleInstallClick}>
-          <i className="fa-solid fa-puzzle-piece"></i>Installer
-          l'application
-        </button>
-      )}
-      {/* <SearchSound /> */}
-      {/* <Stretcher source={windows} custom="perlinNoise" /> */}
       {savedSnaps.size > 0 && <SavedSnaps />}
       <main>
         <>
@@ -121,6 +105,10 @@ function App() {
           />
         </>
       </main>
+      <BottomBar
+        installPromptEvent={installPromptEvent}
+        onInstallClick={handleInstallClick}
+      />
       <Notification />
     </>
   );

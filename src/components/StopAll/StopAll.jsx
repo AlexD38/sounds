@@ -1,5 +1,4 @@
 import { useContext } from 'react';
-import './styles.css';
 import { Context } from '../../context/context';
 
 export const StopAll = () => {
@@ -11,8 +10,14 @@ export const StopAll = () => {
   };
 
   return (
-    <div className="stop-all-container">
-      <i className="fa-solid fa-pause" onClick={handleStopAll}></i>
-    </div>
+    <button
+      type="button"
+      className="bar-action"
+      onClick={handleStopAll}
+      aria-label="Stop all sounds"
+    >
+      <i className="fa-solid fa-pause" aria-hidden="true" />
+      <span className="bar-action__label">Stop</span>
+    </button>
   );
 };

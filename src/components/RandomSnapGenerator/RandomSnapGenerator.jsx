@@ -1,7 +1,6 @@
 import { useContext } from 'react';
 import { Context } from '../../context/context';
 import { config } from '../../ref/random.config';
-import './styles.css'; // Import local styles
 
 export const RandomSnapGenerator = () => {
   const {
@@ -11,17 +10,16 @@ export const RandomSnapGenerator = () => {
     setNotification,
     setRandomSnap,
   } = useContext(Context);
+
   const generateRandomSnap = () => {
     setStopAll(true);
     const numberOfPlayersArr = [2, 2, 3, 4];
     const randomSnapTitle = [];
     const selectedPlayers = { players: [] };
 
-    // Nombre de joueurs à sélectionner
     const numberOfPlayersNeeded =
       numberOfPlayersArr[Math.floor(Math.random() * numberOfPlayersArr.length)];
 
-    // Pour éviter de sélectionner plusieurs fois le même joueur
     const availableIndexes = Array.from({ length: config.length }, (_, i) => i);
 
     for (
@@ -47,7 +45,6 @@ export const RandomSnapGenerator = () => {
       );
     }
 
-    // ---- TRANSFORMATION EN PHRASE NATURELLE ----
     const adjectives = [];
     let noun = '';
 
@@ -66,7 +63,6 @@ export const RandomSnapGenerator = () => {
 
     const finalTitle = [...adjectives, noun].join(' ');
 
-    // ✅ Création de la Map comme demandé
     const result = new Map();
     result.set(finalTitle, selectedPlayers);
 
@@ -82,9 +78,16 @@ export const RandomSnapGenerator = () => {
       setNotification(null);
     }, 3000);
   };
+
   return (
-    <div className="random-snap-gen">
-      <i className="fa-solid fa-dice" onClick={generateRandomSnap}></i>
-    </div>
+    <button
+      type="button"
+      className="bar-action"
+      onClick={generateRandomSnap}
+      aria-label="Generate random mix"
+    >
+      <i className="fa-solid fa-dice" aria-hidden="true" />
+      <span className="bar-action__label">Random</span>
+    </button>
   );
 };
