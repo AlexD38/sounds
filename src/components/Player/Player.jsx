@@ -8,6 +8,8 @@ import { formatPlayerLabel } from '../../utils/formatPlayerLabel';
 import { PlayerTitle } from '../PlayerTitle/PlayerTitle';
 import './styles.css'; // Import local styles
 
+const FADE_OUT_DURATION = 2.5;
+
 function Player({ title, sourcePath, custom, speed, stopAll }) {
   const {
     registerPlayerSituation,
@@ -45,6 +47,8 @@ function Player({ title, sourcePath, custom, speed, stopAll }) {
   const reverbGainNodeRef = useRef(null);
   const modulatorIntervalRef = useRef(null);
   const nodeRef = useRef(null);
+  const isFadingRef = useRef(false);
+  const fadeTimeoutRef = useRef(null);
 
   // Ref to hold the latest playlist state for the onended handler
   const playlistRef = useRef(playlist);
@@ -70,6 +74,12 @@ function Player({ title, sourcePath, custom, speed, stopAll }) {
   useEffect(() => {
     isPlayingRef.current = isPlaying;
   }, [isPlaying]);
+
+  useEffect(() => {
+    return () => {
+      if (fadeTimeoutRef.current) clearTimeout(fadeTimeoutRef.current);
+    };
+  }, []);
 
   // Fonction pour afficher l'indicateur de valeur temporairement
   const triggerIndicator = text => {
@@ -386,6 +396,8 @@ function Player({ title, sourcePath, custom, speed, stopAll }) {
     newFilter = filterValue,
     newSpeed = playbackRate
   ) {
+    cancelPendingFade();
+
     // Initialize and resume AudioContext on user gesture
     const audioCtx = initAudioContext();
     if (audioCtx.state === 'suspended') {
@@ -420,6 +432,8 @@ function Player({ title, sourcePath, custom, speed, stopAll }) {
     newSpeed = playbackRate,
     forceReload = false
   ) {
+    cancelPendingFade();
+
     const audioCtx = initAudioContext();
     if (audioCtx.state === 'suspended') await audioCtx.resume();
 
@@ -580,17 +594,20 @@ function Player({ title, sourcePath, custom, speed, stopAll }) {
   }
 
   // STOP -------------------------------------------------
-  function stop() {
-    setIsPlaying(false);
-    setIsStereo(false);
-
-    if (loadASnap) {
-      setLoadASnap(false);
+  function cancelPendingFade() {
+    if (fadeTimeoutRef.current) {
+      clearTimeout(fadeTimeoutRef.current);
+      fadeTimeoutRef.current = null;
     }
+    if (isFadingRef.current) {
+      isFadingRef.current = false;
+      disconnectAudioNodes();
+    }
+  }
 
-    // Stop and disconnect the main sound source
+  function disconnectAudioNodes() {
     if (sourceNodeRef.current) {
-      sourceNodeRef.current.onended = null; // Prevent onended from firing on manual stop
+      sourceNodeRef.current.onended = null;
       try {
         sourceNodeRef.current.stop();
       } catch {
@@ -609,6 +626,7 @@ function Player({ title, sourcePath, custom, speed, stopAll }) {
       noiseSourceRef.current.disconnect();
       noiseSourceRef.current = null;
     }
+
     if (filterRef.current) {
       filterRef.current.disconnect();
       filterRef.current = null;
@@ -630,8 +648,71 @@ function Player({ title, sourcePath, custom, speed, stopAll }) {
       clearInterval(modulatorIntervalRef.current);
       modulatorIntervalRef.current = null;
     }
+  }
 
-    // We no longer close the audio context here to allow reuse
+  function stop({ fade = true } = {}) {
+    if (isFadingRef.current) return;
+
+    const hasActiveAudio =
+      sourceNodeRef.current || gainNodeRef.current || noiseSourceRef.current;
+
+    if (!hasActiveAudio) {
+      setIsPlaying(false);
+      setIsStereo(false);
+      if (loadASnap) setLoadASnap(false);
+      return;
+    }
+
+    registerPlayerSituation(title, { isPlaying: false });
+    stopPerlinModulation();
+    setIsPlaying(false);
+    setIsStereo(false);
+
+    if (loadASnap) {
+      setLoadASnap(false);
+    }
+
+    const shouldFade =
+      fade && audioCtxRef.current && gainNodeRef.current && FADE_OUT_DURATION > 0;
+
+    if (!shouldFade) {
+      disconnectAudioNodes();
+      return;
+    }
+
+    isFadingRef.current = true;
+    const audioCtx = audioCtxRef.current;
+    const now = audioCtx.currentTime;
+
+    if (gainNodeRef.current) {
+      gainNodeRef.current.gain.cancelScheduledValues(now);
+      gainNodeRef.current.gain.setValueAtTime(
+        gainNodeRef.current.gain.value,
+        now
+      );
+      gainNodeRef.current.gain.linearRampToValueAtTime(
+        0,
+        now + FADE_OUT_DURATION
+      );
+    }
+
+    if (reverbGainNodeRef.current) {
+      reverbGainNodeRef.current.gain.cancelScheduledValues(now);
+      reverbGainNodeRef.current.gain.setValueAtTime(
+        reverbGainNodeRef.current.gain.value,
+        now
+      );
+      reverbGainNodeRef.current.gain.linearRampToValueAtTime(
+        0,
+        now + FADE_OUT_DURATION
+      );
+    }
+
+    fadeTimeoutRef.current = setTimeout(() => {
+      isFadingRef.current = false;
+      fadeTimeoutRef.current = null;
+      disconnectAudioNodes();
+    }, FADE_OUT_DURATION * 1000);
   }
 
   // STEREO ------------------------------------------------
