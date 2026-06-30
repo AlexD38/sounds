@@ -48,6 +48,7 @@ function Player({ title, sourcePath, custom, speed, stopAll }) {
   const modulatorIntervalRef = useRef(null);
   const isFadingRef = useRef(false);
   const fadeTimeoutRef = useRef(null);
+  const playbackGenerationRef = useRef(0);
   const [portalTarget, setPortalTarget] = useState(null);
 
   // Ref to hold the latest playlist state for the onended handler
@@ -85,7 +86,20 @@ function Player({ title, sourcePath, custom, speed, stopAll }) {
     setPortalTarget(document.getElementById('active-mix-portal'));
   }, []);
 
-  // Fonction pour afficher l'indicateur de valeur temporairement
+  function invalidatePlayback() {
+    playbackGenerationRef.current += 1;
+  }
+
+  function isPlaybackCancelled(generation) {
+    return generation !== playbackGenerationRef.current;
+  }
+
+  function clearSourceOnEnded() {
+    if (sourceNodeRef.current) {
+      sourceNodeRef.current.onended = null;
+    }
+  }
+
   const triggerIndicator = text => {
     setIndicatorText(text);
     setShowIndicator(true);
@@ -159,7 +173,9 @@ function Player({ title, sourcePath, custom, speed, stopAll }) {
           custom,
           volValue,
           filterValue,
-          playbackRate
+          playbackRate,
+          false,
+          playbackGenerationRef.current
         );
       } catch (err) {
         console.error('Erreur lors du replay du son :', err);
@@ -416,6 +432,7 @@ function Player({ title, sourcePath, custom, speed, stopAll }) {
     if (isPlaying) {
       return;
     }
+    const generation = ++playbackGenerationRef.current;
     setIsPlaying(true);
     setStopAll(false);
     registerPlayerSituation(title, {
@@ -425,7 +442,15 @@ function Player({ title, sourcePath, custom, speed, stopAll }) {
       speed: newSpeed,
     });
 
-    await playFromSource(sourcePath, custom, newVol, newFilter, newSpeed);
+    await playFromSource(
+      sourcePath,
+      custom,
+      newVol,
+      newFilter,
+      newSpeed,
+      false,
+      generation
+    );
   }
 
   async function playFromSource(
@@ -434,10 +459,12 @@ function Player({ title, sourcePath, custom, speed, stopAll }) {
     newVol = volValue,
     newFilter = filterValue,
     newSpeed = playbackRate,
-    forceReload = false
+    forceReload = false,
+    generation = playbackGenerationRef.current
   ) {
     cancelPendingFade();
 
+    if (isPlaybackCancelled(generation)) return;
     const audioCtx = initAudioContext();
     if (audioCtx.state === 'suspended') await audioCtx.resume();
 
@@ -476,6 +503,10 @@ function Player({ title, sourcePath, custom, speed, stopAll }) {
 
             for (let i = 0; i < playlistOfIds.length; i++) {
               const { obj } = await SearchThatSound(playlistOfIds[i]);
+              if (isPlaybackCancelled(generation)) {
+                setIsLoading(false);
+                return;
+              }
               if (!obj?.url) continue;
               newPlaylist.push({
                 id: playlistOfIds[i],
@@ -493,6 +524,11 @@ function Player({ title, sourcePath, custom, speed, stopAll }) {
               setTimeout(() => setNotification(null), 5000);
               setIsLoading(false);
               setIsPlaying(false);
+              return;
+            }
+
+            if (isPlaybackCancelled(generation)) {
+              setIsLoading(false);
               return;
             }
 
@@ -515,6 +551,10 @@ function Player({ title, sourcePath, custom, speed, stopAll }) {
             throw new Error(`Failed to load audio (${response.status})`);
           }
           const arrayBuffer = await response.arrayBuffer();
+          if (isPlaybackCancelled(generation)) {
+            setIsLoading(false);
+            return;
+          }
           audioBuffer = await audioCtx.decodeAudioData(arrayBuffer);
         }
 
@@ -522,6 +562,11 @@ function Player({ title, sourcePath, custom, speed, stopAll }) {
         if (source !== 'apiSearch') {
           audioBufferRef.current = audioBuffer;
         }
+      }
+
+      if (isPlaybackCancelled(generation)) {
+        setIsLoading(false);
+        return;
       }
 
       // 3. NETTOYAGE DES ANCIENS NOEUDS
@@ -547,7 +592,8 @@ function Player({ title, sourcePath, custom, speed, stopAll }) {
 
       if (source === 'apiSearch') {
         sourceNode.onended = () => {
-          if (!sourceNode.loop) refresh();
+          if (isPlaybackCancelled(generation)) return;
+          refresh();
         };
       }
 
@@ -581,6 +627,11 @@ function Player({ title, sourcePath, custom, speed, stopAll }) {
         reverbGainNodeRef.current = reverbGainNode;
       }
 
+      if (isPlaybackCancelled(generation)) {
+        setIsLoading(false);
+        return;
+      }
+
       sourceNode.start();
       sourceNodeRef.current = sourceNode;
       gainNodeRef.current = gainNode;
@@ -610,8 +661,9 @@ function Player({ title, sourcePath, custom, speed, stopAll }) {
   }
 
   function disconnectAudioNodes() {
+    clearSourceOnEnded();
+
     if (sourceNodeRef.current) {
-      sourceNodeRef.current.onended = null;
       try {
         sourceNodeRef.current.stop();
       } catch {
@@ -655,25 +707,40 @@ function Player({ title, sourcePath, custom, speed, stopAll }) {
   }
 
   function stop({ fade = true } = {}) {
-    if (isFadingRef.current) return;
+    invalidatePlayback();
 
-    const hasActiveAudio =
-      sourceNodeRef.current || gainNodeRef.current || noiseSourceRef.current;
-
-    if (!hasActiveAudio) {
-      setIsPlaying(false);
-      setIsStereo(false);
-      if (loadASnap) setLoadASnap(false);
-      return;
+    if (fadeTimeoutRef.current) {
+      clearTimeout(fadeTimeoutRef.current);
+      fadeTimeoutRef.current = null;
     }
+    isFadingRef.current = false;
 
-    registerPlayerSituation(title, { isPlaying: false });
-    stopPerlinModulation();
+    setIsLoading(false);
     setIsPlaying(false);
     setIsStereo(false);
 
     if (loadASnap) {
       setLoadASnap(false);
+    }
+
+    registerPlayerSituation(title, { isPlaying: false });
+    stopPerlinModulation();
+
+    clearSourceOnEnded();
+
+    const hasActiveAudio =
+      sourceNodeRef.current || gainNodeRef.current || noiseSourceRef.current;
+
+    if (!hasActiveAudio) {
+      return;
+    }
+
+    if (sourceNodeRef.current) {
+      try {
+        sourceNodeRef.current.stop();
+      } catch {
+        // stop() can throw if already stopped or not started
+      }
     }
 
     const shouldFade =
@@ -774,6 +841,11 @@ function Player({ title, sourcePath, custom, speed, stopAll }) {
 
   // REFRESH -----------------------------------------------
   const refresh = async () => {
+    if (!isPlayingRef.current) return;
+
+    const generation = playbackGenerationRef.current;
+    if (isPlaybackCancelled(generation)) return;
+
     const currentPlaylist = playlistRef.current;
     const currentIndex = currentPlaylist.findIndex(x => x.isCurrent);
 
@@ -814,7 +886,8 @@ function Player({ title, sourcePath, custom, speed, stopAll }) {
       volValue,
       filterValue,
       playbackRate,
-      true
+      true,
+      generation
     );
   };
 
