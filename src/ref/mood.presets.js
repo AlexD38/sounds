@@ -63,3 +63,9 @@ export const moodPresets = [
     ],
   },
 ];
+
+export const getMoodPresetById = id =>
+  moodPresets.find(mood => mood.id === id);
+
+export const getMoodPresetByLabel = label =>
+  moodPresets.find(mood => mood.label === label);

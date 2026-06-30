@@ -5,6 +5,7 @@ import { Context } from './context/context';
 import { Notification } from './components/notification/notification';
 import { SavedSnaps } from './components/SavedSnaps/SavedSnaps';
 import { ActiveMixDock } from './components/ActiveMixDock/ActiveMixDock';
+import { ActiveMixBanner } from './components/ActiveMixBanner/ActiveMixBanner';
 import { BottomBar } from './components/BottomBar/BottomBar';
 import { config } from './ref/random.config';
 
@@ -99,6 +100,8 @@ function App() {
         </div>
         <p className="app-header__tagline">Mix your focus soundscape</p>
       </header>
+
+      <ActiveMixBanner />
 
       {savedSnaps.size > 0 && <SavedSnaps />}
 

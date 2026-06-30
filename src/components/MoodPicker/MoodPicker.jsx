@@ -6,11 +6,9 @@ import './styles.css';
 
 export const MoodPicker = () => {
   const {
-    setStopAll,
-    setPlayingSnap,
-    setLoadASnap,
+    loadMix,
     setNotification,
-    setRandomSnap,
+    activeMix,
   } = useContext(Context);
   const [isOpen, setIsOpen] = useState(false);
 
@@ -31,22 +29,23 @@ export const MoodPicker = () => {
   }, [isOpen]);
 
   const loadMood = mood => {
-    setStopAll(true);
-    setRandomSnap(null);
-
     const snap = new Map();
     snap.set(mood.label, { title: mood.label, players: mood.players });
 
-    setRandomSnap(snap);
-    setPlayingSnap(mood.label);
-    setLoadASnap(true);
-    setStopAll(false);
+    loadMix({
+      label: mood.label,
+      snapMap: snap,
+      activeMix: { type: 'mood', id: mood.id, label: mood.label },
+    });
 
     setNotification({ message: `Now playing "${mood.label}" mood` });
     setTimeout(() => setNotification(null), 3000);
 
     setIsOpen(false);
   };
+
+  const isMoodActive = mood =>
+    activeMix?.type === 'mood' && activeMix?.id === mood.id;
 
   const sheet =
     isOpen &&
@@ -84,9 +83,13 @@ export const MoodPicker = () => {
               <button
                 key={mood.id}
                 type="button"
-                className="mood-card"
+                className={`mood-card${isMoodActive(mood) ? ' mood-card--active' : ''}`}
                 onClick={() => loadMood(mood)}
+                aria-pressed={isMoodActive(mood)}
               >
+                {isMoodActive(mood) && (
+                  <span className="mood-card__active-dot" aria-hidden="true" />
+                )}
                 <span className="mood-card__icon-wrap">
                   <i
                     className={`fa-solid fa-${mood.icon}`}
@@ -107,13 +110,18 @@ export const MoodPicker = () => {
     <>
       <button
         type="button"
-        className="bar-action"
+        className={`bar-action${activeMix?.type === 'mood' ? ' bar-action--active' : ''}`}
         onClick={() => setIsOpen(true)}
         aria-label="Choose a mood"
         aria-expanded={isOpen}
       >
         <i className="fa-solid fa-wand-magic-sparkles" aria-hidden="true" />
         <span className="bar-action__label">Moods</span>
+        {activeMix?.type === 'mood' && (
+          <span className="bar-action__badge" aria-hidden="true">
+            <i className="fa-solid fa-circle" />
+          </span>
+        )}
       </button>
       {sheet}
     </>

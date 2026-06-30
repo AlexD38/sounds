@@ -1,5 +1,6 @@
-import { createContext, useEffect, useMemo, useState } from 'react';
+import { createContext, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import localforage from 'localforage';
+import { CROSSFADE_DURATION } from '../ref/mix.constants';
 
 // Crée le contexte
 // eslint-disable-next-line react-refresh/only-export-components
@@ -23,6 +24,8 @@ export function ContextProvider({ children }) {
   const [playingSnap, setPlayingSnap] = useState(null);
   const [stopAll, setStopAll] = useState(false);
   const [randomSnap, setRandomSnap] = useState(null);
+  const [mixTransition, setMixTransition] = useState(false);
+  const [activeMix, setActiveMix] = useState(null);
   const [cachedAudios, setCachedAudios] = useState(null);
   const [playlist, setPlaylist] = useState([]);
   const [zenQuote, setZenQuote] = useState(null);
@@ -83,6 +86,39 @@ export function ContextProvider({ children }) {
     });
   };
 
+  const mixTransitionTimeoutRef = useRef(null);
+
+  const clearActiveMix = useCallback(() => {
+    setActiveMix(null);
+  }, []);
+
+  const loadMix = useCallback(({ label, snapMap, activeMix: mixMeta }) => {
+    if (mixTransitionTimeoutRef.current) {
+      clearTimeout(mixTransitionTimeoutRef.current);
+    }
+
+    setMixTransition(true);
+    setRandomSnap(snapMap ?? null);
+    setPlayingSnap(label);
+    setLoadASnap(true);
+    setStopAll(false);
+    setActiveMix(mixMeta ?? null);
+
+    mixTransitionTimeoutRef.current = setTimeout(() => {
+      setMixTransition(false);
+      setLoadASnap(false);
+      mixTransitionTimeoutRef.current = null;
+    }, CROSSFADE_DURATION * 1000);
+  }, []);
+
+  useEffect(() => {
+    return () => {
+      if (mixTransitionTimeoutRef.current) {
+        clearTimeout(mixTransitionTimeoutRef.current);
+      }
+    };
+  }, []);
+
   const providerValue = useMemo(
     () => ({
       theme,
@@ -105,6 +141,11 @@ export function ContextProvider({ children }) {
       setStopAll,
       randomSnap,
       setRandomSnap,
+      mixTransition,
+      activeMix,
+      setActiveMix,
+      loadMix,
+      clearActiveMix,
       cachedAudios,
       setCachedAudios,
       playlist,
@@ -122,9 +163,13 @@ export function ContextProvider({ children }) {
       playingSnap,
       stopAll,
       randomSnap,
+      mixTransition,
+      activeMix,
       cachedAudios,
       playlist,
       zenQuote,
+      loadMix,
+      clearActiveMix,
     ]
   );
 

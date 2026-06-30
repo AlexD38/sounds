@@ -23,6 +23,7 @@ function Player({ title, sourcePath, custom, speed, stopAll }) {
     setNotification,
     playlist,
     setPlaylist,
+    mixTransition,
   } = useContext(Context);
 
   const [filterValue, setFilterValue] = useState(1800);
@@ -63,6 +64,7 @@ function Player({ title, sourcePath, custom, speed, stopAll }) {
   const savedSnapsRef = useRef(savedSnaps);
   const randomSnapRef = useRef(randomSnap);
   const isPlayingRef = useRef(isPlaying);
+  const mixTransitionRef = useRef(mixTransition);
 
   const { setCustomSound } = useContext(Context);
 
@@ -77,6 +79,10 @@ function Player({ title, sourcePath, custom, speed, stopAll }) {
   useEffect(() => {
     isPlayingRef.current = isPlaying;
   }, [isPlaying]);
+
+  useEffect(() => {
+    mixTransitionRef.current = mixTransition;
+  }, [mixTransition]);
 
   useEffect(() => {
     return () => {
@@ -239,9 +245,13 @@ function Player({ title, sourcePath, custom, speed, stopAll }) {
       setFilterValue(filter);
       setVolValue(volume);
       setPlaybackRate(speed);
-      play(null, sourcePath, custom, volume, filter, speed);
+      if (isPlayingRef.current) {
+        crossfadeParams(volume, filter, speed);
+      } else {
+        play(null, sourcePath, custom, volume, filter, speed);
+      }
     } else if (isPlayingRef.current) {
-      stop();
+      stop({ fade: true });
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [loadASnap, playingSnap, stopAll]);
@@ -431,6 +441,76 @@ function Player({ title, sourcePath, custom, speed, stopAll }) {
       if (isPlaybackCancelled(generation)) return;
       startPerlinModulation(0.5, maxGain);
     }, FADE_IN_DURATION * 1000);
+  }
+
+  function crossfadeParams(newVol, newFilter, newSpeed) {
+    const audioCtx = audioCtxRef.current;
+    if (!audioCtx || !gainNodeRef.current || !filterRef.current) {
+      play(null, sourcePath, custom, newVol, newFilter, newSpeed);
+      return;
+    }
+
+    const now = audioCtx.currentTime;
+    const dryLevel = sourcePath === 'apiSearch' ? 1 - reverbValue : 1;
+    const dryTarget = newVol * dryLevel;
+    const generation = playbackGenerationRef.current;
+
+    gainNodeRef.current.gain.cancelScheduledValues(now);
+    gainNodeRef.current.gain.setValueAtTime(
+      gainNodeRef.current.gain.value,
+      now
+    );
+    gainNodeRef.current.gain.linearRampToValueAtTime(
+      dryTarget,
+      now + FADE_IN_DURATION
+    );
+
+    if (reverbGainNodeRef.current) {
+      const wetTarget = newVol * reverbValue;
+      reverbGainNodeRef.current.gain.cancelScheduledValues(now);
+      reverbGainNodeRef.current.gain.setValueAtTime(
+        reverbGainNodeRef.current.gain.value,
+        now
+      );
+      reverbGainNodeRef.current.gain.linearRampToValueAtTime(
+        wetTarget,
+        now + FADE_IN_DURATION
+      );
+    }
+
+    filterRef.current.frequency.cancelScheduledValues(now);
+    filterRef.current.frequency.setValueAtTime(
+      filterRef.current.frequency.value,
+      now
+    );
+    filterRef.current.frequency.linearRampToValueAtTime(
+      newFilter,
+      now + FADE_IN_DURATION
+    );
+
+    if (sourceNodeRef.current) {
+      sourceNodeRef.current.playbackRate.cancelScheduledValues(now);
+      sourceNodeRef.current.playbackRate.setValueAtTime(
+        sourceNodeRef.current.playbackRate.value,
+        now
+      );
+      sourceNodeRef.current.playbackRate.linearRampToValueAtTime(
+        newSpeed,
+        now + FADE_IN_DURATION
+      );
+    }
+
+    registerPlayerSituation(title, {
+      isPlaying: true,
+      volume: newVol,
+      filter: newFilter,
+      speed: newSpeed,
+    });
+
+    if (custom === 'perlinNoise') {
+      stopPerlinModulation();
+      schedulePerlinAfterFade(generation, newVol);
+    }
   }
 
   // PLAY ----------------------------------------
@@ -748,7 +828,7 @@ function Player({ title, sourcePath, custom, speed, stopAll }) {
     setIsPlaying(false);
     setIsStereo(false);
 
-    if (loadASnap) {
+    if (loadASnap && !mixTransitionRef.current) {
       setLoadASnap(false);
     }
 

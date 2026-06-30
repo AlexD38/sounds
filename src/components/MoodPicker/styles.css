@@ -104,6 +104,7 @@
 }
 
 .mood-card {
+  position: relative;
   display: flex;
   flex-direction: column;
   align-items: flex-start;
@@ -129,6 +130,23 @@
 
 .mood-card:active {
   transform: scale(0.98);
+}
+
+.mood-card--active {
+  border-color: var(--color-accent);
+  background: rgba(126, 184, 164, 0.14);
+  box-shadow: 0 0 0 1px rgba(126, 184, 164, 0.2);
+}
+
+.mood-card__active-dot {
+  position: absolute;
+  top: 0.55rem;
+  right: 0.55rem;
+  width: 0.45rem;
+  height: 0.45rem;
+  border-radius: var(--radius-full);
+  background: var(--color-accent-bright);
+  box-shadow: 0 0 6px rgba(126, 184, 164, 0.6);
 }
 
 .mood-card__icon-wrap {

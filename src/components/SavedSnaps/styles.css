@@ -69,6 +69,17 @@
   box-shadow: var(--shadow-sm);
 }
 
+.saved-snap--active {
+  border-color: var(--color-accent);
+  background: rgba(126, 184, 164, 0.1);
+  box-shadow: 0 0 0 1px rgba(126, 184, 164, 0.22);
+}
+
+.saved-snap--active .saved-snap__play-icon {
+  background: rgba(126, 184, 164, 0.28);
+  color: var(--color-accent-bright);
+}
+
 .saved-snap__play {
   flex: 1;
   display: flex;

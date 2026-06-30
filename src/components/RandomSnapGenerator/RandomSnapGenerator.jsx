@@ -3,16 +3,9 @@ import { Context } from '../../context/context';
 import { config } from '../../ref/random.config';
 
 export const RandomSnapGenerator = () => {
-  const {
-    setStopAll,
-    setPlayingSnap,
-    setLoadASnap,
-    setNotification,
-    setRandomSnap,
-  } = useContext(Context);
+  const { loadMix, setNotification } = useContext(Context);
 
   const generateRandomSnap = () => {
-    setStopAll(true);
     const numberOfPlayersArr = [2, 2, 3, 4];
     const randomSnapTitle = [];
     const selectedPlayers = { players: [] };
@@ -66,13 +59,15 @@ export const RandomSnapGenerator = () => {
     const result = new Map();
     result.set(finalTitle, selectedPlayers);
 
-    setRandomSnap(result);
-    setLoadASnap(true);
-    setPlayingSnap(finalTitle);
+    loadMix({
+      label: finalTitle,
+      snapMap: result,
+      activeMix: { type: 'random', label: finalTitle },
+    });
+
     setNotification({
       message: `Now Playing auto generated playlist`,
     });
-    setStopAll(false);
 
     setTimeout(() => {
       setNotification(null);

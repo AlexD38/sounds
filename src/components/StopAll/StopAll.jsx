@@ -2,11 +2,12 @@ import { useContext } from 'react';
 import { Context } from '../../context/context';
 
 export const StopAll = () => {
-  const { setStopAll, setRandomSnap } = useContext(Context);
+  const { setStopAll, setRandomSnap, clearActiveMix } = useContext(Context);
 
   const handleStopAll = () => {
     setStopAll(true);
     setRandomSnap(null);
+    clearActiveMix();
   };
 
   return (

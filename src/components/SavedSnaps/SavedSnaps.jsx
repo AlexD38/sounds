@@ -7,10 +7,8 @@ export const SavedSnaps = () => {
     savedSnaps,
     setSavedSnaps,
     setNotification,
-    setLoadASnap,
-    setPlayingSnap,
-    setStopAll,
-    setRandomSnap,
+    loadMix,
+    activeMix,
   } = useContext(Context);
 
   const [snapsToDisplay, setSnapsToDisplay] = useState([]);
@@ -22,13 +20,15 @@ export const SavedSnaps = () => {
   }, [savedSnaps]);
 
   const handleLoadSavedSnap = snapTitle => {
-    setRandomSnap(null);
-    setStopAll(false);
-    setPlayingSnap(snapTitle);
+    loadMix({
+      label: snapTitle,
+      snapMap: null,
+      activeMix: { type: 'saved', label: snapTitle },
+    });
+
     setNotification({
       message: `Now playing "${snapTitle}"`,
     });
-    setLoadASnap(true);
     setTimeout(() => setNotification(null), 3000);
   };
 
@@ -52,28 +52,40 @@ export const SavedSnaps = () => {
         <span className="saved-section__count">{snapsToDisplay.length}</span>
       </div>
       <div className="saved-snaps-container">
-        {snapsToDisplay.map(snap => (
-          <div className="saved-snap" key={snap.title}>
-            <button
-              type="button"
-              className="saved-snap__play"
-              onClick={() => handleLoadSavedSnap(snap.title)}
-              aria-label={`Play mix ${snap.title}`}
+        {snapsToDisplay.map(snap => {
+          const isActive =
+            activeMix?.type === 'saved' && activeMix?.label === snap.title;
+
+          return (
+            <div
+              className={`saved-snap${isActive ? ' saved-snap--active' : ''}`}
+              key={snap.title}
             >
-              <i className="fa-solid fa-play saved-snap__play-icon" aria-hidden="true" />
-              <span className="saved-snap__label">{snap.title}</span>
-            </button>
-            <button
-              type="button"
-              className="saved-snap__delete"
-              data-id={snap.title}
-              onClick={e => handleDelSnap(e, snap.title)}
-              aria-label={`Delete mix ${snap.title}`}
-            >
-              <i className="fa-solid fa-xmark" aria-hidden="true" />
-            </button>
-          </div>
-        ))}
+              <button
+                type="button"
+                className="saved-snap__play"
+                onClick={() => handleLoadSavedSnap(snap.title)}
+                aria-label={`Play mix ${snap.title}`}
+                aria-pressed={isActive}
+              >
+                <i
+                  className={`fa-solid ${isActive ? 'fa-circle-play' : 'fa-play'} saved-snap__play-icon`}
+                  aria-hidden="true"
+                />
+                <span className="saved-snap__label">{snap.title}</span>
+              </button>
+              <button
+                type="button"
+                className="saved-snap__delete"
+                data-id={snap.title}
+                onClick={e => handleDelSnap(e, snap.title)}
+                aria-label={`Delete mix ${snap.title}`}
+              >
+                <i className="fa-solid fa-xmark" aria-hidden="true" />
+              </button>
+            </div>
+          );
+        })}
       </div>
     </section>
   );
