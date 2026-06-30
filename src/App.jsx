@@ -6,6 +6,7 @@ import { Notification } from './components/notification/notification';
 import { SavedSnaps } from './components/SavedSnaps/SavedSnaps';
 import { ActiveMixDock } from './components/ActiveMixDock/ActiveMixDock';
 import { ActiveMixBanner } from './components/ActiveMixBanner/ActiveMixBanner';
+import { ThemePicker } from './components/ThemePicker/ThemePicker';
 import { BottomBar } from './components/BottomBar/BottomBar';
 import { config } from './ref/random.config';
 
@@ -83,6 +84,7 @@ function App() {
           pointerEvents: headerOpacity < 0.05 ? 'none' : 'auto',
         }}
       >
+        <ThemePicker />
         <div className={`app-header__brand${titleShort ? ' app-header__brand--short' : ''}`}>
           {titleShort ? (
             <>

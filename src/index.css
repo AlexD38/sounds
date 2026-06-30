@@ -1,22 +1,6 @@
+@import './styles/themes.css';
+
 :root {
-  /* Palette — deep forest + warm sand */
-  --color-bg-deep: #1a2423;
-  --color-bg-mid: #243330;
-  --color-bg-surface: rgba(255, 255, 255, 0.04);
-  --color-bg-elevated: rgba(255, 255, 255, 0.08);
-  --color-border: rgba(255, 255, 255, 0.08);
-  --color-border-strong: rgba(250, 234, 177, 0.22);
-
-  --color-accent: #7eb8a4;
-  --color-accent-bright: #a8dcc8;
-  --color-accent-muted: #4a7c6f;
-  --color-warm: #faeab1;
-  --color-warm-dim: #c4b88a;
-
-  --color-text: #eef5f2;
-  --color-text-muted: rgba(238, 245, 242, 0.55);
-  --color-text-inverse: #1a2423;
-
   /* Typography */
   --font-sans: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
 
@@ -30,7 +14,6 @@
   /* Effects */
   --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.15);
   --shadow-md: 0 8px 32px rgba(0, 0, 0, 0.25);
-  --shadow-glow: 0 0 24px rgba(126, 184, 164, 0.25);
   --blur-glass: blur(20px);
 
   /* Layout */
@@ -62,22 +45,25 @@ body {
   background-image:
     radial-gradient(
       ellipse 80% 60% at 20% -10%,
-      rgba(74, 124, 111, 0.35) 0%,
+      var(--gradient-1) 0%,
       transparent 55%
     ),
     radial-gradient(
       ellipse 70% 50% at 90% 20%,
-      rgba(250, 234, 177, 0.08) 0%,
+      var(--gradient-2) 0%,
       transparent 50%
     ),
     radial-gradient(
       ellipse 60% 40% at 50% 100%,
-      rgba(52, 101, 109, 0.2) 0%,
+      var(--gradient-3) 0%,
       transparent 55%
     );
   background-attachment: fixed;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  transition:
+    background-color 0.35s ease,
+    color 0.35s ease;
 }
 
 #root {
@@ -108,6 +94,6 @@ input[type='range'] {
 }
 
 ::selection {
-  background: rgba(126, 184, 164, 0.35);
+  background: var(--color-selection);
   color: var(--color-text);
 }

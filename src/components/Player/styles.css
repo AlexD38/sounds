@@ -30,7 +30,7 @@
   border-radius: inherit;
   background: radial-gradient(
     circle at 50% 0%,
-    rgba(126, 184, 164, 0.12) 0%,
+    var(--color-accent-soft) 0%,
     transparent 65%
   );
   opacity: 0;
@@ -50,8 +50,8 @@
 
 .player-container.is-active {
   border-color: var(--color-accent);
-  background: rgba(126, 184, 164, 0.1);
-  box-shadow: 0 0 16px rgba(126, 184, 164, 0.2);
+  background: var(--color-accent-subtle);
+  box-shadow: 0 0 16px var(--color-accent-emphasis);
   cursor: default;
   transform: none;
 }
@@ -89,9 +89,9 @@
 }
 
 .player-container.is-active .player-card__icon-wrap {
-  background: rgba(126, 184, 164, 0.15);
+  background: var(--color-accent-muted-bg);
   border-color: var(--color-accent);
-  box-shadow: 0 0 12px rgba(126, 184, 164, 0.25);
+  box-shadow: 0 0 12px var(--color-accent-glow-sm);
 }
 
 .player-card__icon {

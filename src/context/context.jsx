@@ -1,6 +1,12 @@
 import { createContext, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import localforage from 'localforage';
 import { CROSSFADE_DURATION } from '../ref/mix.constants';
+import {
+  THEME_IDS,
+  THEME_STORAGE_KEY,
+  getStoredTheme,
+  getThemeById,
+} from '../ref/themes';
 
 // Crée le contexte
 // eslint-disable-next-line react-refresh/only-export-components
@@ -14,7 +20,7 @@ const toSavedSnapsMap = data => {
 
 // Crée le provider
 export function ContextProvider({ children }) {
-  const [theme, setTheme] = useState('light');
+  const [theme, setThemeState] = useState(getStoredTheme);
   const [customSound, setCustomSound] = useState(null);
   const [currentInput, setCurrentInput] = useState(null);
   const [snapshotMix, setSnapshotMix] = useState(new Map());
@@ -87,6 +93,35 @@ export function ContextProvider({ children }) {
   };
 
   const mixTransitionTimeoutRef = useRef(null);
+
+  const applyTheme = useCallback(themeId => {
+    document.documentElement.setAttribute('data-theme', themeId);
+
+    const meta = document.querySelector('meta[name="theme-color"]');
+    if (meta) {
+      meta.setAttribute('content', getThemeById(themeId).metaColor);
+    }
+  }, []);
+
+  const setTheme = useCallback(
+    themeId => {
+      if (!THEME_IDS.includes(themeId)) return;
+
+      setThemeState(themeId);
+      applyTheme(themeId);
+
+      try {
+        localStorage.setItem(THEME_STORAGE_KEY, themeId);
+      } catch {
+        // localStorage may be unavailable
+      }
+    },
+    [applyTheme]
+  );
+
+  useEffect(() => {
+    applyTheme(theme);
+  }, [theme, applyTheme]);
 
   const clearActiveMix = useCallback(() => {
     setActiveMix(null);
@@ -170,6 +205,7 @@ export function ContextProvider({ children }) {
       zenQuote,
       loadMix,
       clearActiveMix,
+      setTheme,
     ]
   );
 

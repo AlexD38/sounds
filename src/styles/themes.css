@@ -1,0 +1,229 @@
+/* Forest — default palette */
+:root,
+[data-theme='forest'] {
+  --color-bg-deep: #1a2423;
+  --color-bg-mid: #243330;
+  --color-bg-surface: rgba(255, 255, 255, 0.04);
+  --color-bg-elevated: rgba(255, 255, 255, 0.08);
+  --color-border: rgba(255, 255, 255, 0.08);
+  --color-border-strong: rgba(250, 234, 177, 0.22);
+
+  --color-accent: #7eb8a4;
+  --color-accent-bright: #a8dcc8;
+  --color-accent-muted: #4a7c6f;
+  --color-warm: #faeab1;
+  --color-warm-dim: #c4b88a;
+
+  --color-text: #eef5f2;
+  --color-text-muted: rgba(238, 245, 242, 0.55);
+  --color-text-inverse: #1a2423;
+
+  --color-accent-subtle: rgba(126, 184, 164, 0.1);
+  --color-accent-soft: rgba(126, 184, 164, 0.12);
+  --color-accent-muted-bg: rgba(126, 184, 164, 0.15);
+  --color-accent-medium: rgba(126, 184, 164, 0.18);
+  --color-accent-emphasis: rgba(126, 184, 164, 0.2);
+  --color-accent-ring: rgba(126, 184, 164, 0.22);
+  --color-accent-strong: rgba(126, 184, 164, 0.28);
+  --color-accent-glow-sm: rgba(126, 184, 164, 0.25);
+  --color-accent-glow-md: rgba(126, 184, 164, 0.35);
+  --color-accent-glow-lg: rgba(126, 184, 164, 0.6);
+  --color-selection: rgba(126, 184, 164, 0.35);
+
+  --gradient-1: rgba(74, 124, 111, 0.35);
+  --gradient-2: rgba(250, 234, 177, 0.08);
+  --gradient-3: rgba(52, 101, 109, 0.2);
+  --color-bar-bg: rgba(26, 36, 35, 0.82);
+  --color-overlay: rgba(10, 16, 15, 0.65);
+  --shadow-glow: 0 0 24px rgba(126, 184, 164, 0.25);
+}
+
+[data-theme='ember'] {
+  --color-bg-deep: #1c1612;
+  --color-bg-mid: #2a221c;
+  --color-bg-surface: rgba(255, 255, 255, 0.04);
+  --color-bg-elevated: rgba(255, 255, 255, 0.08);
+  --color-border: rgba(255, 255, 255, 0.08);
+  --color-border-strong: rgba(245, 230, 200, 0.22);
+
+  --color-accent: #d4956a;
+  --color-accent-bright: #e8b88a;
+  --color-accent-muted: #8b5e3c;
+  --color-warm: #f5e6c8;
+  --color-warm-dim: #b8a078;
+
+  --color-text: #f8f0e8;
+  --color-text-muted: rgba(248, 240, 232, 0.55);
+  --color-text-inverse: #1c1612;
+
+  --color-accent-subtle: rgba(212, 149, 106, 0.1);
+  --color-accent-soft: rgba(212, 149, 106, 0.12);
+  --color-accent-muted-bg: rgba(212, 149, 106, 0.15);
+  --color-accent-medium: rgba(212, 149, 106, 0.18);
+  --color-accent-emphasis: rgba(212, 149, 106, 0.2);
+  --color-accent-ring: rgba(212, 149, 106, 0.22);
+  --color-accent-strong: rgba(212, 149, 106, 0.28);
+  --color-accent-glow-sm: rgba(212, 149, 106, 0.25);
+  --color-accent-glow-md: rgba(212, 149, 106, 0.35);
+  --color-accent-glow-lg: rgba(212, 149, 106, 0.6);
+  --color-selection: rgba(212, 149, 106, 0.35);
+
+  --gradient-1: rgba(139, 94, 60, 0.35);
+  --gradient-2: rgba(245, 230, 200, 0.09);
+  --gradient-3: rgba(100, 60, 40, 0.22);
+  --color-bar-bg: rgba(28, 22, 18, 0.84);
+  --color-overlay: rgba(12, 10, 8, 0.68);
+  --shadow-glow: 0 0 24px rgba(212, 149, 106, 0.25);
+}
+
+[data-theme='ocean'] {
+  --color-bg-deep: #0f1a24;
+  --color-bg-mid: #162430;
+  --color-bg-surface: rgba(255, 255, 255, 0.04);
+  --color-bg-elevated: rgba(255, 255, 255, 0.08);
+  --color-border: rgba(255, 255, 255, 0.08);
+  --color-border-strong: rgba(200, 232, 245, 0.2);
+
+  --color-accent: #5eb8c9;
+  --color-accent-bright: #8dd9e8;
+  --color-accent-muted: #2d6b7a;
+  --color-warm: #c8e8f5;
+  --color-warm-dim: #7aa8b8;
+
+  --color-text: #e8f4f8;
+  --color-text-muted: rgba(232, 244, 248, 0.55);
+  --color-text-inverse: #0f1a24;
+
+  --color-accent-subtle: rgba(94, 184, 201, 0.1);
+  --color-accent-soft: rgba(94, 184, 201, 0.12);
+  --color-accent-muted-bg: rgba(94, 184, 201, 0.15);
+  --color-accent-medium: rgba(94, 184, 201, 0.18);
+  --color-accent-emphasis: rgba(94, 184, 201, 0.2);
+  --color-accent-ring: rgba(94, 184, 201, 0.22);
+  --color-accent-strong: rgba(94, 184, 201, 0.28);
+  --color-accent-glow-sm: rgba(94, 184, 201, 0.25);
+  --color-accent-glow-md: rgba(94, 184, 201, 0.35);
+  --color-accent-glow-lg: rgba(94, 184, 201, 0.6);
+  --color-selection: rgba(94, 184, 201, 0.35);
+
+  --gradient-1: rgba(45, 107, 122, 0.38);
+  --gradient-2: rgba(200, 232, 245, 0.08);
+  --gradient-3: rgba(30, 80, 110, 0.22);
+  --color-bar-bg: rgba(15, 26, 36, 0.84);
+  --color-overlay: rgba(6, 12, 18, 0.68);
+  --shadow-glow: 0 0 24px rgba(94, 184, 201, 0.25);
+}
+
+[data-theme='lavender'] {
+  --color-bg-deep: #1a1724;
+  --color-bg-mid: #252035;
+  --color-bg-surface: rgba(255, 255, 255, 0.04);
+  --color-bg-elevated: rgba(255, 255, 255, 0.08);
+  --color-border: rgba(255, 255, 255, 0.08);
+  --color-border-strong: rgba(232, 216, 240, 0.22);
+
+  --color-accent: #a88cc8;
+  --color-accent-bright: #c8b0e0;
+  --color-accent-muted: #6a5088;
+  --color-warm: #e8d8f0;
+  --color-warm-dim: #a890b8;
+
+  --color-text: #f0ecf5;
+  --color-text-muted: rgba(240, 236, 245, 0.55);
+  --color-text-inverse: #1a1724;
+
+  --color-accent-subtle: rgba(168, 140, 200, 0.1);
+  --color-accent-soft: rgba(168, 140, 200, 0.12);
+  --color-accent-muted-bg: rgba(168, 140, 200, 0.15);
+  --color-accent-medium: rgba(168, 140, 200, 0.18);
+  --color-accent-emphasis: rgba(168, 140, 200, 0.2);
+  --color-accent-ring: rgba(168, 140, 200, 0.22);
+  --color-accent-strong: rgba(168, 140, 200, 0.28);
+  --color-accent-glow-sm: rgba(168, 140, 200, 0.25);
+  --color-accent-glow-md: rgba(168, 140, 200, 0.35);
+  --color-accent-glow-lg: rgba(168, 140, 200, 0.6);
+  --color-selection: rgba(168, 140, 200, 0.35);
+
+  --gradient-1: rgba(106, 80, 136, 0.35);
+  --gradient-2: rgba(232, 216, 240, 0.08);
+  --gradient-3: rgba(80, 60, 120, 0.22);
+  --color-bar-bg: rgba(26, 23, 36, 0.84);
+  --color-overlay: rgba(10, 8, 16, 0.68);
+  --shadow-glow: 0 0 24px rgba(168, 140, 200, 0.25);
+}
+
+[data-theme='rose'] {
+  --color-bg-deep: #24181c;
+  --color-bg-mid: #302228;
+  --color-bg-surface: rgba(255, 255, 255, 0.04);
+  --color-bg-elevated: rgba(255, 255, 255, 0.08);
+  --color-border: rgba(255, 255, 255, 0.08);
+  --color-border-strong: rgba(245, 224, 216, 0.22);
+
+  --color-accent: #c87a8a;
+  --color-accent-bright: #e0a0ad;
+  --color-accent-muted: #884858;
+  --color-warm: #f5e0d8;
+  --color-warm-dim: #b89898;
+
+  --color-text: #f5eef0;
+  --color-text-muted: rgba(245, 238, 240, 0.55);
+  --color-text-inverse: #24181c;
+
+  --color-accent-subtle: rgba(200, 122, 138, 0.1);
+  --color-accent-soft: rgba(200, 122, 138, 0.12);
+  --color-accent-muted-bg: rgba(200, 122, 138, 0.15);
+  --color-accent-medium: rgba(200, 122, 138, 0.18);
+  --color-accent-emphasis: rgba(200, 122, 138, 0.2);
+  --color-accent-ring: rgba(200, 122, 138, 0.22);
+  --color-accent-strong: rgba(200, 122, 138, 0.28);
+  --color-accent-glow-sm: rgba(200, 122, 138, 0.25);
+  --color-accent-glow-md: rgba(200, 122, 138, 0.35);
+  --color-accent-glow-lg: rgba(200, 122, 138, 0.6);
+  --color-selection: rgba(200, 122, 138, 0.35);
+
+  --gradient-1: rgba(136, 72, 88, 0.35);
+  --gradient-2: rgba(245, 224, 216, 0.08);
+  --gradient-3: rgba(100, 50, 65, 0.22);
+  --color-bar-bg: rgba(36, 24, 28, 0.84);
+  --color-overlay: rgba(14, 8, 10, 0.68);
+  --shadow-glow: 0 0 24px rgba(200, 122, 138, 0.25);
+}
+
+[data-theme='midnight'] {
+  --color-bg-deep: #12141f;
+  --color-bg-mid: #1a1e2e;
+  --color-bg-surface: rgba(255, 255, 255, 0.04);
+  --color-bg-elevated: rgba(255, 255, 255, 0.08);
+  --color-border: rgba(255, 255, 255, 0.08);
+  --color-border-strong: rgba(216, 224, 245, 0.2);
+
+  --color-accent: #7a8cc8;
+  --color-accent-bright: #a8b8e8;
+  --color-accent-muted: #485878;
+  --color-warm: #d8e0f5;
+  --color-warm-dim: #8898b8;
+
+  --color-text: #e8ecf5;
+  --color-text-muted: rgba(232, 236, 245, 0.55);
+  --color-text-inverse: #12141f;
+
+  --color-accent-subtle: rgba(122, 140, 200, 0.1);
+  --color-accent-soft: rgba(122, 140, 200, 0.12);
+  --color-accent-muted-bg: rgba(122, 140, 200, 0.15);
+  --color-accent-medium: rgba(122, 140, 200, 0.18);
+  --color-accent-emphasis: rgba(122, 140, 200, 0.2);
+  --color-accent-ring: rgba(122, 140, 200, 0.22);
+  --color-accent-strong: rgba(122, 140, 200, 0.28);
+  --color-accent-glow-sm: rgba(122, 140, 200, 0.25);
+  --color-accent-glow-md: rgba(122, 140, 200, 0.35);
+  --color-accent-glow-lg: rgba(122, 140, 200, 0.6);
+  --color-selection: rgba(122, 140, 200, 0.35);
+
+  --gradient-1: rgba(72, 88, 120, 0.38);
+  --gradient-2: rgba(216, 224, 245, 0.08);
+  --gradient-3: rgba(40, 50, 90, 0.24);
+  --color-bar-bg: rgba(18, 20, 31, 0.84);
+  --color-overlay: rgba(6, 8, 14, 0.68);
+  --shadow-glow: 0 0 24px rgba(122, 140, 200, 0.25);
+}

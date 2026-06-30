@@ -176,7 +176,7 @@
 }
 
 .player-control-btn:hover {
-  background: rgba(126, 184, 164, 0.15);
+  background: var(--color-accent-muted-bg);
   border-color: var(--color-border-strong);
   color: var(--color-accent-bright);
 }
@@ -191,7 +191,7 @@
 }
 
 .player-control-btn--active {
-  background: rgba(126, 184, 164, 0.2);
+  background: var(--color-accent-emphasis);
   border-color: var(--color-accent);
   color: var(--color-accent-bright);
 }

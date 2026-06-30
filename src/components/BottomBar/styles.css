@@ -17,7 +17,7 @@
   max-width: 26rem;
   margin: 0 auto;
   padding: 0.35rem;
-  background: rgba(26, 36, 35, 0.82);
+  background: var(--color-bar-bg);
   border: 1px solid var(--color-border);
   border-radius: var(--radius-xl);
   box-shadow:
@@ -69,7 +69,7 @@
 }
 
 .bar-action--active {
-  background: rgba(126, 184, 164, 0.12);
+  background: var(--color-accent-soft);
   color: var(--color-accent-bright);
 }
 
@@ -173,7 +173,7 @@
 .bar-popover__input:focus {
   outline: none;
   border-color: var(--color-accent);
-  box-shadow: 0 0 0 3px rgba(126, 184, 164, 0.2);
+  box-shadow: 0 0 0 3px var(--color-accent-emphasis);
 }
 
 .bar-popover__confirm {

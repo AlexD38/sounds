@@ -71,12 +71,12 @@
 
 .saved-snap--active {
   border-color: var(--color-accent);
-  background: rgba(126, 184, 164, 0.1);
-  box-shadow: 0 0 0 1px rgba(126, 184, 164, 0.22);
+  background: var(--color-accent-subtle);
+  box-shadow: 0 0 0 1px var(--color-accent-ring);
 }
 
 .saved-snap--active .saved-snap__play-icon {
-  background: rgba(126, 184, 164, 0.28);
+  background: var(--color-accent-strong);
   color: var(--color-accent-bright);
 }
 
@@ -104,12 +104,12 @@
 }
 
 .saved-snap__play:hover {
-  background: rgba(126, 184, 164, 0.12);
+  background: var(--color-accent-soft);
   color: var(--color-accent-bright);
 }
 
 .saved-snap__play:active {
-  background: rgba(126, 184, 164, 0.18);
+  background: var(--color-accent-medium);
 }
 
 .saved-snap__play-icon {
@@ -120,14 +120,14 @@
   width: 1.75rem;
   height: 1.75rem;
   border-radius: var(--radius-full);
-  background: rgba(126, 184, 164, 0.15);
+  background: var(--color-accent-muted-bg);
   font-size: 0.65rem;
   color: var(--color-accent-bright);
   transition: background 0.2s ease;
 }
 
 .saved-snap__play:hover .saved-snap__play-icon {
-  background: rgba(126, 184, 164, 0.28);
+  background: var(--color-accent-strong);
 }
 
 .saved-snap__label {
