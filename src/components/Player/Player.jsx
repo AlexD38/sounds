@@ -764,14 +764,6 @@ function Player({ title, sourcePath, custom, speed, stopAll }) {
       return;
     }
 
-    if (sourceNodeRef.current) {
-      try {
-        sourceNodeRef.current.stop();
-      } catch {
-        // stop() can throw if already stopped or not started
-      }
-    }
-
     const shouldFade =
       fade && audioCtxRef.current && gainNodeRef.current && FADE_OUT_DURATION > 0;
 
