@@ -1,5 +1,6 @@
 import { StopAll } from '../StopAll/StopAll';
 import { SaveSnapshotMix } from '../SaveSnapshotMix/SaveSnapshotMix';
+import { MoodPicker } from '../MoodPicker/MoodPicker';
 import { Timer } from '../timer/Timer';
 import { RandomSnapGenerator } from '../RandomSnapGenerator/RandomSnapGenerator';
 import './styles.css';
@@ -10,6 +11,7 @@ export function BottomBar({ installPromptEvent, onInstallClick }) {
       <div className="bottom-bar__inner">
         <StopAll />
         <SaveSnapshotMix />
+        <MoodPicker />
         <RandomSnapGenerator />
         <Timer />
         {installPromptEvent && (

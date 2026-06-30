@@ -9,6 +9,7 @@ import { PlayerTitle } from '../PlayerTitle/PlayerTitle';
 import './styles.css'; // Import local styles
 
 const FADE_OUT_DURATION = 2.5;
+const FADE_IN_DURATION = 2.5;
 
 function Player({ title, sourcePath, custom, speed, stopAll }) {
   const {
@@ -48,6 +49,7 @@ function Player({ title, sourcePath, custom, speed, stopAll }) {
   const modulatorIntervalRef = useRef(null);
   const isFadingRef = useRef(false);
   const fadeTimeoutRef = useRef(null);
+  const perlinFadeTimerRef = useRef(null);
   const playbackGenerationRef = useRef(0);
   const [portalTarget, setPortalTarget] = useState(null);
 
@@ -79,6 +81,7 @@ function Player({ title, sourcePath, custom, speed, stopAll }) {
   useEffect(() => {
     return () => {
       if (fadeTimeoutRef.current) clearTimeout(fadeTimeoutRef.current);
+      if (perlinFadeTimerRef.current) clearTimeout(perlinFadeTimerRef.current);
     };
   }, []);
 
@@ -407,6 +410,29 @@ function Player({ title, sourcePath, custom, speed, stopAll }) {
     return audioCtxRef.current;
   };
 
+  function clearPerlinFadeTimer() {
+    if (perlinFadeTimerRef.current) {
+      clearTimeout(perlinFadeTimerRef.current);
+      perlinFadeTimerRef.current = null;
+    }
+  }
+
+  function applyGainFadeIn(gainNode, targetValue, audioCtx) {
+    const now = audioCtx.currentTime;
+    gainNode.gain.cancelScheduledValues(now);
+    gainNode.gain.setValueAtTime(0, now);
+    gainNode.gain.linearRampToValueAtTime(targetValue, now + FADE_IN_DURATION);
+  }
+
+  function schedulePerlinAfterFade(generation, maxGain) {
+    clearPerlinFadeTimer();
+    perlinFadeTimerRef.current = setTimeout(() => {
+      perlinFadeTimerRef.current = null;
+      if (isPlaybackCancelled(generation)) return;
+      startPerlinModulation(0.5, maxGain);
+    }, FADE_IN_DURATION * 1000);
+  }
+
   // PLAY ----------------------------------------
   async function play(
     event,
@@ -599,7 +625,8 @@ function Player({ title, sourcePath, custom, speed, stopAll }) {
 
       const gainNode = audioCtx.createGain();
       const dryLevel = source === 'apiSearch' ? 1 - reverbValue : 1;
-      gainNode.gain.setValueAtTime(newVol * dryLevel, audioCtx.currentTime);
+      const dryTarget = newVol * dryLevel;
+      applyGainFadeIn(gainNode, dryTarget, audioCtx);
 
       const filter = audioCtx.createBiquadFilter();
       filter.type = 'lowpass';
@@ -614,10 +641,8 @@ function Player({ title, sourcePath, custom, speed, stopAll }) {
         const reverbNode = audioCtx.createConvolver();
         reverbNode.buffer = createImpulseResponse(audioCtx, reverbDuration);
         const reverbGainNode = audioCtx.createGain();
-        reverbGainNode.gain.setValueAtTime(
-          newVol * reverbValue,
-          audioCtx.currentTime
-        );
+        const wetTarget = newVol * reverbValue;
+        applyGainFadeIn(reverbGainNode, wetTarget, audioCtx);
 
         filter.connect(reverbNode);
         reverbNode.connect(reverbGainNode);
@@ -637,7 +662,9 @@ function Player({ title, sourcePath, custom, speed, stopAll }) {
       gainNodeRef.current = gainNode;
       filterRef.current = filter;
 
-      if (custom === 'perlinNoise') startPerlinModulation(0.5, newVol);
+      if (custom === 'perlinNoise') {
+        schedulePerlinAfterFade(generation, newVol);
+      }
       setIsLoading(false);
     } catch (error) {
       console.error(`[${title}] Error in playFromSource:`, error);
@@ -654,6 +681,7 @@ function Player({ title, sourcePath, custom, speed, stopAll }) {
       clearTimeout(fadeTimeoutRef.current);
       fadeTimeoutRef.current = null;
     }
+    clearPerlinFadeTimer();
     if (isFadingRef.current) {
       isFadingRef.current = false;
       disconnectAudioNodes();
@@ -713,6 +741,7 @@ function Player({ title, sourcePath, custom, speed, stopAll }) {
       clearTimeout(fadeTimeoutRef.current);
       fadeTimeoutRef.current = null;
     }
+    clearPerlinFadeTimer();
     isFadingRef.current = false;
 
     setIsLoading(false);
