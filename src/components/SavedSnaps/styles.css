@@ -1,46 +1,101 @@
-.saved-snaps-container {
-  min-width: 100%;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  flex-wrap: wrap;
-  padding: 2rem 0;
-  gap: 1rem;
-  margin-bottom: 3rem;
-  margin-top: 3rem;
-  /* border-top: 1px solid #34656d; */
-  /* border-bottom: 1px solid #34656d; */
-}
-.saved-snap {
-  padding: 0.8rem 1.2rem;
-  border-radius: 0.5rem;
-  min-width: 20%;
-  background-color: #34656d;
-  color: #faeab1;
-  font-weight: 900;
-  text-transform: capitalize;
-  cursor: pointer;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  gap: 2rem;
-}
-.saved-snap:hover {
-  transition: all 0.3s ease;
-  filter: brightness(110%);
-  background-color: #34656d;
-}
-.del-btn {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  font-size: 1.2rem;
-  transition: all 0.3s ease;
-  color: #faeab1;
+.saved-section {
+  width: 100%;
+  max-width: 42rem;
+  margin: 0 auto;
+  padding: 0 1rem 0.5rem;
 }
 
-@media (max-width: 768px) {
-  .saved-snap {
-    gap: 2rem;
-  }
+.saved-section__header {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 0.65rem;
+  padding: 0 0.25rem;
+}
+
+.saved-section__title {
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--color-text-muted);
+}
+
+.saved-section__count {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 1.25rem;
+  height: 1.25rem;
+  padding: 0 0.35rem;
+  font-size: 0.65rem;
+  font-weight: 700;
+  color: var(--color-text-inverse);
+  background: var(--color-accent);
+  border-radius: var(--radius-full);
+}
+
+.saved-snaps-container {
+  display: flex;
+  gap: 0.5rem;
+  overflow-x: auto;
+  padding: 0.15rem 0.25rem 0.5rem;
+  scroll-snap-type: x mandatory;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+}
+
+.saved-snaps-container::-webkit-scrollbar {
+  display: none;
+}
+
+.saved-snap {
+  flex-shrink: 0;
+  scroll-snap-align: start;
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  padding: 0.55rem 0.85rem 0.55rem 1rem;
+  border-radius: var(--radius-full);
+  background: var(--color-bg-elevated);
+  border: 1px solid var(--color-border);
+  color: var(--color-text);
+  font-size: 0.8rem;
+  font-weight: 600;
+  text-transform: capitalize;
+  cursor: pointer;
+  transition:
+    background 0.2s ease,
+    border-color 0.2s ease,
+    transform 0.15s ease;
+  white-space: nowrap;
+}
+
+.saved-snap:hover {
+  background: rgba(126, 184, 164, 0.12);
+  border-color: var(--color-border-strong);
+  transform: translateY(-1px);
+}
+
+.saved-snap:active {
+  transform: scale(0.97);
+}
+
+.del-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.5rem;
+  height: 1.5rem;
+  border-radius: var(--radius-full);
+  font-size: 0.7rem;
+  color: var(--color-text-muted);
+  transition:
+    background 0.2s ease,
+    color 0.2s ease;
+}
+
+.del-btn:hover {
+  background: rgba(255, 100, 100, 0.15);
+  color: #ff9999;
 }

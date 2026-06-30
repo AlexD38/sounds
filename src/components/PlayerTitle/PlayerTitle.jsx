@@ -1,3 +1,5 @@
+import { formatPlayerLabel } from '../../utils/formatPlayerLabel';
+
 export const PlayerTitle = ({ title, isPlaying }) => {
   let iconLabel = 'question';
   if (title === 'morning') {
@@ -11,13 +13,13 @@ export const PlayerTitle = ({ title, isPlaying }) => {
   } else if (title === 'spring') {
     iconLabel = 'seedling';
   } else if (title === 'ocean') {
-    iconLabel = 'house-tsunami';
+    iconLabel = 'water';
   } else if (title === 'lake') {
     iconLabel = 'water';
   } else if (title === 'lightRain') {
-    iconLabel = 'umbrella';
-  } else if (title === 'heavyRain') {
     iconLabel = 'cloud-rain';
+  } else if (title === 'heavyRain') {
+    iconLabel = 'cloud-showers-heavy';
   } else if (title === 'thunder') {
     iconLabel = 'cloud-bolt';
   } else if (title === 'train') {
@@ -33,30 +35,34 @@ export const PlayerTitle = ({ title, isPlaying }) => {
   } else if (title === 'music') {
     iconLabel = 'music';
   } else if (title === 'book') {
-    iconLabel = 'book';
-  } else if (title == 'writing') {
+    iconLabel = 'book-open';
+  } else if (title === 'writing') {
     iconLabel = 'feather-pointed';
-  } else if (title == 'whiteNoise') {
-    iconLabel = 'ear-listen';
-  } else if (title == 'bowl') {
+  } else if (title === 'whiteNoise') {
+    iconLabel = 'wave-square';
+  } else if (title === 'bowl') {
     iconLabel = 'bell';
-  } else if (title == 'wind') {
+  } else if (title === 'wind') {
     iconLabel = 'wind';
-  } else if (title == 'cat') {
-    iconLabel = 'paw';
-  } else if (title == 'forest') {
+  } else if (title === 'cat') {
+    iconLabel = 'cat';
+  } else if (title === 'forest') {
     iconLabel = 'tree';
-  } else if (title == 'home') {
+  } else if (title === 'home') {
     iconLabel = 'house-chimney';
-  } else if (title == 'city') {
+  } else if (title === 'city') {
     iconLabel = 'city';
   } else {
-    return title;
+    return (
+      <span className="player-card__icon player-card__icon--text">
+        {formatPlayerLabel(title).charAt(0)}
+      </span>
+    );
   }
 
-  let iconClassName = `fa-solid fa-${iconLabel} title`;
+  const iconClassName = `fa-solid fa-${iconLabel} player-card__icon${
+    isPlaying ? ' player-card__icon--active' : ''
+  }`;
 
-  return (
-    <i className={isPlaying ? iconClassName + ' playing' : iconClassName}></i>
-  );
+  return <i className={iconClassName} aria-hidden="true" />;
 };

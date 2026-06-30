@@ -2,7 +2,6 @@ import { useContext, useEffect, useState } from 'react';
 import './App.css';
 import Player from './components/Player/Player';
 import { Context } from './context/context';
-
 import { Notification } from './components/notification/notification';
 import { SavedSnaps } from './components/SavedSnaps/SavedSnaps';
 import { BottomBar } from './components/BottomBar/BottomBar';
@@ -14,12 +13,7 @@ function App() {
     rawSavedSnaps instanceof Map
       ? rawSavedSnaps
       : new Map(rawSavedSnaps ?? []);
-  const [opacity, setOpacity] = useState(1);
-  const [title, setTitle] = useState(
-    <>
-      Ambient <i className="fa-solid fa-compass-drafting"></i> Architect
-    </>
-  );
+  const [titleShort, setTitleShort] = useState(false);
   const [installPromptEvent, setInstallPromptEvent] = useState(null);
 
   useEffect(() => {
@@ -29,7 +23,6 @@ function App() {
     };
 
     window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
-
     return () => {
       window.removeEventListener(
         'beforeinstallprompt',
@@ -41,76 +34,71 @@ function App() {
   const handleInstallClick = () => {
     if (installPromptEvent) {
       installPromptEvent.prompt();
-      installPromptEvent.userChoice.then(choiceResult => {
-        if (choiceResult.outcome === 'accepted') {
-          console.log('User accepted the install prompt');
-        }
+      installPromptEvent.userChoice.then(() => {
         setInstallPromptEvent(null);
       });
     }
   };
 
   useEffect(() => {
-    const timer = setTimeout(() => {
-      setOpacity(0);
-      setTimeout(() => {
-        setTitle(
-          <>
-            A <i className="fa-solid fa-compass-drafting"></i> A
-          </>
-        );
-        setOpacity(1);
-      }, 500);
-    }, 3000);
+    const timer = setTimeout(() => setTitleShort(true), 3000);
     return () => clearTimeout(timer);
   }, []);
 
+  const soundPlayers = config.filter(
+    p => p.title !== 'whiteNoise' && p.title !== 'music'
+  );
+
   return (
-    <>
-      <h1
-        className="logo"
-        style={{ opacity, transition: 'opacity 0.5s ease-in-out' }}
-      >
-        {title}
-      </h1>
+    <div className="app">
+      <header className="app-header">
+        <div className={`app-header__brand${titleShort ? ' app-header__brand--short' : ''}`}>
+          {titleShort ? (
+            <>
+              <span className="app-header__mark">A</span>
+              <i className="fa-solid fa-compass-drafting app-header__compass" aria-hidden="true" />
+              <span className="app-header__mark">A</span>
+            </>
+          ) : (
+            <>
+              <span className="app-header__word">Ambient</span>
+              <i className="fa-solid fa-compass-drafting app-header__compass" aria-hidden="true" />
+              <span className="app-header__word">Architect</span>
+            </>
+          )}
+        </div>
+        <p className="app-header__tagline">Mix your focus soundscape</p>
+      </header>
+
       {savedSnaps.size > 0 && <SavedSnaps />}
-      <main>
-        <>
-          {config.map(player => {
-            if (player.title === 'whiteNoise' || player.title === 'music')
-              return null;
-            return (
-              <Player
-                key={player.title}
-                title={player.title}
-                sourcePath={`/assets/sounds/${player.title}.mp3`}
-                custom="perlinNoise"
-                stopAll={stopAll}
-                speed={player.speed || false}
-              />
-            );
-          })}
+
+      <main className="sound-grid" aria-label="Sound library">
+        {soundPlayers.map(player => (
           <Player
-            title={'whiteNoise'}
+            key={player.title}
+            title={player.title}
+            sourcePath={`/assets/sounds/${player.title}.mp3`}
             custom="perlinNoise"
             stopAll={stopAll}
+            speed={player.speed || false}
           />
-
-          <Player
-            title={'music'}
-            sourcePath={'apiSearch'}
-            custom={true}
-            speed={true}
-            stopAll={stopAll}
-          />
-        </>
+        ))}
+        <Player title="whiteNoise" custom="perlinNoise" stopAll={stopAll} />
+        <Player
+          title="music"
+          sourcePath="apiSearch"
+          custom={true}
+          speed={true}
+          stopAll={stopAll}
+        />
       </main>
+
       <BottomBar
         installPromptEvent={installPromptEvent}
         onInstallClick={handleInstallClick}
       />
       <Notification />
-    </>
+    </div>
   );
 }
 

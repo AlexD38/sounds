@@ -4,6 +4,7 @@ import '../../App.css';
 import { Context } from '../../context/context';
 import { config } from '../../ref/random.config';
 import { makePlaylist, perlinNoise, SearchThatSound } from '../../utils/utils';
+import { formatPlayerLabel } from '../../utils/formatPlayerLabel';
 import { PlayerTitle } from '../PlayerTitle/PlayerTitle';
 import './styles.css'; // Import local styles
 
@@ -740,22 +741,32 @@ function Player({ title, sourcePath, custom, speed, stopAll }) {
         play(event, sourcePath, custom, volValue, filterValue, playbackRate)
       }
     >
-      <h3>
-        <PlayerTitle title={title} isPlaying={isPlaying} />
-      </h3>
-      {title == 'bowl' && isPlaying && (
-        <span key={bowlInterval} className="interval-value fade-out">
-          (on repeat every {(bowlInterval / 1000).toFixed(1)}s)
+      <div className="player-card__head">
+        <div className="player-card__icon-wrap">
+          <PlayerTitle title={title} isPlaying={isPlaying} />
+        </div>
+        <span className="player-card__label">{formatPlayerLabel(title)}</span>
+      </div>
+      {title === 'bowl' && isPlaying && (
+        <span key={bowlInterval} className="interval-value">
+          every {(bowlInterval / 1000).toFixed(1)}s
         </span>
       )}
       <CSSTransition
         in={isPlaying}
-        timeout={{ enter: 0, exit: 0 }}
+        timeout={{ enter: 350, exit: 200 }}
         classNames="fade"
         unmountOnExit
         nodeRef={nodeRef}
       >
-        <div ref={nodeRef} className="main-container">
+        <div
+          ref={nodeRef}
+          className="main-container"
+          onClick={e => e.stopPropagation()}
+          onKeyDown={e => e.stopPropagation()}
+          role="group"
+          aria-label={`${formatPlayerLabel(title)} controls`}
+        >
           {isLoading ? (
             <i className="fa-solid fa-spinner loader"></i>
           ) : (
@@ -863,21 +874,37 @@ function Player({ title, sourcePath, custom, speed, stopAll }) {
               </div>
 
               <div className="btn-container">
-                <button onClick={stop} data-stop={true}>
-                  <i className="fa-solid fa-pause" data-stop={true}></i>
+                <button
+                  type="button"
+                  className="player-control-btn"
+                  onClick={stop}
+                  data-stop={true}
+                  aria-label="Pause"
+                >
+                  <i className="fa-solid fa-pause" data-stop={true} aria-hidden="true" />
                 </button>
                 {title !== 'bowl' && (
-                  <button onClick={toggleStereoEffect}>
+                  <button
+                    type="button"
+                    className={`player-control-btn${isStereo ? ' player-control-btn--active' : ''}`}
+                    onClick={toggleStereoEffect}
+                    aria-label="Toggle stereo"
+                    aria-pressed={isStereo}
+                  >
                     <i
-                      className={`fa-solid ${
-                        isStereo ? 'fa-check-double' : 'fa-check'
-                      }`}
-                    ></i>
+                      className={`fa-solid ${isStereo ? 'fa-check-double' : 'fa-check'}`}
+                      aria-hidden="true"
+                    />
                   </button>
                 )}
                 {sourcePath === 'apiSearch' && (
-                  <button onClick={refresh}>
-                    <i className="fa-solid fa-forward"></i>{' '}
+                  <button
+                    type="button"
+                    className="player-control-btn"
+                    onClick={refresh}
+                    aria-label="Next track"
+                  >
+                    <i className="fa-solid fa-forward" aria-hidden="true" />
                   </button>
                 )}
               </div>

@@ -55,17 +55,38 @@ export const SaveSnapshotMix = () => {
         <span className="bar-action__label">Save</span>
       </button>
       {showInput && (
-        <div className="snapshot-title-container">
-          <h3>Name your snapshot : </h3>
-          <input
-            className="snapshot-title-input"
-            type="text"
-            ref={inputRef}
-            autoFocus={true}
-          />
-          <div className="snapshot-footer-container">
-            <button onClick={handleSaveSnapshot}>Save</button>
-            <button onClick={() => setShowInput(false)}>Cancel</button>
+        <div
+          className="snapshot-title-container"
+          onClick={() => setShowInput(false)}
+          role="presentation"
+        >
+          <div
+            className="snapshot-modal"
+            onClick={e => e.stopPropagation()}
+            role="dialog"
+            aria-labelledby="snapshot-modal-title"
+          >
+            <h3 id="snapshot-modal-title" className="snapshot-modal__title">
+              Save your mix
+            </h3>
+            <p className="snapshot-modal__hint">
+              Give it a name to load it later
+            </p>
+            <input
+              className="snapshot-title-input"
+              type="text"
+              ref={inputRef}
+              placeholder="e.g. Rainy morning"
+              autoFocus={true}
+            />
+            <div className="snapshot-footer-container">
+              <button type="button" onClick={handleSaveSnapshot}>
+                Save
+              </button>
+              <button type="button" onClick={() => setShowInput(false)}>
+                Cancel
+              </button>
+            </div>
           </div>
         </div>
       )}

@@ -56,23 +56,36 @@ export const SavedSnaps = () => {
     }, 3000);
   };
 
+  if (snapsToDisplay.length === 0) return null;
+
   return (
-    <div className="saved-snaps-container">
-      {snapsToDisplay.length > 0 &&
-        snapsToDisplay.map(snap => (
+    <section className="saved-section" aria-label="Saved mixes">
+      <div className="saved-section__header">
+        <h2 className="saved-section__title">Your mixes</h2>
+        <span className="saved-section__count">{snapsToDisplay.length}</span>
+      </div>
+      <div className="saved-snaps-container">
+        {snapsToDisplay.map(snap => (
           <div
             className="saved-snap"
             key={snap.title}
             onClick={e => handleLoadSavedSnap(e, snap.title)}
+            role="button"
+            tabIndex={0}
+            onKeyDown={e => {
+              if (e.key === 'Enter') handleLoadSavedSnap(e, snap.title);
+            }}
           >
-            {snap.title}{' '}
+            {snap.title}
             <i
               data-id={snap.title}
               onClick={handleDelSnap}
-              className="fa-solid fa-trash del-btn"
-            ></i>
+              className="fa-solid fa-xmark del-btn"
+              aria-label={`Delete ${snap.title}`}
+            />
           </div>
         ))}
-    </div>
+      </div>
+    </section>
   );
 };
