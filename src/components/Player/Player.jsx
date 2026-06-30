@@ -1,5 +1,5 @@
 import { useContext, useEffect, useRef, useState } from 'react';
-import { CSSTransition } from 'react-transition-group';
+import { createPortal } from 'react-dom';
 import '../../App.css';
 import { Context } from '../../context/context';
 import { config } from '../../ref/random.config';
@@ -46,9 +46,9 @@ function Player({ title, sourcePath, custom, speed, stopAll }) {
   const reverbNodeRef = useRef(null);
   const reverbGainNodeRef = useRef(null);
   const modulatorIntervalRef = useRef(null);
-  const nodeRef = useRef(null);
   const isFadingRef = useRef(false);
   const fadeTimeoutRef = useRef(null);
+  const [portalTarget, setPortalTarget] = useState(null);
 
   // Ref to hold the latest playlist state for the onended handler
   const playlistRef = useRef(playlist);
@@ -79,6 +79,10 @@ function Player({ title, sourcePath, custom, speed, stopAll }) {
     return () => {
       if (fadeTimeoutRef.current) clearTimeout(fadeTimeoutRef.current);
     };
+  }, []);
+
+  useEffect(() => {
+    setPortalTarget(document.getElementById('active-mix-portal'));
   }, []);
 
   // Fonction pour afficher l'indicateur de valeur temporairement
@@ -814,186 +818,199 @@ function Player({ title, sourcePath, custom, speed, stopAll }) {
     );
   };
 
-  return (
+  const renderActiveCard = () => (
     <div
-      data-stop={true}
-      className={isPlaying ? 'player-container is-playing' : 'player-container'}
-      onClick={event =>
-        play(event, sourcePath, custom, volValue, filterValue, playbackRate)
-      }
+      className="active-player-card"
+      onClick={e => e.stopPropagation()}
+      role="group"
+      aria-label={`${formatPlayerLabel(title)} controls`}
     >
-      <div className="player-card__head">
-        <div className="player-card__icon-wrap">
-          <PlayerTitle title={title} isPlaying={isPlaying} />
+      <div className="active-player-card__top">
+        <div className="active-player-card__icon-wrap">
+          <PlayerTitle title={title} isPlaying={true} />
         </div>
-        <span className="player-card__label">{formatPlayerLabel(title)}</span>
-      </div>
-      {title === 'bowl' && isPlaying && (
-        <span key={bowlInterval} className="interval-value">
-          every {(bowlInterval / 1000).toFixed(1)}s
-        </span>
-      )}
-      <CSSTransition
-        in={isPlaying}
-        timeout={{ enter: 350, exit: 200 }}
-        classNames="fade"
-        unmountOnExit
-        nodeRef={nodeRef}
-      >
-        <div
-          ref={nodeRef}
-          className="main-container"
-          onClick={e => e.stopPropagation()}
-          onKeyDown={e => e.stopPropagation()}
-          role="group"
-          aria-label={`${formatPlayerLabel(title)} controls`}
-        >
-          {isLoading ? (
-            <i className="fa-solid fa-spinner loader"></i>
-          ) : (
-            <>
-              <div
-                className={`value-indicator ${showIndicator ? 'visible' : ''}`}
-              >
-                {indicatorText}
-              </div>
-              <div className="sliders-container">
-                <div className="sliders-labels">
-                  <span>
-                    <i className="fa-solid fa-filter"></i>
-                  </span>
-                  {title === 'bowl' && (
-                    <span>
-                      <i className="fa-solid fa-clock"></i>
-                    </span>
-                  )}
-                  {sourcePath === 'apiSearch' && (
-                    <>
-                      <span>
-                        <i className="fa-solid fa-cloud"></i>
-                      </span>
-                      <span>
-                        <i className="fa-solid fa-arrows-left-right-to-line"></i>
-                      </span>
-                    </>
-                  )}
-                  <span>
-                    <i className="fa-solid fa-volume-high"></i>
-                  </span>
-                  {speed && (
-                    <span>
-                      <i className="fa-solid fa-gauge-high"></i>
-                    </span>
-                  )}
-                </div>
-                <div className="sliders">
-                  <input
-                    className="noise-range"
-                    type="range"
-                    min="50"
-                    max="1500"
-                    step="10"
-                    onChange={handleFilterValue}
-                    value={filterValue}
-                  />
-                  {title === 'bowl' && (
-                    <>
-                      <input
-                        className="interval-range"
-                        type="range"
-                        min="3000"
-                        max="20000"
-                        step="100"
-                        value={bowlInterval}
-                        onChange={e => setBowlInterval(Number(e.target.value))}
-                      />
-                    </>
-                  )}
-                  {sourcePath === 'apiSearch' && (
-                    <>
-                      <input
-                        className="reverb-range"
-                        type="range"
-                        min="0"
-                        max="0.8"
-                        step="0.01"
-                        value={reverbValue}
-                        onChange={handleReverbValue}
-                      />
-                      <input
-                        className="reverb-duration-range"
-                        type="range"
-                        min="0.1"
-                        max="10"
-                        step="0.1"
-                        value={reverbDuration}
-                        onChange={handleReverbDuration}
-                      />
-                    </>
-                  )}
-                  <input
-                    className="vol-range"
-                    type="range"
-                    min="0"
-                    max="2"
-                    step="0.01"
-                    value={volValue}
-                    onChange={handleVolValue}
-                  />
-                  {speed && (
-                    <input
-                      className="speed-range"
-                      type="range"
-                      min="0.5"
-                      max="2"
-                      step="0.1"
-                      value={playbackRate}
-                      onChange={handlePlaybackRateChange}
-                    />
-                  )}
-                </div>
-              </div>
-
-              <div className="btn-container">
-                <button
-                  type="button"
-                  className="player-control-btn"
-                  onClick={stop}
-                  data-stop={true}
-                  aria-label="Pause"
-                >
-                  <i className="fa-solid fa-pause" data-stop={true} aria-hidden="true" />
-                </button>
-                {title !== 'bowl' && (
-                  <button
-                    type="button"
-                    className={`player-control-btn${isStereo ? ' player-control-btn--active' : ''}`}
-                    onClick={toggleStereoEffect}
-                    aria-label="Toggle stereo"
-                    aria-pressed={isStereo}
-                  >
-                    <i
-                      className={`fa-solid ${isStereo ? 'fa-check-double' : 'fa-check'}`}
-                      aria-hidden="true"
-                    />
-                  </button>
-                )}
-                {sourcePath === 'apiSearch' && (
-                  <button
-                    type="button"
-                    className="player-control-btn"
-                    onClick={refresh}
-                    aria-label="Next track"
-                  >
-                    <i className="fa-solid fa-forward" aria-hidden="true" />
-                  </button>
-                )}
-              </div>
-            </>
+        <div className="active-player-card__meta">
+          <p className="active-player-card__title">{formatPlayerLabel(title)}</p>
+          {title === 'bowl' && (
+            <p className="active-player-card__hint">
+              every {(bowlInterval / 1000).toFixed(1)}s
+            </p>
           )}
         </div>
-      </CSSTransition>
+        <div className="active-player-card__actions">
+          <button
+            type="button"
+            className="player-control-btn"
+            onClick={stop}
+            aria-label="Pause"
+          >
+            <i className="fa-solid fa-pause" aria-hidden="true" />
+          </button>
+          {title !== 'bowl' && (
+            <button
+              type="button"
+              className={`player-control-btn${isStereo ? ' player-control-btn--active' : ''}`}
+              onClick={toggleStereoEffect}
+              aria-label="Toggle stereo"
+              aria-pressed={isStereo}
+            >
+              <i
+                className={`fa-solid ${isStereo ? 'fa-check-double' : 'fa-check'}`}
+                aria-hidden="true"
+              />
+            </button>
+          )}
+          {sourcePath === 'apiSearch' && (
+            <button
+              type="button"
+              className="player-control-btn"
+              onClick={refresh}
+              aria-label="Next track"
+            >
+              <i className="fa-solid fa-forward" aria-hidden="true" />
+            </button>
+          )}
+        </div>
+      </div>
+
+      {isLoading ? (
+        <i className="fa-solid fa-spinner active-player-card__loader" aria-hidden="true" />
+      ) : (
+        <>
+          <div
+            className={`active-player-card__value-indicator${showIndicator ? ' active-player-card__value-indicator--visible' : ''}`}
+          >
+            {indicatorText}
+          </div>
+          <div className="active-player-card__sliders">
+            <label className="active-player-card__row">
+              <span className="active-player-card__row-label">
+                <i className="fa-solid fa-filter" aria-hidden="true" />
+              </span>
+              <input
+                className="active-player-card__range"
+                type="range"
+                min="50"
+                max="1500"
+                step="10"
+                value={filterValue}
+                onChange={handleFilterValue}
+                aria-label="Filter"
+              />
+            </label>
+            {title === 'bowl' && (
+              <label className="active-player-card__row">
+                <span className="active-player-card__row-label">
+                  <i className="fa-solid fa-clock" aria-hidden="true" />
+                </span>
+                <input
+                  className="active-player-card__range"
+                  type="range"
+                  min="3000"
+                  max="20000"
+                  step="100"
+                  value={bowlInterval}
+                  onChange={e => setBowlInterval(Number(e.target.value))}
+                  aria-label="Repeat interval"
+                />
+              </label>
+            )}
+            {sourcePath === 'apiSearch' && (
+              <>
+                <label className="active-player-card__row">
+                  <span className="active-player-card__row-label">
+                    <i className="fa-solid fa-cloud" aria-hidden="true" />
+                  </span>
+                  <input
+                    className="active-player-card__range"
+                    type="range"
+                    min="0"
+                    max="0.8"
+                    step="0.01"
+                    value={reverbValue}
+                    onChange={handleReverbValue}
+                    aria-label="Reverb"
+                  />
+                </label>
+                <label className="active-player-card__row">
+                  <span className="active-player-card__row-label">
+                    <i
+                      className="fa-solid fa-arrows-left-right-to-line"
+                      aria-hidden="true"
+                    />
+                  </span>
+                  <input
+                    className="active-player-card__range"
+                    type="range"
+                    min="0.1"
+                    max="10"
+                    step="0.1"
+                    value={reverbDuration}
+                    onChange={handleReverbDuration}
+                    aria-label="Reverb room size"
+                  />
+                </label>
+              </>
+            )}
+            <label className="active-player-card__row">
+              <span className="active-player-card__row-label">
+                <i className="fa-solid fa-volume-high" aria-hidden="true" />
+              </span>
+              <input
+                className="active-player-card__range"
+                type="range"
+                min="0"
+                max="2"
+                step="0.01"
+                value={volValue}
+                onChange={handleVolValue}
+                aria-label="Volume"
+              />
+            </label>
+            {speed && (
+              <label className="active-player-card__row">
+                <span className="active-player-card__row-label">
+                  <i className="fa-solid fa-gauge-high" aria-hidden="true" />
+                </span>
+                <input
+                  className="active-player-card__range"
+                  type="range"
+                  min="0.5"
+                  max="2"
+                  step="0.1"
+                  value={playbackRate}
+                  onChange={handlePlaybackRateChange}
+                  aria-label="Speed"
+                />
+              </label>
+            )}
+          </div>
+        </>
+      )}
     </div>
+  );
+
+  return (
+    <>
+      <div
+        data-stop={true}
+        className={`player-container${isPlaying ? ' is-active' : ''}`}
+        onClick={event =>
+          play(event, sourcePath, custom, volValue, filterValue, playbackRate)
+        }
+      >
+        <div className="player-card__head">
+          <div className="player-card__icon-wrap">
+            <PlayerTitle title={title} isPlaying={isPlaying} />
+          </div>
+          <span className="player-card__label">{formatPlayerLabel(title)}</span>
+        </div>
+        {isPlaying && <span className="player-card__active-dot" aria-hidden="true" />}
+      </div>
+      {isPlaying &&
+        portalTarget &&
+        createPortal(renderActiveCard(), portalTarget)}
+    </>
   );
 }
 

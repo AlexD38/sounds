@@ -4,6 +4,7 @@ import Player from './components/Player/Player';
 import { Context } from './context/context';
 import { Notification } from './components/notification/notification';
 import { SavedSnaps } from './components/SavedSnaps/SavedSnaps';
+import { ActiveMixDock } from './components/ActiveMixDock/ActiveMixDock';
 import { BottomBar } from './components/BottomBar/BottomBar';
 import { config } from './ref/random.config';
 
@@ -122,6 +123,7 @@ function App() {
         />
       </main>
 
+      <ActiveMixDock />
       <BottomBar
         installPromptEvent={installPromptEvent}
         onInstallClick={handleInstallClick}

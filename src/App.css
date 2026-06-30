@@ -13,6 +13,14 @@
   padding-bottom: calc(
     var(--bottom-bar-height) + env(safe-area-inset-bottom, 0px)
   );
+  transition: padding-bottom 0.3s ease;
+}
+
+.app:has(.active-mix-dock--visible) {
+  padding-bottom: calc(
+    var(--bottom-bar-height) + var(--active-dock-height) +
+      env(safe-area-inset-bottom, 0px)
+  );
 }
 
 /* ── Header ── */
