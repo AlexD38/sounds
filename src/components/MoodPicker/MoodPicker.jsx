@@ -117,11 +117,6 @@ export const MoodPicker = () => {
       >
         <i className="fa-solid fa-wand-magic-sparkles" aria-hidden="true" />
         <span className="bar-action__label">Moods</span>
-        {activeMix?.type === 'mood' && (
-          <span className="bar-action__badge" aria-hidden="true">
-            <i className="fa-solid fa-circle" />
-          </span>
-        )}
       </button>
       {sheet}
     </>

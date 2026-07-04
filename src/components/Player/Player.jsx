@@ -3,6 +3,11 @@ import { createPortal } from 'react-dom';
 import '../../App.css';
 import { Context } from '../../context/context';
 import { config } from '../../ref/random.config';
+import {
+  connectToMasterBus,
+  getSharedAudioContext,
+  resumeSharedAudioContext,
+} from '../../utils/masterBus';
 import { makePlaylist, perlinNoise, SearchThatSound } from '../../utils/utils';
 import { formatPlayerLabel } from '../../utils/formatPlayerLabel';
 import { PlayerTitle } from '../PlayerTitle/PlayerTitle';
@@ -412,11 +417,7 @@ function Player({ title, sourcePath, custom, speed, stopAll }) {
   };
 
   const initAudioContext = () => {
-    if (!audioCtxRef.current) {
-      audioCtxRef.current = new (
-        window.AudioContext || window.webkitAudioContext
-      )();
-    }
+    audioCtxRef.current = getSharedAudioContext();
     return audioCtxRef.current;
   };
 
@@ -527,7 +528,7 @@ function Player({ title, sourcePath, custom, speed, stopAll }) {
     // Initialize and resume AudioContext on user gesture
     const audioCtx = initAudioContext();
     if (audioCtx.state === 'suspended') {
-      await audioCtx.resume();
+      await resumeSharedAudioContext();
     }
 
     if (isPlaying && event?.target?.dataset?.stop) {
@@ -572,7 +573,7 @@ function Player({ title, sourcePath, custom, speed, stopAll }) {
 
     if (isPlaybackCancelled(generation)) return;
     const audioCtx = initAudioContext();
-    if (audioCtx.state === 'suspended') await audioCtx.resume();
+    if (audioCtx.state === 'suspended') await resumeSharedAudioContext();
 
     try {
       if (forceReload) {
@@ -714,7 +715,7 @@ function Player({ title, sourcePath, custom, speed, stopAll }) {
 
       sourceNode.connect(filter);
       filter.connect(gainNode);
-      gainNode.connect(audioCtx.destination);
+      connectToMasterBus(gainNode);
 
       // Reverb path pour les sons API
       if (source === 'apiSearch') {
@@ -726,7 +727,7 @@ function Player({ title, sourcePath, custom, speed, stopAll }) {
 
         filter.connect(reverbNode);
         reverbNode.connect(reverbGainNode);
-        reverbGainNode.connect(audioCtx.destination);
+        connectToMasterBus(reverbGainNode);
 
         reverbNodeRef.current = reverbNode;
         reverbGainNodeRef.current = reverbGainNode;
@@ -957,7 +958,7 @@ function Player({ title, sourcePath, custom, speed, stopAll }) {
 
     // Resume context if it was suspended (e.g., tab was inactive)
     if (audioCtxRef.current && audioCtxRef.current.state === 'suspended') {
-      await audioCtxRef.current.resume();
+      await resumeSharedAudioContext();
     }
 
     const nextIndex = (currentIndex + 1) % currentPlaylist.length; // Loop back to start
