@@ -35,23 +35,25 @@
   border-radius: var(--radius-full);
 }
 
-.saved-snaps-container {
-  display: flex;
-  gap: 0.65rem;
-  overflow-x: auto;
-  padding: 0.25rem 0.25rem 0.65rem;
-  scroll-snap-type: x mandatory;
-  -webkit-overflow-scrolling: touch;
-  scrollbar-width: none;
+.saved-snaps-empty {
+  margin: 0;
+  padding: 1.25rem 0.5rem;
+  font-size: 0.88rem;
+  line-height: 1.5;
+  text-align: center;
+  color: var(--color-text-muted);
 }
 
-.saved-snaps-container::-webkit-scrollbar {
-  display: none;
+.saved-snaps-container {
+  display: flex;
+  flex-direction: column;
+  gap: 0.55rem;
+  padding: 0.15rem 0.1rem 0.25rem;
 }
 
 .saved-snap {
   flex-shrink: 0;
-  scroll-snap-align: start;
+  width: 100%;
   display: flex;
   align-items: stretch;
   min-height: 3rem;

@@ -3,19 +3,13 @@ import './App.css';
 import Player from './components/Player/Player';
 import { Context } from './context/context';
 import { Notification } from './components/notification/notification';
-import { SavedSnaps } from './components/SavedSnaps/SavedSnaps';
 import { ActiveMixDock } from './components/ActiveMixDock/ActiveMixDock';
-import { ActiveMixBanner } from './components/ActiveMixBanner/ActiveMixBanner';
 import { ThemePicker } from './components/ThemePicker/ThemePicker';
 import { BottomBar } from './components/BottomBar/BottomBar';
 import { config } from './ref/random.config';
 
 function App() {
-  const { stopAll, savedSnaps: rawSavedSnaps } = useContext(Context);
-  const savedSnaps =
-    rawSavedSnaps instanceof Map
-      ? rawSavedSnaps
-      : new Map(rawSavedSnaps ?? []);
+  const { stopAll } = useContext(Context);
   const [titleShort, setTitleShort] = useState(false);
   const [headerOpacity, setHeaderOpacity] = useState(1);
   const [installPromptEvent, setInstallPromptEvent] = useState(null);
@@ -102,10 +96,6 @@ function App() {
         </div>
         <p className="app-header__tagline">Mix your focus soundscape</p>
       </header>
-
-      <ActiveMixBanner />
-
-      {savedSnaps.size > 0 && <SavedSnaps />}
 
       <main className="sound-grid" aria-label="Sound library">
         {soundPlayers.map(player => (

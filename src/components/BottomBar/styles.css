@@ -14,7 +14,7 @@
   justify-content: center;
   align-items: stretch;
   gap: 0.25rem;
-  max-width: 26rem;
+  max-width: 32rem;
   margin: 0 auto;
   padding: 0.35rem;
   background: var(--color-bar-bg);
@@ -236,7 +236,7 @@
 @media (min-width: 480px) {
   .bottom-bar__inner {
     gap: 0.35rem;
-    max-width: 30rem;
+    max-width: 32rem;
     padding: 0.45rem;
   }
 
@@ -254,11 +254,17 @@
   }
 }
 
-@media (max-width: 360px) {
+@media (max-width: 380px) {
   .bar-action__label {
-    font-size: 0.52rem;
+    display: none;
   }
 
+  .bar-action {
+    padding: 0.55rem 0.25rem;
+  }
+}
+
+@media (max-width: 360px) {
   .bar-action i {
     font-size: 1.1rem;
   }

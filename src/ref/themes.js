@@ -44,6 +44,48 @@ export const themes = [
     swatch: ['#12141f', '#7a8cc8', '#d8e0f5'],
     metaColor: '#12141f',
   },
+  {
+    id: 'sage',
+    label: 'Sage',
+    description: 'Muted olive and soft linen.',
+    swatch: ['#1e2420', '#8fa882', '#e8ead8'],
+    metaColor: '#1e2420',
+  },
+  {
+    id: 'sand',
+    label: 'Sand',
+    description: 'Warm dunes and golden dusk.',
+    swatch: ['#221e18', '#c4a574', '#f0e4cc'],
+    metaColor: '#221e18',
+  },
+  {
+    id: 'aurora',
+    label: 'Aurora',
+    description: 'Northern teal and soft green light.',
+    swatch: ['#0f1e22', '#6ec4b8', '#d0f0e8'],
+    metaColor: '#0f1e22',
+  },
+  {
+    id: 'honey',
+    label: 'Honey',
+    description: 'Golden amber and gentle warmth.',
+    swatch: ['#1e1810', '#d4a84a', '#f5e8c0'],
+    metaColor: '#1e1810',
+  },
+  {
+    id: 'slate',
+    label: 'Slate',
+    description: 'Cool grey stone and quiet focus.',
+    swatch: ['#181a1e', '#8898a8', '#d8dce4'],
+    metaColor: '#181a1e',
+  },
+  {
+    id: 'sunset',
+    label: 'Sunset',
+    description: 'Coral twilight and soft peach.',
+    swatch: ['#1e1418', '#d48468', '#f5ddd0'],
+    metaColor: '#1e1418',
+  },
 ];
 
 export const THEME_IDS = themes.map(theme => theme.id);

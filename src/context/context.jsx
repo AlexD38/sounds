@@ -32,6 +32,7 @@ export function ContextProvider({ children }) {
   const [randomSnap, setRandomSnap] = useState(null);
   const [mixTransition, setMixTransition] = useState(false);
   const [activeMix, setActiveMix] = useState(null);
+  const [mixesSheetOpen, setMixesSheetOpen] = useState(false);
   const [cachedAudios, setCachedAudios] = useState(null);
   const [playlist, setPlaylist] = useState([]);
   const [zenQuote, setZenQuote] = useState(null);
@@ -179,6 +180,8 @@ export function ContextProvider({ children }) {
       mixTransition,
       activeMix,
       setActiveMix,
+      mixesSheetOpen,
+      setMixesSheetOpen,
       loadMix,
       clearActiveMix,
       cachedAudios,
@@ -200,6 +203,7 @@ export function ContextProvider({ children }) {
       randomSnap,
       mixTransition,
       activeMix,
+      mixesSheetOpen,
       cachedAudios,
       playlist,
       zenQuote,

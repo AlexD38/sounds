@@ -62,6 +62,28 @@ export const moodPresets = [
       { playerTitle: 'thunder', isPlaying: true, volume: 0.35, filter: 600 },
     ],
   },
+  {
+    id: 'shore',
+    label: 'Shore',
+    icon: 'water',
+    description: 'Gentle waves and open coastal air.',
+    players: [
+      { playerTitle: 'ocean', isPlaying: true, volume: 1.0, filter: 1200, speed: 0.85 },
+      { playerTitle: 'lake', isPlaying: true, volume: 0.5, filter: 1400, speed: 0.9 },
+      { playerTitle: 'wind', isPlaying: true, volume: 0.3, filter: 1000 },
+    ],
+  },
+  {
+    id: 'study',
+    label: 'Study',
+    icon: 'book-open',
+    description: 'Quiet pages, soft rain on the window.',
+    players: [
+      { playerTitle: 'book', isPlaying: true, volume: 0.9, filter: 1500 },
+      { playerTitle: 'writing', isPlaying: true, volume: 0.55, filter: 1600 },
+      { playerTitle: 'lightRain', isPlaying: true, volume: 0.45, filter: 1100 },
+    ],
+  },
 ];
 
 export const getMoodPresetById = id =>
