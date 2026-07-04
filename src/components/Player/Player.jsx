@@ -531,12 +531,11 @@ function Player({ title, sourcePath, custom, speed, stopAll }) {
       await resumeSharedAudioContext();
     }
 
-    if (isPlaying && event?.target?.dataset?.stop) {
-      registerPlayerSituation(title, { isPlaying: false });
-      stop();
-      return;
-    }
     if (isPlaying) {
+      if (event) {
+        registerPlayerSituation(title, { isPlaying: false });
+        stop();
+      }
       return;
     }
     const generation = ++playbackGenerationRef.current;
@@ -1168,7 +1167,6 @@ function Player({ title, sourcePath, custom, speed, stopAll }) {
   return (
     <>
       <div
-        data-stop={true}
         className={`player-container${isPlaying ? ' is-active' : ''}`}
         onClick={event =>
           play(event, sourcePath, custom, volValue, filterValue, playbackRate)
