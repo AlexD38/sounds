@@ -48,7 +48,7 @@ export const moodPresets = [
     players: [
       { playerTitle: 'forest', isPlaying: true, volume: 1.1, filter: 1400 },
       { playerTitle: 'morning', isPlaying: true, volume: 0.85, filter: 1200 },
-      { playerTitle: 'wind', isPlaying: true, volume: 0.45, filter: 1100 },
+      { playerTitle: 'windCreator', isPlaying: true, volume: 0.45, filter: 1100 },
     ],
   },
   {
@@ -70,7 +70,7 @@ export const moodPresets = [
     players: [
       { playerTitle: 'ocean', isPlaying: true, volume: 1.0, filter: 1200, speed: 0.85 },
       { playerTitle: 'lake', isPlaying: true, volume: 0.5, filter: 1400, speed: 0.9 },
-      { playerTitle: 'wind', isPlaying: true, volume: 0.3, filter: 1000 },
+      { playerTitle: 'windCreator', isPlaying: true, volume: 0.3, filter: 1000 },
     ],
   },
   {

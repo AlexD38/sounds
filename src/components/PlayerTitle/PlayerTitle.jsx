@@ -1,4 +1,5 @@
 import { formatPlayerLabel } from '../../utils/formatPlayerLabel';
+import { isWindCreator } from '../../utils/windCreator';
 
 export const PlayerTitle = ({ title, isPlaying }) => {
   let iconLabel = 'question';
@@ -42,7 +43,7 @@ export const PlayerTitle = ({ title, isPlaying }) => {
     iconLabel = 'wave-square';
   } else if (title === 'bowl') {
     iconLabel = 'bell';
-  } else if (title === 'wind') {
+  } else if (isWindCreator(title)) {
     iconLabel = 'wind';
   } else if (title === 'cat') {
     iconLabel = 'cat';

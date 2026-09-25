@@ -7,6 +7,7 @@ import { ActiveMixDock } from './components/ActiveMixDock/ActiveMixDock';
 import { ThemePicker } from './components/ThemePicker/ThemePicker';
 import { BottomBar } from './components/BottomBar/BottomBar';
 import { config } from './ref/random.config';
+import { isWindCreator } from './utils/windCreator';
 
 function App() {
   const { stopAll } = useContext(Context);
@@ -102,7 +103,11 @@ function App() {
           <Player
             key={player.title}
             title={player.title}
-            sourcePath={`/assets/sounds/${player.title}.mp3`}
+            sourcePath={
+              isWindCreator(player.title)
+                ? undefined
+                : `/assets/sounds/${player.title}.mp3`
+            }
             custom="perlinNoise"
             stopAll={stopAll}
             speed={player.speed || false}

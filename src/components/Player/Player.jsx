@@ -9,8 +9,22 @@ import {
   resumeSharedAudioContext,
 } from '../../utils/masterBus';
 import { makePlaylist, perlinNoise, SearchThatSound } from '../../utils/utils';
+import {
+  buildWindLayerGraph,
+  createWindNoiseBuffer,
+  DEFAULT_WIND_PARAMS,
+  disconnectWindLayerGraph,
+  isWindCreator as checkIsWindCreator,
+  mergeWindParams,
+  startWindModulation,
+  WIND_DEFAULT_FILTER,
+  WIND_GLOBAL_SLIDERS,
+  WIND_LAYER_SLIDERS,
+  WIND_MIN_GAIN,
+} from '../../utils/windCreator';
 import { formatPlayerLabel } from '../../utils/formatPlayerLabel';
 import { PlayerTitle } from '../PlayerTitle/PlayerTitle';
+import { WindCreatorSliders } from './WindCreatorSliders';
 import './styles.css'; // Import local styles
 
 const FADE_OUT_DURATION = 2.5;
@@ -31,8 +45,17 @@ function Player({ title, sourcePath, custom, speed, stopAll }) {
     mixTransition,
   } = useContext(Context);
 
-  const [filterValue, setFilterValue] = useState(1800);
+  const isWindCreator = checkIsWindCreator(title);
+  const [filterValue, setFilterValue] = useState(
+    isWindCreator ? WIND_DEFAULT_FILTER : 1800
+  );
   const [volValue, setVolValue] = useState(1.5);
+  const filterValueRef = useRef(filterValue);
+  const [windParams, setWindParams] = useState(() =>
+    mergeWindParams(DEFAULT_WIND_PARAMS)
+  );
+  const windParamsRef = useRef(windParams);
+  const windLayerNodesRef = useRef(null);
   const [isPlaying, setIsPlaying] = useState(false);
   const [playbackRate, setPlaybackRate] = useState(1);
   const [isStereo, setIsStereo] = useState(false);
@@ -84,6 +107,14 @@ function Player({ title, sourcePath, custom, speed, stopAll }) {
   useEffect(() => {
     isPlayingRef.current = isPlaying;
   }, [isPlaying]);
+
+  useEffect(() => {
+    filterValueRef.current = filterValue;
+  }, [filterValue]);
+
+  useEffect(() => {
+    windParamsRef.current = windParams;
+  }, [windParams]);
 
   useEffect(() => {
     mixTransitionRef.current = mixTransition;
@@ -245,7 +276,7 @@ function Player({ title, sourcePath, custom, speed, stopAll }) {
     if (playerState?.isPlaying === true) {
       setStopAll(false);
       const volume = playerState.volume ?? 1.5;
-      const filter = playerState.filter ?? 1800;
+      const filter = playerState.filter ?? (isWindCreator ? WIND_DEFAULT_FILTER : 1800);
       const speed = playerState.speed ?? 1;
       setFilterValue(filter);
       setVolValue(volume);
@@ -265,15 +296,37 @@ function Player({ title, sourcePath, custom, speed, stopAll }) {
   function startPerlinModulation(minGain = 0, maxGain = 1.5) {
     if (!gainNodeRef.current || !audioCtxRef.current) return;
 
+    if (isWindCreator) {
+      startWindModulation({
+        masterGain: gainNodeRef.current,
+        layerNodes: windLayerNodesRef.current,
+        audioCtx: audioCtxRef.current,
+        maxGain,
+        getParams: () => windParamsRef.current,
+        intervalRef: modulatorIntervalRef,
+      });
+      return;
+    }
+
     // Clear d'abord pour éviter les doublons
     if (modulatorIntervalRef.current) {
       clearInterval(modulatorIntervalRef.current);
     }
 
-    let t = 0;
+    let t = Math.random() * 100;
     const speed = 0.005;
+    const timeConstant = 0.05;
+
+    const now = audioCtxRef.current.currentTime;
+    gainNodeRef.current.gain.cancelScheduledValues(now);
+    gainNodeRef.current.gain.setValueAtTime(
+      gainNodeRef.current.gain.value,
+      now
+    );
 
     modulatorIntervalRef.current = setInterval(() => {
+      if (!gainNodeRef.current || !audioCtxRef.current) return;
+
       const noise = perlinNoise(t);
       const mapped = (noise + 1) / 2;
       const newGain = minGain + mapped * (maxGain - minGain);
@@ -281,12 +334,11 @@ function Player({ title, sourcePath, custom, speed, stopAll }) {
       gainNodeRef.current.gain.setTargetAtTime(
         newGain,
         audioCtxRef.current.currentTime,
-        0.05
+        timeConstant
       );
-      // console.log('Perlin modulation → value:', newGain.toFixed(2));
 
       t += speed;
-    }, 50);
+    }, 40);
   }
 
   // STOP PERLIN --------------------------------------
@@ -335,8 +387,10 @@ function Player({ title, sourcePath, custom, speed, stopAll }) {
             0.01
           );
         }
+      } else if (isWindCreator && modulatorIntervalRef.setMasterGain) {
+        modulatorIntervalRef.setMasterGain(value);
       } else {
-        startPerlinModulation(0.5, value);
+        startPerlinModulation(isWindCreator ? WIND_MIN_GAIN : 0.5, value);
       }
     } else {
       if (gainNodeRef.current && audioCtxRef.current) {
@@ -440,7 +494,8 @@ function Player({ title, sourcePath, custom, speed, stopAll }) {
     perlinFadeTimerRef.current = setTimeout(() => {
       perlinFadeTimerRef.current = null;
       if (isPlaybackCancelled(generation)) return;
-      startPerlinModulation(0.5, maxGain);
+      // Wider dynamic range for wind: near-quiet lulls → full gusts
+      startPerlinModulation(isWindCreator ? WIND_MIN_GAIN : 0.5, maxGain);
     }, FADE_IN_DURATION * 1000);
   }
 
@@ -510,7 +565,11 @@ function Player({ title, sourcePath, custom, speed, stopAll }) {
 
     if (custom === 'perlinNoise') {
       stopPerlinModulation();
-      schedulePerlinAfterFade(generation, newVol);
+      if (isWindCreator) {
+        startPerlinModulation(WIND_MIN_GAIN, newVol);
+      } else {
+        schedulePerlinAfterFade(generation, newVol);
+      }
     }
   }
 
@@ -586,20 +645,24 @@ function Player({ title, sourcePath, custom, speed, stopAll }) {
         setIsLoading(true);
 
         // 1. OBTENTION DE L'INSTANCE AUDIO (soit Bruit Blanc, soit API, soit Fichier)
-        if (title === 'whiteNoise' || (!source && !custom)) {
-          // Génération du bruit blanc via un tableau PCM
-          const sr = audioCtx.sampleRate;
-          const len = sr * 2; // 2 secondes de boucle
-          const data = new Float32Array(len);
-          let lastOut = 0.0;
-          for (let i = 0; i < len; i++) {
-            const white = Math.random() * 2 - 1;
-            data[i] = (lastOut + 0.02 * white) / 1.02;
-            lastOut = data[i];
-            data[i] *= 3.5;
+        if (title === 'whiteNoise' || isWindCreator || (!source && !custom)) {
+          if (isWindCreator) {
+            audioBuffer = createWindNoiseBuffer(audioCtx);
+          } else {
+            // Génération du bruit blanc via un tableau PCM
+            const sr = audioCtx.sampleRate;
+            const len = sr * 2; // 2 secondes de boucle
+            const data = new Float32Array(len);
+            let lastOut = 0.0;
+            for (let i = 0; i < len; i++) {
+              const white = Math.random() * 2 - 1;
+              data[i] = (lastOut + 0.02 * white) / 1.02;
+              lastOut = data[i];
+              data[i] *= 3.5;
+            }
+            audioBuffer = audioCtx.createBuffer(1, len, sr);
+            audioBuffer.copyToChannel(data, 0);
           }
-          audioBuffer = audioCtx.createBuffer(1, len, sr);
-          audioBuffer.copyToChannel(data, 0);
         } else {
           let audioSource = source;
           if (source === 'apiSearch') {
@@ -686,11 +749,40 @@ function Player({ title, sourcePath, custom, speed, stopAll }) {
         sourceNodeRef.current.disconnect();
       }
       if (filterRef.current) filterRef.current.disconnect();
+      if (windLayerNodesRef.current) {
+        disconnectWindLayerGraph(windLayerNodesRef.current);
+        windLayerNodesRef.current = null;
+      }
       if (gainNodeRef.current) gainNodeRef.current.disconnect();
       if (reverbNodeRef.current) reverbNodeRef.current.disconnect();
       if (reverbGainNodeRef.current) reverbGainNodeRef.current.disconnect();
 
       // 4. CRÉATION DU GRAPHE AUDIO
+      if (isWindCreator) {
+        const { sourceNode, masterGain, layerNodes } = buildWindLayerGraph(
+          audioCtx,
+          audioBuffer,
+          windParamsRef.current.layers
+        );
+
+        connectToMasterBus(masterGain);
+
+        if (isPlaybackCancelled(generation)) {
+          setIsLoading(false);
+          return;
+        }
+
+        sourceNode.start();
+        sourceNodeRef.current = sourceNode;
+        gainNodeRef.current = masterGain;
+        filterRef.current = null;
+        windLayerNodesRef.current = layerNodes;
+
+        startPerlinModulation(WIND_MIN_GAIN, newVol);
+        setIsLoading(false);
+        return;
+      }
+
       const sourceNode = audioCtx.createBufferSource();
       sourceNode.buffer = audioBuffer;
       sourceNode.loop = source !== 'apiSearch' && title !== 'bowl';
@@ -794,6 +886,10 @@ function Player({ title, sourcePath, custom, speed, stopAll }) {
     if (filterRef.current) {
       filterRef.current.disconnect();
       filterRef.current = null;
+    }
+    if (windLayerNodesRef.current) {
+      disconnectWindLayerGraph(windLayerNodesRef.current);
+      windLayerNodesRef.current = null;
     }
     if (gainNodeRef.current) {
       gainNodeRef.current.disconnect();
@@ -994,7 +1090,7 @@ function Player({ title, sourcePath, custom, speed, stopAll }) {
 
   const renderActiveCard = () => (
     <div
-      className="active-player-card"
+      className={`active-player-card${isWindCreator ? ' active-player-card--wind' : ''}`}
       onClick={e => e.stopPropagation()}
       role="group"
       aria-label={`${formatPlayerLabel(title)} controls`}
@@ -1057,21 +1153,23 @@ function Player({ title, sourcePath, custom, speed, stopAll }) {
             {indicatorText}
           </div>
           <div className="active-player-card__sliders">
-            <label className="active-player-card__row">
-              <span className="active-player-card__row-label">
-                <i className="fa-solid fa-filter" aria-hidden="true" />
-              </span>
-              <input
-                className="active-player-card__range"
-                type="range"
-                min="50"
-                max="1500"
-                step="10"
-                value={filterValue}
-                onChange={handleFilterValue}
-                aria-label="Filter"
-              />
-            </label>
+            {!isWindCreator && (
+              <label className="active-player-card__row">
+                <span className="active-player-card__row-label">
+                  <i className="fa-solid fa-filter" aria-hidden="true" />
+                </span>
+                <input
+                  className="active-player-card__range"
+                  type="range"
+                  min="50"
+                  max="1500"
+                  step="10"
+                  value={filterValue}
+                  onChange={handleFilterValue}
+                  aria-label="Filter"
+                />
+              </label>
+            )}
             {title === 'bowl' && (
               <label className="active-player-card__row">
                 <span className="active-player-card__row-label">
@@ -1126,22 +1224,24 @@ function Player({ title, sourcePath, custom, speed, stopAll }) {
                 </label>
               </>
             )}
-            <label className="active-player-card__row">
-              <span className="active-player-card__row-label">
-                <i className="fa-solid fa-volume-high" aria-hidden="true" />
-              </span>
-              <input
-                className="active-player-card__range"
-                type="range"
-                min="0"
-                max="2"
-                step="0.01"
-                value={volValue}
-                onChange={handleVolValue}
-                aria-label="Volume"
-              />
-            </label>
-            {speed && (
+            {!isWindCreator && (
+              <label className="active-player-card__row">
+                <span className="active-player-card__row-label">
+                  <i className="fa-solid fa-volume-high" aria-hidden="true" />
+                </span>
+                <input
+                  className="active-player-card__range"
+                  type="range"
+                  min="0"
+                  max="2"
+                  step="0.01"
+                  value={volValue}
+                  onChange={handleVolValue}
+                  aria-label="Volume"
+                />
+              </label>
+            )}
+            {speed && !isWindCreator && (
               <label className="active-player-card__row">
                 <span className="active-player-card__row-label">
                   <i className="fa-solid fa-gauge-high" aria-hidden="true" />
@@ -1157,6 +1257,51 @@ function Player({ title, sourcePath, custom, speed, stopAll }) {
                   aria-label="Speed"
                 />
               </label>
+            )}
+            {isWindCreator && (
+              <WindCreatorSliders
+                params={windParams}
+                onChange={(next, key) => {
+                  setWindParams(mergeWindParams(next));
+                  if (!key) return;
+
+                  if (key === 'addLayer') {
+                    triggerIndicator(`Track ${next.layers.length} added`);
+                    return;
+                  }
+                  if (key === 'removeLayer') {
+                    triggerIndicator(`Track removed`);
+                    return;
+                  }
+
+                  if (key.includes('.')) {
+                    const [layerId, paramKey] = key.split('.');
+                    const index = next.layers.findIndex(l => l.id === layerId);
+                    const layer = next.layers[index];
+                    const label = `Track ${index + 1}`;
+                    const slider = WIND_LAYER_SLIDERS.find(
+                      s => s.key === paramKey
+                    );
+                    if (paramKey === 'enabled' && layer) {
+                      triggerIndicator(
+                        `${label}: ${layer.enabled ? 'on' : 'off'}`
+                      );
+                    } else if (slider && layer) {
+                      triggerIndicator(
+                        `${label} ${slider.label}: ${layer[paramKey]}`
+                      );
+                    }
+                    return;
+                  }
+
+                  const globalMeta = WIND_GLOBAL_SLIDERS.find(
+                    s => s.key === key
+                  );
+                  if (globalMeta) {
+                    triggerIndicator(`${globalMeta.label}: ${next[key]}`);
+                  }
+                }}
+              />
             )}
           </div>
         </>

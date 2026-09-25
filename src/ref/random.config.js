@@ -65,11 +65,10 @@ export const config = [
     category: 'Soundscapes',
   },
   {
-    title: 'wind',
+    title: 'windCreator',
     apiSuggestions: [],
     titleSuggestions: ['wind'],
     category: 'Soundscapes',
-    speed: true,
   },
   {
     title: 'scary',
