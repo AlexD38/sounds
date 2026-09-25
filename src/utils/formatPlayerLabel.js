@@ -4,7 +4,7 @@ export const formatPlayerLabel = title => {
     lightRain: 'Light Rain',
     heavyRain: 'Heavy Rain',
     birdWoods: 'Bird Woods',
-    windCreator: 'Wind Creator',
+    windCreator: 'Wind',
   };
   if (labels[title]) return labels[title];
   return title
