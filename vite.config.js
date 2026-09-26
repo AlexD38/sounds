@@ -16,17 +16,24 @@ export default defineConfig({
         name: 'Ambient Architect',
         short_name: 'AA',
         description: 'Ambiant sounds for focus and relaxation',
-        theme_color: '#000',
+        theme_color: '#1a2423',
+        background_color: '#1a2423',
         icons: [
           {
             src: 'AA.svg',
-            sizes: '192x192',
+            sizes: 'any',
             type: 'image/svg+xml',
+            purpose: 'any',
           },
           {
-            src: 'AA.svg',
+            src: 'android-chrome-192x192.png',
+            sizes: '192x192',
+            type: 'image/png',
+          },
+          {
+            src: 'android-chrome-512x512.png',
             sizes: '512x512',
-            type: 'image/svg+xml',
+            type: 'image/png',
           },
         ],
       },
