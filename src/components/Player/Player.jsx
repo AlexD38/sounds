@@ -24,11 +24,14 @@ import {
 } from '../../utils/windCreator';
 import { formatPlayerLabel } from '../../utils/formatPlayerLabel';
 import { PlayerTitle } from '../PlayerTitle/PlayerTitle';
+import { BandFilterSlider } from './BandFilterSlider';
 import { WindCreatorSliders } from './WindCreatorSliders';
 import './styles.css'; // Import local styles
 
 const FADE_OUT_DURATION = 2.5;
 const FADE_IN_DURATION = 2.5;
+/** Transparent high-pass default for classic players (Wind has per-layer HP). */
+const DEFAULT_HIGHPASS = 20;
 
 function Player({ title, sourcePath, custom, speed, stopAll }) {
   const {
@@ -49,8 +52,10 @@ function Player({ title, sourcePath, custom, speed, stopAll }) {
   const [filterValue, setFilterValue] = useState(
     isWindCreator ? WIND_DEFAULT_FILTER : 1800
   );
+  const [highpassValue, setHighpassValue] = useState(DEFAULT_HIGHPASS);
   const [volValue, setVolValue] = useState(1.5);
   const filterValueRef = useRef(filterValue);
+  const highpassValueRef = useRef(highpassValue);
   const [windParams, setWindParams] = useState(() =>
     mergeWindParams(DEFAULT_WIND_PARAMS)
   );
@@ -72,6 +77,7 @@ function Player({ title, sourcePath, custom, speed, stopAll }) {
   const sourceNodeRef = useRef(null);
   const noiseSourceRef = useRef(null);
   const gainNodeRef = useRef(null);
+  const highpassRef = useRef(null);
   const filterRef = useRef(null);
   const reverbNodeRef = useRef(null);
   const reverbGainNodeRef = useRef(null);
@@ -111,6 +117,10 @@ function Player({ title, sourcePath, custom, speed, stopAll }) {
   useEffect(() => {
     filterValueRef.current = filterValue;
   }, [filterValue]);
+
+  useEffect(() => {
+    highpassValueRef.current = highpassValue;
+  }, [highpassValue]);
 
   useEffect(() => {
     windParamsRef.current = windParams;
@@ -158,6 +168,7 @@ function Player({ title, sourcePath, custom, speed, stopAll }) {
   const paramsRef = useRef({
     volValue,
     filterValue,
+    highpassValue,
     playbackRate,
     sourcePath,
     custom,
@@ -169,6 +180,7 @@ function Player({ title, sourcePath, custom, speed, stopAll }) {
     paramsRef.current = {
       volValue,
       filterValue,
+      highpassValue,
       playbackRate,
       sourcePath,
       custom,
@@ -178,6 +190,7 @@ function Player({ title, sourcePath, custom, speed, stopAll }) {
   }, [
     volValue,
     filterValue,
+    highpassValue,
     playbackRate,
     sourcePath,
     custom,
@@ -209,8 +222,14 @@ function Player({ title, sourcePath, custom, speed, stopAll }) {
       if (!audioCtxRef.current) return;
 
       // Récupère les paramètres depuis la ref
-      const { sourcePath, custom, volValue, filterValue, playbackRate } =
-        paramsRef.current;
+      const {
+        sourcePath,
+        custom,
+        volValue,
+        filterValue,
+        highpassValue,
+        playbackRate,
+      } = paramsRef.current;
 
       try {
         await playFromSource(
@@ -220,7 +239,8 @@ function Player({ title, sourcePath, custom, speed, stopAll }) {
           filterValue,
           playbackRate,
           false,
-          playbackGenerationRef.current
+          playbackGenerationRef.current,
+          highpassValue
         );
       } catch (err) {
         console.error('Erreur lors du replay du son :', err);
@@ -277,14 +297,16 @@ function Player({ title, sourcePath, custom, speed, stopAll }) {
       setStopAll(false);
       const volume = playerState.volume ?? 1.5;
       const filter = playerState.filter ?? (isWindCreator ? WIND_DEFAULT_FILTER : 1800);
+      const highpass = playerState.highpass ?? DEFAULT_HIGHPASS;
       const speed = playerState.speed ?? 1;
       setFilterValue(filter);
+      setHighpassValue(highpass);
       setVolValue(volume);
       setPlaybackRate(speed);
       if (isPlayingRef.current) {
-        crossfadeParams(volume, filter, speed);
+        crossfadeParams(volume, filter, speed, highpass);
       } else {
-        play(null, sourcePath, custom, volume, filter, speed);
+        play(null, sourcePath, custom, volume, filter, speed, highpass);
       }
     } else if (isPlayingRef.current) {
       stop({ fade: true });
@@ -349,17 +371,39 @@ function Player({ title, sourcePath, custom, speed, stopAll }) {
     }
   }
 
-  // FILTER ----------------------------------------
+  // FILTER (low-pass) ----------------------------------------
   const handleFilterValue = e => {
-    const value = parseFloat(e?.currentTarget?.value || e);
+    const value = parseFloat(e?.currentTarget?.value ?? e);
     setFilterValue(value);
     registerPlayerSituation(title, { filter: value });
+    triggerIndicator(
+      `${Math.round(highpassValue)} – ${Math.round(value)} Hz`
+    );
 
     if (loadASnap) {
       setLoadASnap(false);
     }
     if (filterRef.current && audioCtxRef.current) {
       filterRef.current.frequency.setTargetAtTime(
+        value,
+        audioCtxRef.current.currentTime,
+        0.01
+      );
+    }
+  };
+
+  // HIGH-PASS ----------------------------------------
+  const handleHighpassValue = e => {
+    const value = parseFloat(e?.currentTarget?.value ?? e);
+    setHighpassValue(value);
+    registerPlayerSituation(title, { highpass: value });
+    triggerIndicator(`${Math.round(value)} – ${Math.round(filterValue)} Hz`);
+
+    if (loadASnap) {
+      setLoadASnap(false);
+    }
+    if (highpassRef.current && audioCtxRef.current) {
+      highpassRef.current.frequency.setTargetAtTime(
         value,
         audioCtxRef.current.currentTime,
         0.01
@@ -499,10 +543,15 @@ function Player({ title, sourcePath, custom, speed, stopAll }) {
     }, FADE_IN_DURATION * 1000);
   }
 
-  function crossfadeParams(newVol, newFilter, newSpeed) {
+  function crossfadeParams(
+    newVol,
+    newFilter,
+    newSpeed,
+    newHighpass = highpassValue
+  ) {
     const audioCtx = audioCtxRef.current;
     if (!audioCtx || !gainNodeRef.current || !filterRef.current) {
-      play(null, sourcePath, custom, newVol, newFilter, newSpeed);
+      play(null, sourcePath, custom, newVol, newFilter, newSpeed, newHighpass);
       return;
     }
 
@@ -544,6 +593,18 @@ function Player({ title, sourcePath, custom, speed, stopAll }) {
       now + FADE_IN_DURATION
     );
 
+    if (highpassRef.current) {
+      highpassRef.current.frequency.cancelScheduledValues(now);
+      highpassRef.current.frequency.setValueAtTime(
+        highpassRef.current.frequency.value,
+        now
+      );
+      highpassRef.current.frequency.linearRampToValueAtTime(
+        newHighpass,
+        now + FADE_IN_DURATION
+      );
+    }
+
     if (sourceNodeRef.current) {
       sourceNodeRef.current.playbackRate.cancelScheduledValues(now);
       sourceNodeRef.current.playbackRate.setValueAtTime(
@@ -560,6 +621,7 @@ function Player({ title, sourcePath, custom, speed, stopAll }) {
       isPlaying: true,
       volume: newVol,
       filter: newFilter,
+      highpass: newHighpass,
       speed: newSpeed,
     });
 
@@ -580,7 +642,8 @@ function Player({ title, sourcePath, custom, speed, stopAll }) {
     custom,
     newVol = volValue,
     newFilter = filterValue,
-    newSpeed = playbackRate
+    newSpeed = playbackRate,
+    newHighpass = highpassValue
   ) {
     cancelPendingFade();
 
@@ -604,6 +667,7 @@ function Player({ title, sourcePath, custom, speed, stopAll }) {
       isPlaying: true,
       volume: newVol,
       filter: newFilter,
+      highpass: newHighpass,
       speed: newSpeed,
     });
 
@@ -614,7 +678,8 @@ function Player({ title, sourcePath, custom, speed, stopAll }) {
       newFilter,
       newSpeed,
       false,
-      generation
+      generation,
+      newHighpass
     );
   }
 
@@ -625,7 +690,8 @@ function Player({ title, sourcePath, custom, speed, stopAll }) {
     newFilter = filterValue,
     newSpeed = playbackRate,
     forceReload = false,
-    generation = playbackGenerationRef.current
+    generation = playbackGenerationRef.current,
+    newHighpass = highpassValue
   ) {
     cancelPendingFade();
 
@@ -749,6 +815,7 @@ function Player({ title, sourcePath, custom, speed, stopAll }) {
         sourceNodeRef.current.disconnect();
       }
       if (filterRef.current) filterRef.current.disconnect();
+      if (highpassRef.current) highpassRef.current.disconnect();
       if (windLayerNodesRef.current) {
         disconnectWindLayerGraph(windLayerNodesRef.current);
         windLayerNodesRef.current = null;
@@ -776,6 +843,7 @@ function Player({ title, sourcePath, custom, speed, stopAll }) {
         sourceNodeRef.current = sourceNode;
         gainNodeRef.current = masterGain;
         filterRef.current = null;
+        highpassRef.current = null;
         windLayerNodesRef.current = layerNodes;
 
         startPerlinModulation(WIND_MIN_GAIN, newVol);
@@ -800,11 +868,17 @@ function Player({ title, sourcePath, custom, speed, stopAll }) {
       const dryTarget = newVol * dryLevel;
       applyGainFadeIn(gainNode, dryTarget, audioCtx);
 
+      const highpass = audioCtx.createBiquadFilter();
+      highpass.type = 'highpass';
+      highpass.frequency.setValueAtTime(newHighpass, audioCtx.currentTime);
+      highpass.Q.setValueAtTime(0.7, audioCtx.currentTime);
+
       const filter = audioCtx.createBiquadFilter();
       filter.type = 'lowpass';
       filter.frequency.setValueAtTime(newFilter, audioCtx.currentTime);
 
-      sourceNode.connect(filter);
+      sourceNode.connect(highpass);
+      highpass.connect(filter);
       filter.connect(gainNode);
       connectToMasterBus(gainNode);
 
@@ -832,6 +906,7 @@ function Player({ title, sourcePath, custom, speed, stopAll }) {
       sourceNode.start();
       sourceNodeRef.current = sourceNode;
       gainNodeRef.current = gainNode;
+      highpassRef.current = highpass;
       filterRef.current = filter;
 
       if (custom === 'perlinNoise') {
@@ -886,6 +961,10 @@ function Player({ title, sourcePath, custom, speed, stopAll }) {
     if (filterRef.current) {
       filterRef.current.disconnect();
       filterRef.current = null;
+    }
+    if (highpassRef.current) {
+      highpassRef.current.disconnect();
+      highpassRef.current = null;
     }
     if (windLayerNodesRef.current) {
       disconnectWindLayerGraph(windLayerNodesRef.current);
@@ -1084,7 +1163,8 @@ function Player({ title, sourcePath, custom, speed, stopAll }) {
       filterValue,
       playbackRate,
       true,
-      generation
+      generation,
+      highpassValue
     );
   };
 
@@ -1154,21 +1234,21 @@ function Player({ title, sourcePath, custom, speed, stopAll }) {
           </div>
           <div className="active-player-card__sliders">
             {!isWindCreator && (
-              <label className="active-player-card__row">
+              <div
+                className="active-player-card__row"
+                role="group"
+                aria-label="Band filter"
+              >
                 <span className="active-player-card__row-label">
                   <i className="fa-solid fa-filter" aria-hidden="true" />
                 </span>
-                <input
-                  className="active-player-card__range"
-                  type="range"
-                  min="50"
-                  max="1500"
-                  step="10"
-                  value={filterValue}
-                  onChange={handleFilterValue}
-                  aria-label="Filter"
+                <BandFilterSlider
+                  low={highpassValue}
+                  high={filterValue}
+                  onLowChange={handleHighpassValue}
+                  onHighChange={handleFilterValue}
                 />
-              </label>
+              </div>
             )}
             {title === 'bowl' && (
               <label className="active-player-card__row">

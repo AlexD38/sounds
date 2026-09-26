@@ -717,6 +717,93 @@
   border: 2px solid var(--color-bg-deep);
 }
 
+/* Dual-thumb band filter (HP left + LP right on one track) */
+.band-filter-slider {
+  --band-low: 0%;
+  --band-high: 100%;
+  position: relative;
+  flex: 1;
+  min-width: 0;
+  height: 1.1rem;
+}
+
+.band-filter-slider__rail {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 50%;
+  height: 4px;
+  transform: translateY(-50%);
+  border-radius: var(--radius-full);
+  background: linear-gradient(
+    to right,
+    var(--color-border) 0%,
+    var(--color-border) var(--band-low),
+    var(--color-accent) var(--band-low),
+    var(--color-accent) var(--band-high),
+    var(--color-border) var(--band-high),
+    var(--color-border) 100%
+  );
+  pointer-events: none;
+}
+
+.band-filter-slider__thumb {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  margin: 0;
+  padding: 0;
+  -webkit-appearance: none;
+  appearance: none;
+  background: transparent;
+  pointer-events: none;
+  cursor: pointer;
+}
+
+.band-filter-slider__thumb--low {
+  z-index: 3;
+}
+
+.band-filter-slider__thumb--high {
+  z-index: 2;
+}
+
+.band-filter-slider__thumb::-webkit-slider-runnable-track {
+  height: 4px;
+  background: transparent;
+}
+
+.band-filter-slider__thumb::-moz-range-track {
+  height: 4px;
+  background: transparent;
+  border: none;
+}
+
+.band-filter-slider__thumb::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  pointer-events: auto;
+  margin-top: -5px;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: var(--color-accent-bright);
+  border: 2px solid var(--color-bg-deep);
+  box-shadow: 0 0 6px var(--color-accent-glow-md);
+  position: relative;
+  z-index: 1;
+}
+
+.band-filter-slider__thumb::-moz-range-thumb {
+  pointer-events: auto;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: var(--color-accent-bright);
+  border: 2px solid var(--color-bg-deep);
+  box-shadow: 0 0 6px var(--color-accent-glow-md);
+}
+
 .active-player-card__loader {
   align-self: center;
   font-size: 1.25rem;
