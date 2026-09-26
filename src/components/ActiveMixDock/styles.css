@@ -659,6 +659,17 @@
   text-align: right;
 }
 
+.active-player-card__stretch {
+  width: 100%;
+  gap: 0.4rem;
+  margin-top: 0.15rem;
+}
+
+.active-player-card__stretch-label {
+  font-size: 0.7rem;
+  font-weight: 600;
+}
+
 .active-player-card__row {
   display: flex;
   align-items: center;

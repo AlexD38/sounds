@@ -1,6 +1,22 @@
 import { useContext } from 'react';
 import { Context } from '../../context/context';
 import { config } from '../../ref/random.config';
+import { randomWindParams } from '../../ref/windPresets';
+import { hasFreesoundApiKey } from '../../ref/localMusic';
+import { isWindCreator } from '../../utils/windCreator';
+
+function pickVolume() {
+  return 0.55 + Math.random() * 0.9;
+}
+
+function pickFilter() {
+  return 700 + Math.floor(Math.random() * 1400);
+}
+
+function pickSpeed(supportsSpeed) {
+  if (!supportsSpeed) return undefined;
+  return 0.75 + Math.random() * 0.5;
+}
 
 export const RandomSnapGenerator = () => {
   const { loadMix, setNotification } = useContext(Context);
@@ -13,7 +29,12 @@ export const RandomSnapGenerator = () => {
     const numberOfPlayersNeeded =
       numberOfPlayersArr[Math.floor(Math.random() * numberOfPlayersArr.length)];
 
-    const availableIndexes = Array.from({ length: config.length }, (_, i) => i);
+    const pool = config.filter(player => {
+      if (player.title === 'music') return hasFreesoundApiKey();
+      return true;
+    });
+
+    const availableIndexes = Array.from({ length: pool.length }, (_, i) => i);
 
     for (
       let i = 0;
@@ -24,12 +45,23 @@ export const RandomSnapGenerator = () => {
         Math.random() * availableIndexes.length
       );
       const playerIndex = availableIndexes.splice(randomIdxInAvailable, 1)[0];
-      const targetedPlayer = config[playerIndex];
+      const targetedPlayer = pool[playerIndex];
 
-      selectedPlayers.players.push({
+      const entry = {
         playerTitle: targetedPlayer.title,
         isPlaying: true,
-      });
+        volume: pickVolume(),
+        filter: isWindCreator(targetedPlayer.title) ? 900 : pickFilter(),
+      };
+
+      const speed = pickSpeed(targetedPlayer.speed);
+      if (speed != null) entry.speed = speed;
+
+      if (isWindCreator(targetedPlayer.title)) {
+        entry.windParams = randomWindParams();
+      }
+
+      selectedPlayers.players.push(entry);
 
       randomSnapTitle.push(
         targetedPlayer.titleSuggestions[
@@ -66,7 +98,7 @@ export const RandomSnapGenerator = () => {
     });
 
     setNotification({
-      message: `Now Playing auto generated playlist`,
+      message: `Now playing a random mix`,
     });
 
     setTimeout(() => {

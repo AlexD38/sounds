@@ -1,12 +1,18 @@
 import { createContext, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import localforage from 'localforage';
 import { CROSSFADE_DURATION } from '../ref/mix.constants';
+import { config } from '../ref/random.config';
 import {
   THEME_IDS,
   THEME_STORAGE_KEY,
   getStoredTheme,
   getThemeById,
 } from '../ref/themes';
+import { cacheManager } from '../utils/cacheManager';
+import {
+  clearShareParamFromUrl,
+  readSharedMixFromLocation,
+} from '../utils/mixShare';
 
 // Crée le contexte
 // eslint-disable-next-line react-refresh/only-export-components
@@ -36,6 +42,8 @@ export function ContextProvider({ children }) {
   const [cachedAudios, setCachedAudios] = useState(null);
   const [playlist, setPlaylist] = useState([]);
   const [zenQuote, setZenQuote] = useState(null);
+  /** Override fade-out duration (seconds) for the next stop-all, e.g. sleep timer. */
+  const [stopFadeDuration, setStopFadeDuration] = useState(null);
 
   // QUOTE ---------------------------------------------------------
   useEffect(() => {
@@ -55,11 +63,24 @@ export function ContextProvider({ children }) {
     fetchQuote();
   }, []);
 
-  //Cache ------------------------
+  // Warm IndexedDB cache for local library (best-effort, after idle)
   useEffect(() => {
-    // On ne pré-charge plus rien au démarrage pour économiser les ressources sur mobile.
-    // Le chargement se fera à la demande dans le composant Player.
     setCachedAudios({});
+    const titles = config
+      .map(p => p.title)
+      .filter(t => t !== 'whiteNoise' && t !== 'music' && t !== 'windCreator');
+    titles.push('chopin', 'piano');
+
+    const run = () => {
+      cacheManager.warmLibrary(titles).catch(() => {});
+    };
+
+    if (typeof requestIdleCallback === 'function') {
+      const id = requestIdleCallback(run, { timeout: 8000 });
+      return () => cancelIdleCallback(id);
+    }
+    const timer = setTimeout(run, 2500);
+    return () => clearTimeout(timer);
   }, []);
 
   // Load snaps from localforage on initial mount
@@ -147,6 +168,30 @@ export function ContextProvider({ children }) {
     }, CROSSFADE_DURATION * 1000);
   }, []);
 
+  // Hydrate shared mix from ?mix= URL (after loadMix exists)
+  useEffect(() => {
+    try {
+      const shared = readSharedMixFromLocation();
+      if (!shared) return;
+
+      const snapMap = new Map();
+      snapMap.set(shared.title, shared);
+      loadMix({
+        label: shared.title,
+        snapMap,
+        activeMix: { type: 'shared', label: shared.title },
+      });
+      setNotification({ message: `Opened shared mix "${shared.title}"` });
+      setTimeout(() => setNotification(null), 3500);
+      clearShareParamFromUrl();
+    } catch (err) {
+      console.error('Failed to load shared mix:', err);
+      setNotification({ message: 'Could not open shared mix link.' });
+      setTimeout(() => setNotification(null), 4000);
+      clearShareParamFromUrl();
+    }
+  }, [loadMix]);
+
   useEffect(() => {
     return () => {
       if (mixTransitionTimeoutRef.current) {
@@ -175,6 +220,8 @@ export function ContextProvider({ children }) {
       setPlayingSnap,
       stopAll,
       setStopAll,
+      stopFadeDuration,
+      setStopFadeDuration,
       randomSnap,
       setRandomSnap,
       mixTransition,
@@ -200,6 +247,7 @@ export function ContextProvider({ children }) {
       loadASnap,
       playingSnap,
       stopAll,
+      stopFadeDuration,
       randomSnap,
       mixTransition,
       activeMix,

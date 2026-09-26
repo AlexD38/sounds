@@ -2,9 +2,11 @@ import { useContext } from 'react';
 import { Context } from '../../context/context';
 
 export const StopAll = () => {
-  const { setStopAll, setRandomSnap, clearActiveMix } = useContext(Context);
+  const { setStopAll, setRandomSnap, clearActiveMix, setStopFadeDuration } =
+    useContext(Context);
 
   const handleStopAll = () => {
+    setStopFadeDuration(null);
     setStopAll(true);
     setRandomSnap(null);
     clearActiveMix();

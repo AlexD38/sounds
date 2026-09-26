@@ -138,6 +138,37 @@ export const config = [
     speed: true,
   },
   {
+    title: 'birdWoods',
+    apiSuggestions: ['birds', 'forest'],
+    titleSuggestions: ['birds', 'woods'],
+    category: 'Soundscapes',
+  },
+  {
+    title: 'village',
+    apiSuggestions: ['village', 'town'],
+    titleSuggestions: ['village', 'quiet'],
+    category: 'Soundscapes',
+  },
+  {
+    title: 'spring',
+    apiSuggestions: ['spring', 'birds'],
+    titleSuggestions: ['spring', 'fresh'],
+    category: 'Soundscapes',
+  },
+  {
+    title: 'waves',
+    apiSuggestions: ['waves', 'shore'],
+    titleSuggestions: ['waves', 'shore'],
+    category: 'Soundscapes',
+    speed: true,
+  },
+  {
+    title: 'market',
+    apiSuggestions: ['market', 'crowd'],
+    titleSuggestions: ['market', 'bustling'],
+    category: 'Soundscapes',
+  },
+  {
     title: 'music',
     apiSuggestions: [
       501199, 750021, 746982, 706660, 706660, 524327, 747495, 745762, 745828,

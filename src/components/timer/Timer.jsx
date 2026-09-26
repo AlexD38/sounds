@@ -2,7 +2,8 @@ import { useContext, useEffect, useRef, useState } from 'react';
 import { Context } from '../../context/context';
 
 export const Timer = () => {
-  const { setNotification, setStopAll } = useContext(Context);
+  const { setNotification, setStopAll, setStopFadeDuration } =
+    useContext(Context);
   const [isOpen, setIsOpen] = useState(false);
   const minutesRef = useRef(null);
   const wrapperRef = useRef(null);
@@ -34,9 +35,12 @@ export const Timer = () => {
       return () => clearInterval(intervalId);
     } else if (countDown && remainingTime === 0) {
       setCountDown(false);
+      setStopFadeDuration(20);
       setStopAll(true);
-      setNotification({ message: `Goodnight... and don't let the bugs bite` });
-      setTimeout(() => setNotification(null), 3000);
+      setNotification({
+        message: `Fading out gently… goodnight`,
+      });
+      setTimeout(() => setNotification(null), 4000);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [countDown, remainingTime]);

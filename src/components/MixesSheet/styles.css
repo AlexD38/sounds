@@ -69,6 +69,36 @@
   line-height: 1.45;
 }
 
+.mixes-sheet__tools {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+  margin-bottom: 0.9rem;
+}
+
+.mixes-sheet__tool {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.4rem 0.65rem;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--color-border);
+  background: var(--color-bg-elevated);
+  color: var(--color-text);
+  font-size: 0.72rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.mixes-sheet__tool i {
+  font-size: 0.7rem;
+  color: var(--color-text-muted);
+}
+
+.mixes-sheet__tool:hover {
+  border-color: var(--color-accent);
+}
+
 .mixes-sheet__header-actions {
   display: flex;
   align-items: center;

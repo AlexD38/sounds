@@ -1,63 +1,97 @@
 import localforage from 'localforage';
 
-const decodedCache = new Map(); // RAM cache: { title -> AudioBuffer }
+const decodedCache = new Map(); // RAM: cacheKey -> AudioBuffer
+const audioStore = localforage.createInstance({ name: 'aa-audio-cache' });
+
+function cacheKeyFromUrl(url) {
+  if (!url) return null;
+  try {
+    const u = new URL(url, window.location.origin);
+    return u.pathname + u.search;
+  } catch {
+    return url;
+  }
+}
+
+async function fetchArrayBuffer(url) {
+  const response = await fetch(url);
+  if (!response.ok) {
+    throw new Error(`Failed to fetch audio (${response.status})`);
+  }
+  return response.arrayBuffer();
+}
 
 export const cacheManager = {
-  async decodeSound({ title }, audioCtx) {
+  /**
+   * Load + decode audio by URL. Persists ArrayBuffer in IndexedDB for offline reuse.
+   * Skip persistent cache for cross-origin URLs (API previews) — RAM only.
+   */
+  async decodeFromUrl(url, audioCtx, { persist = true, cacheKey } = {}) {
     const context =
       audioCtx || new (window.AudioContext || window.webkitAudioContext)();
-    const url = `/assets/sounds/${title}.mp3`;
+    const key = cacheKey || cacheKeyFromUrl(url);
+    if (!key) throw new Error('No audio URL');
 
-    try {
-      // Récupère depuis le cache
-      let arrayBuffer = await localforage.getItem(title);
-
-      if (!arrayBuffer) {
-        // Sinon fetch depuis le réseau
-        const response = await fetch(url);
-        if (!response.ok) {
-          throw new Error(`Failed to fetch ${title} (${response.status})`);
-        }
-        arrayBuffer = await response.arrayBuffer();
-
-        // Stocke en cache (ArrayBuffer brut)
-        await localforage.setItem(title, arrayBuffer);
-      }
-
-      // Décodage UNE SEULE FOIS
-      let audioBuffer;
-      if (decodedCache.has(title)) {
-        audioBuffer = decodedCache.get(title);
-      } else {
-        audioBuffer = await context.decodeAudioData(arrayBuffer.slice(0));
-        decodedCache.set(title, audioBuffer);
-      }
-
-      return audioBuffer;
-    } catch (error) {
-      console.error(`Erreur avec ${title}:`, error);
-      return null; // or rethrow, depending on desired error handling
+    if (decodedCache.has(key)) {
+      return decodedCache.get(key);
     }
+
+    let arrayBuffer = null;
+    const canPersist = persist && key.startsWith('/assets/');
+
+    if (canPersist) {
+      arrayBuffer = await audioStore.getItem(key);
+    }
+
+    if (!arrayBuffer) {
+      arrayBuffer = await fetchArrayBuffer(url);
+      if (canPersist) {
+        try {
+          await audioStore.setItem(key, arrayBuffer);
+        } catch (err) {
+          console.warn('Audio cache write failed:', err);
+        }
+      }
+    }
+
+    const audioBuffer = await context.decodeAudioData(arrayBuffer.slice(0));
+    decodedCache.set(key, audioBuffer);
+    return audioBuffer;
   },
 
-  // ------------------------------—
-  // 2. Récupération d'un son décodé
-  // ------------------------------—
+  /** Legacy helper: decode `/assets/sounds/${title}.mp3`. */
+  async decodeSound({ title }, audioCtx) {
+    return this.decodeFromUrl(`/assets/sounds/${title}.mp3`, audioCtx, {
+      cacheKey: `/assets/sounds/${title}.mp3`,
+    });
+  },
+
   async getDecodedBuffer(title, audioCtx) {
+    const key = `/assets/sounds/${title}.mp3`;
+    if (decodedCache.has(key)) return decodedCache.get(key);
+
     const context =
       audioCtx || new (window.AudioContext || window.webkitAudioContext)();
-
-    // Déjà en RAM
-    if (decodedCache.has(title)) {
-      return decodedCache.get(title);
-    }
-
-    // Sinon depuis IndexedDB
-    const arrayBuffer = await localforage.getItem(title);
+    const arrayBuffer = await audioStore.getItem(key);
     if (!arrayBuffer) return null;
 
     const audioBuffer = await context.decodeAudioData(arrayBuffer.slice(0));
-    decodedCache.set(title, audioBuffer);
+    decodedCache.set(key, audioBuffer);
     return audioBuffer;
+  },
+
+  /** Warm IndexedDB for known local library titles (best-effort, non-blocking). */
+  async warmLibrary(titles = []) {
+    const jobs = titles.map(async title => {
+      const key = `/assets/sounds/${title}.mp3`;
+      if (await audioStore.getItem(key)) return;
+      try {
+        const buf = await fetchArrayBuffer(key);
+        await audioStore.setItem(key, buf);
+      } catch {
+        // ignore missing / network errors
+      }
+    });
+    await Promise.allSettled(jobs);
   },
 };

@@ -9,12 +9,14 @@ const MIX_TYPE_LABELS = {
   mood: 'Mood',
   saved: 'Saved mix',
   random: 'Random mix',
+  shared: 'Shared mix',
 };
 
 const MIX_TYPE_ICONS = {
   mood: 'wand-magic-sparkles',
   saved: 'bookmark',
   random: 'dice',
+  shared: 'link',
 };
 
 const DOCK_HINT_KEY = 'dock-hint-shown';

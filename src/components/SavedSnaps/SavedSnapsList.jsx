@@ -1,9 +1,8 @@
 import { useContext } from 'react';
 import { Context } from '../../context/context';
 import './styles.css';
-import './styles.css';
 
-export function SavedSnapsList({ onLoad }) {
+export function SavedSnapsList({ onLoad, onShare }) {
   const {
     savedSnaps,
     setSavedSnaps,
@@ -71,6 +70,19 @@ export function SavedSnapsList({ onLoad }) {
               />
               <span className="saved-snap__label">{snap.title}</span>
             </button>
+            {onShare && (
+              <button
+                type="button"
+                className="saved-snap__share"
+                onClick={event => {
+                  event.stopPropagation();
+                  onShare(snap);
+                }}
+                aria-label={`Share mix ${snap.title}`}
+              >
+                <i className="fa-solid fa-link" aria-hidden="true" />
+              </button>
+            )}
             <button
               type="button"
               className="saved-snap__delete"

@@ -140,6 +140,21 @@ export function mergeWindParams(partial) {
   };
 }
 
+/** Serializable snapshot of wind params (strips non-JSON-safe fields). */
+export function serializeWindParams(params) {
+  const merged = mergeWindParams(params);
+  return {
+    layers: merged.layers.map(layer => ({
+      id: layer.id,
+      enabled: Boolean(layer.enabled),
+      volume: Number(layer.volume),
+      speed: Number(layer.speed),
+      highpass: Number(layer.highpass),
+      lowpass: Number(layer.lowpass),
+    })),
+  };
+}
+
 /** Ajoute une piste (max MAX_WIND_LAYERS). */
 export function addWindLayer(params) {
   const current = mergeWindParams(params);

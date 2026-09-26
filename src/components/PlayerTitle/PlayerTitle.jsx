@@ -53,6 +53,10 @@ export const PlayerTitle = ({ title, isPlaying }) => {
     iconLabel = 'house-chimney';
   } else if (title === 'city') {
     iconLabel = 'city';
+  } else if (title === 'waves') {
+    iconLabel = 'water';
+  } else if (title === 'market') {
+    iconLabel = 'store';
   } else {
     return (
       <span className="player-card__icon player-card__icon--text">

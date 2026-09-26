@@ -1,3 +1,5 @@
+import { calmWindParams, breezeWindParams } from './windPresets';
+
 export const moodPresets = [
   {
     id: 'focus',
@@ -36,7 +38,13 @@ export const moodPresets = [
     icon: 'train',
     description: 'Train rhythm with distant rain on the window.',
     players: [
-      { playerTitle: 'train', isPlaying: true, volume: 1.0, filter: 1000, speed: 0.9 },
+      {
+        playerTitle: 'train',
+        isPlaying: true,
+        volume: 1.0,
+        filter: 1000,
+        speed: 0.9,
+      },
       { playerTitle: 'lightRain', isPlaying: true, volume: 0.65, filter: 950 },
     ],
   },
@@ -48,7 +56,13 @@ export const moodPresets = [
     players: [
       { playerTitle: 'forest', isPlaying: true, volume: 1.1, filter: 1400 },
       { playerTitle: 'morning', isPlaying: true, volume: 0.85, filter: 1200 },
-      { playerTitle: 'windCreator', isPlaying: true, volume: 0.45, filter: 1100 },
+      {
+        playerTitle: 'windCreator',
+        isPlaying: true,
+        volume: 0.45,
+        filter: 1100,
+        windParams: calmWindParams(),
+      },
     ],
   },
   {
@@ -68,9 +82,27 @@ export const moodPresets = [
     icon: 'water',
     description: 'Gentle waves and open coastal air.',
     players: [
-      { playerTitle: 'ocean', isPlaying: true, volume: 1.0, filter: 1200, speed: 0.85 },
-      { playerTitle: 'lake', isPlaying: true, volume: 0.5, filter: 1400, speed: 0.9 },
-      { playerTitle: 'windCreator', isPlaying: true, volume: 0.3, filter: 1000 },
+      {
+        playerTitle: 'ocean',
+        isPlaying: true,
+        volume: 1.0,
+        filter: 1200,
+        speed: 0.85,
+      },
+      {
+        playerTitle: 'lake',
+        isPlaying: true,
+        volume: 0.5,
+        filter: 1400,
+        speed: 0.9,
+      },
+      {
+        playerTitle: 'windCreator',
+        isPlaying: true,
+        volume: 0.3,
+        filter: 1000,
+        windParams: breezeWindParams(),
+      },
     ],
   },
   {

@@ -17,14 +17,34 @@ export default defineConfig({
         'apple-touch-icon.png',
       ],
       workbox: {
-        maximumFileSizeToCacheInBytes: 5 * 1024 * 1024, // 5MB
+        maximumFileSizeToCacheInBytes: 6 * 1024 * 1024,
+        runtimeCaching: [
+          {
+            urlPattern: ({ url }) =>
+              url.pathname.startsWith('/assets/sounds/') &&
+              url.pathname.endsWith('.mp3'),
+            handler: 'CacheFirst',
+            options: {
+              cacheName: 'aa-sound-library',
+              expiration: {
+                maxEntries: 40,
+                maxAgeSeconds: 60 * 60 * 24 * 60,
+              },
+              cacheableResponse: {
+                statuses: [0, 200],
+              },
+            },
+          },
+        ],
       },
       manifest: {
         name: 'Ambient Architect',
         short_name: 'AA',
-        description: 'Ambiant sounds for focus and relaxation',
+        description: 'Ambient sounds for focus and relaxation',
         theme_color: '#1a2423',
         background_color: '#1a2423',
+        display: 'standalone',
+        start_url: '/',
         icons: [
           {
             src: 'AA.svg',

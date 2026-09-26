@@ -1,84 +1,61 @@
-# 🎵 Sounds
+# Ambient Architect
 
-Une application web minimaliste pour créer et écouter des ambiances sonores personnalisées. Mixez différents sons de la nature, de la ville ou de la musique pour créer votre propre paysage sonore.
+Minimal web app to mix nature, city, and music textures into a personal soundscape.
 
-## 🚀 Démo en direct
+## Live demo
 
-[Accédez à l'application ici !](https://sounds-iota.vercel.app/)
+[sounds-iota.vercel.app](https://sounds-iota.vercel.app/)
 
-## ✨ Fonctionnalités
+## Features
 
-- **🎚️ Mixeur de sons :** Jouez plusieurs sons simultanément et ajustez leur volume individuellement.
-- **💾 Snapshots :** Sauvegardez vos mixages préférés pour les réécouter plus tard. Il est possible de sauvegarder plusieurs "snapshots".
-- **🔀 Générateur aléatoire :** Laissez l'application créer une ambiance aléatoire pour vous.
-- **⏱️ Minuteur :** Endormez-vous avec votre ambiance sonore grâce au minuteur intégré.
-- **🔇 Stop :** Un bouton pour arrêter tous les sons en un seul clic.
-- **🎶 Audio Stretching :** Utilise l'algorithme _Paulstretch_ pour étirer les sons et créer des textures sonores uniques.
-- **🎨 Palette de couleurs :** Une interface simple et apaisante.
+- **Mixer** — play several sounds at once with volume, band filter, and speed
+- **Wind creator** — layered procedural wind with per-track controls (saved in mixes)
+- **Snapshots** — save / load multiple local mixes
+- **Share** — copy a `?mix=` link, or import / export mixes as JSON
+- **Moods** — curated soundscapes (Focus, Sleep, Forest, …)
+- **Random** — generate a balanced mix (volumes + Wind params)
+- **Sleep timer** — gentle 20s fade-out
+- **Music** — Freesound when `VITE_API_KEY` is set, otherwise local piano library
+- **Paulstretch** — optional texture stretch on the Music player
+- **PWA** — installable; local MP3s cached for offline replay
+- **Themes** — calming palettes
 
-## 🛠️ Technologies utilisées
+## Stack
 
-- [React](https://reactjs.org/)
-- [Vite](https://vitejs.dev/)
-- [Paulstretch.js](https://github.com/paul-nasca/paulstretch-js) pour la manipulation audio
-- [LocalForage](https://github.com/localForage/localForage) pour le stockage côté client
-- Déployé sur [Vercel](https://vercel.com/)
+- React + Vite
+- Web Audio API
+- [Paulstretch](https://www.npmjs.com/package/paulstretch)
+- LocalForage (snapshots + audio cache)
+- vite-plugin-pwa
+- Deployed on Vercel
 
-## ⚙️ Installation et Lancement
+## Setup
 
-Pour lancer le projet en local, suivez ces étapes :
+```bash
+git clone <your-repo-url>
+cd sounds
+npm install
+cp .env.example .env   # optional: VITE_API_KEY for Freesound music
+npm run dev
+```
 
-1.  **Clonez le dépôt :**
+Open `http://localhost:5173`.
 
-    ```bash
-    git clone https://github.com/your-username/sounds.git
-    cd sounds
-    ```
+## Usage
 
-2.  **Installez les dépendances :**
+1. Tap icons to play sounds  
+2. Adjust sliders in the active mix dock  
+3. Save, load moods, share, or set a sleep timer from the bottom bar  
 
-    ```bash
-    npm install
-    ```
+## Roadmap
 
-3.  **Configurez la clé API Freesound (optionnel, pour le player « music ») :**
+See [ROADMAP.md](./ROADMAP.md).
 
-    ```bash
-    cp .env.example .env
-    ```
+## License
 
-    Renseignez `VITE_API_KEY` avec votre token Freesound.
+MIT
 
-4.  **Lancez le serveur de développement :**
-    ```bash
-    npm run dev
-    ```
-    L'application sera disponible à l'adresse `http://localhost:5173`.
+## Sound sources
 
-## 📖 Comment utiliser
-
-1.  Cliquez sur les icônes pour activer les sons.
-2.  Utilisez les curseurs (sliders) qui apparaissent pour ajuster le volume de chaque son.
-3.  Utilisez les boutons en bas pour sauvegarder, charger ou générer des mixages.
-
-## 🗺️ Feuille de route
-
-Certaines des fonctionnalités prévues incluent :
-
-- [ ] Intégration d'un filtre basé sur le bruit de Perlin.
-
-Pour plus de détails, consultez le fichier [ROADMAP.md](ROADMAP.md).
-
-## 📄 Licence
-
-Ce projet est sous licence MIT.
-
-## Sources
-
-All sounds come from :
-
-- https://orangefreesounds.com/sound-effects/
-  or
-- https://freesound.org/
-  Api docs are to be found here :
-- https://freesound.org/docs/api/authentication.html
+- [Orange Free Sounds](https://orangefreesounds.com/sound-effects/)
+- [Freesound](https://freesound.org/) — [API auth docs](https://freesound.org/docs/api/authentication.html)

@@ -1,16 +1,16 @@
 # ROADMAP
 
 - [x] Possibility to save more than 1 snapshot
-- [ ] Possibility to pass Perlin Noise into filter
+- [x] Possibility to pass Perlin Noise into filter
 - [x] Add undistinctive chattering Sound
+- [x] Persist Wind creator params in snapshots / moods
+- [x] Share mixes via URL + import/export JSON
+- [x] Offline audio cache (IndexedDB + PWA runtime)
+- [x] Local music fallback without Freesound key
+- [x] Sleep timer gentle fade-out
 
-## palette :
+## Next ideas
 
-- #FAF8F1
-- #FAEAB1
-- #34656D
-- #334443
-- rgb(250, 248, 241)
-- rgb(250, 234, 177)
-- rgb(52, 101, 109)
-- rgb(51, 68, 67)
+- [ ] Rename saved mixes in-place
+- [ ] Optional EQ / master compressor
+- [ ] Self-host icon fonts (fully offline UI chrome)

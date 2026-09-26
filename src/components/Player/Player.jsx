@@ -16,12 +16,16 @@ import {
   disconnectWindLayerGraph,
   isWindCreator as checkIsWindCreator,
   mergeWindParams,
+  serializeWindParams,
   startWindModulation,
   WIND_DEFAULT_FILTER,
   WIND_GLOBAL_SLIDERS,
   WIND_LAYER_SLIDERS,
   WIND_MIN_GAIN,
 } from '../../utils/windCreator';
+import { cacheManager } from '../../utils/cacheManager';
+import { stretchAudioBuffer } from '../../utils/stretchBuffer';
+import { hasFreesoundApiKey, LOCAL_MUSIC_TRACKS } from '../../ref/localMusic';
 import { formatPlayerLabel } from '../../utils/formatPlayerLabel';
 import { PlayerTitle } from '../PlayerTitle/PlayerTitle';
 import { BandFilterSlider } from './BandFilterSlider';
@@ -41,6 +45,8 @@ function Player({ title, sourcePath, custom, speed, stopAll }) {
     setLoadASnap,
     playingSnap,
     setStopAll,
+    stopFadeDuration,
+    setStopFadeDuration,
     randomSnap,
     setNotification,
     playlist,
@@ -49,6 +55,8 @@ function Player({ title, sourcePath, custom, speed, stopAll }) {
   } = useContext(Context);
 
   const isWindCreator = checkIsWindCreator(title);
+  const isLayeredCreator = isWindCreator;
+  const isMusic = title === 'music';
   const [filterValue, setFilterValue] = useState(
     isWindCreator ? WIND_DEFAULT_FILTER : 1800
   );
@@ -61,6 +69,8 @@ function Player({ title, sourcePath, custom, speed, stopAll }) {
   );
   const windParamsRef = useRef(windParams);
   const windLayerNodesRef = useRef(null);
+  const [stretchEnabled, setStretchEnabled] = useState(false);
+  const stretchEnabledRef = useRef(false);
   const [isPlaying, setIsPlaying] = useState(false);
   const [playbackRate, setPlaybackRate] = useState(1);
   const [isStereo, setIsStereo] = useState(false);
@@ -125,6 +135,10 @@ function Player({ title, sourcePath, custom, speed, stopAll }) {
   useEffect(() => {
     windParamsRef.current = windParams;
   }, [windParams]);
+
+  useEffect(() => {
+    stretchEnabledRef.current = stretchEnabled;
+  }, [stretchEnabled]);
 
   useEffect(() => {
     mixTransitionRef.current = mixTransition;
@@ -303,8 +317,31 @@ function Player({ title, sourcePath, custom, speed, stopAll }) {
       setHighpassValue(highpass);
       setVolValue(volume);
       setPlaybackRate(speed);
+      if (isWindCreator && playerState.windParams) {
+        const nextWind = mergeWindParams(playerState.windParams);
+        setWindParams(nextWind);
+        windParamsRef.current = nextWind;
+      }
+      if (isMusic && playerState.stretch != null) {
+        setStretchEnabled(Boolean(playerState.stretch));
+        stretchEnabledRef.current = Boolean(playerState.stretch);
+      }
       if (isPlayingRef.current) {
-        crossfadeParams(volume, filter, speed, highpass);
+        if (isWindCreator && playerState.windParams) {
+          const generation = ++playbackGenerationRef.current;
+          playFromSource(
+            sourcePath,
+            custom,
+            volume,
+            filter,
+            speed,
+            true,
+            generation,
+            highpass
+          );
+        } else {
+          crossfadeParams(volume, filter, speed, highpass);
+        }
       } else {
         play(null, sourcePath, custom, volume, filter, speed, highpass);
       }
@@ -338,8 +375,10 @@ function Player({ title, sourcePath, custom, speed, stopAll }) {
     let t = Math.random() * 100;
     const speed = 0.005;
     const timeConstant = 0.05;
+    const baseFilter = filterValueRef.current;
 
     const now = audioCtxRef.current.currentTime;
+
     gainNodeRef.current.gain.cancelScheduledValues(now);
     gainNodeRef.current.gain.setValueAtTime(
       gainNodeRef.current.gain.value,
@@ -358,6 +397,18 @@ function Player({ title, sourcePath, custom, speed, stopAll }) {
         audioCtxRef.current.currentTime,
         timeConstant
       );
+
+      // Soft Perlin wander on low-pass (roadmap: Perlin into filter)
+      if (filterRef.current) {
+        const filterNoise = perlinNoise(t * 0.7 + 40);
+        const filterMapped = (filterNoise + 1) / 2;
+        const filterHz = baseFilter * (0.72 + filterMapped * 0.56);
+        filterRef.current.frequency.setTargetAtTime(
+          filterHz,
+          audioCtxRef.current.currentTime,
+          0.12
+        );
+      }
 
       t += speed;
     }, 40);
@@ -431,10 +482,10 @@ function Player({ title, sourcePath, custom, speed, stopAll }) {
             0.01
           );
         }
-      } else if (isWindCreator && modulatorIntervalRef.setMasterGain) {
+      } else if (isLayeredCreator && modulatorIntervalRef.setMasterGain) {
         modulatorIntervalRef.setMasterGain(value);
       } else {
-        startPerlinModulation(isWindCreator ? WIND_MIN_GAIN : 0.5, value);
+        startPerlinModulation(isLayeredCreator ? 0 : 0.5, value);
       }
     } else {
       if (gainNodeRef.current && audioCtxRef.current) {
@@ -539,7 +590,10 @@ function Player({ title, sourcePath, custom, speed, stopAll }) {
       perlinFadeTimerRef.current = null;
       if (isPlaybackCancelled(generation)) return;
       // Wider dynamic range for wind: near-quiet lulls → full gusts
-      startPerlinModulation(isWindCreator ? WIND_MIN_GAIN : 0.5, maxGain);
+      startPerlinModulation(
+        isLayeredCreator ? WIND_MIN_GAIN : 0.5,
+        maxGain
+      );
     }, FADE_IN_DURATION * 1000);
   }
 
@@ -623,11 +677,15 @@ function Player({ title, sourcePath, custom, speed, stopAll }) {
       filter: newFilter,
       highpass: newHighpass,
       speed: newSpeed,
+      ...(isWindCreator
+        ? { windParams: serializeWindParams(windParamsRef.current) }
+        : {}),
+      ...(isMusic ? { stretch: stretchEnabledRef.current } : {}),
     });
 
     if (custom === 'perlinNoise') {
       stopPerlinModulation();
-      if (isWindCreator) {
+      if (isLayeredCreator) {
         startPerlinModulation(WIND_MIN_GAIN, newVol);
       } else {
         schedulePerlinAfterFade(generation, newVol);
@@ -669,6 +727,10 @@ function Player({ title, sourcePath, custom, speed, stopAll }) {
       filter: newFilter,
       highpass: newHighpass,
       speed: newSpeed,
+      ...(isWindCreator
+        ? { windParams: serializeWindParams(windParamsRef.current) }
+        : {}),
+      ...(isMusic ? { stretch: stretchEnabledRef.current } : {}),
     });
 
     await playFromSource(
@@ -733,33 +795,40 @@ function Player({ title, sourcePath, custom, speed, stopAll }) {
           let audioSource = source;
           if (source === 'apiSearch') {
             const playerConfig = config.find(x => x.title === title);
-            const playlistOfIds = makePlaylist(playerConfig.apiSuggestions);
             const newPlaylist = [];
 
-            for (let i = 0; i < playlistOfIds.length; i++) {
-              const { obj } = await SearchThatSound(playlistOfIds[i]);
-              if (isPlaybackCancelled(generation)) {
-                setIsLoading(false);
-                return;
+            if (hasFreesoundApiKey() && playerConfig?.apiSuggestions?.length) {
+              const playlistOfIds = makePlaylist(playerConfig.apiSuggestions);
+              for (let i = 0; i < playlistOfIds.length; i++) {
+                const { obj } = await SearchThatSound(playlistOfIds[i]);
+                if (isPlaybackCancelled(generation)) {
+                  setIsLoading(false);
+                  return;
+                }
+                if (!obj?.url) continue;
+                newPlaylist.push({
+                  id: playlistOfIds[i],
+                  title: obj.title,
+                  author: obj.author,
+                  url: obj.url,
+                  isCurrent: newPlaylist.length === 0,
+                });
               }
-              if (!obj?.url) continue;
-              newPlaylist.push({
-                id: playlistOfIds[i],
-                title: obj.title,
-                author: obj.author,
-                url: obj.url,
-                isCurrent: newPlaylist.length === 0,
-              });
             }
 
             if (newPlaylist.length === 0) {
-              setNotification({
-                message: 'Could not load music from API. Check your API key.',
+              LOCAL_MUSIC_TRACKS.forEach((track, index) => {
+                newPlaylist.push({
+                  ...track,
+                  isCurrent: index === 0,
+                });
               });
-              setTimeout(() => setNotification(null), 5000);
-              setIsLoading(false);
-              setIsPlaying(false);
-              return;
+              setNotification({
+                message: hasFreesoundApiKey()
+                  ? 'API unavailable — playing local piano library'
+                  : 'Playing local piano library (no Freesound API key)',
+              });
+              setTimeout(() => setNotification(null), 4000);
             }
 
             if (isPlaybackCancelled(generation)) {
@@ -768,29 +837,36 @@ function Player({ title, sourcePath, custom, speed, stopAll }) {
             }
 
             setPlaylist(newPlaylist);
-            const firstTrack = newPlaylist.find(p => p.isCurrent);
+            const firstTrack = newPlaylist.find(p => p.isCurrent) || newPlaylist[0];
             audioSource = firstTrack.url;
-            setNotification({
-              message: `Now playing "${firstTrack.title}" by ${firstTrack.author}`,
-            });
-            setTimeout(() => setNotification(null), 3000);
+            if (hasFreesoundApiKey() && !String(firstTrack.id).includes('local')) {
+              setNotification({
+                message: `Now playing "${firstTrack.title}" by ${firstTrack.author}`,
+              });
+              setTimeout(() => setNotification(null), 3000);
+            }
           }
 
           if (!audioSource) {
             throw new Error('No audio source provided');
           }
 
-          // Chargement et décodage standard
-          const response = await fetch(audioSource);
-          if (!response.ok) {
-            throw new Error(`Failed to load audio (${response.status})`);
+          audioBuffer = await cacheManager.decodeFromUrl(audioSource, audioCtx, {
+            persist: String(audioSource).startsWith('/assets/'),
+          });
+
+          if (
+            stretchEnabledRef.current &&
+            audioBuffer &&
+            !isPlaybackCancelled(generation)
+          ) {
+            setNotification({ message: 'Stretching texture…' });
+            audioBuffer = await stretchAudioBuffer(audioCtx, audioBuffer, {
+              stretchFactor: 8,
+              maxInputSeconds: 18,
+            });
+            setTimeout(() => setNotification(null), 2000);
           }
-          const arrayBuffer = await response.arrayBuffer();
-          if (isPlaybackCancelled(generation)) {
-            setIsLoading(false);
-            return;
-          }
-          audioBuffer = await audioCtx.decodeAudioData(arrayBuffer);
         }
 
         // On met en cache pour la prochaine fois (sauf si c'est du bruit blanc régénéré ou API dynamique)
@@ -1029,11 +1105,17 @@ function Player({ title, sourcePath, custom, speed, stopAll }) {
       return;
     }
 
+    const fadeSeconds =
+      stopFadeDuration != null && stopFadeDuration > 0
+        ? stopFadeDuration
+        : FADE_OUT_DURATION;
+
     const shouldFade =
-      fade && audioCtxRef.current && gainNodeRef.current && FADE_OUT_DURATION > 0;
+      fade && audioCtxRef.current && gainNodeRef.current && fadeSeconds > 0;
 
     if (!shouldFade) {
       disconnectAudioNodes();
+      if (stopFadeDuration != null) setStopFadeDuration(null);
       return;
     }
 
@@ -1047,10 +1129,7 @@ function Player({ title, sourcePath, custom, speed, stopAll }) {
         gainNodeRef.current.gain.value,
         now
       );
-      gainNodeRef.current.gain.linearRampToValueAtTime(
-        0,
-        now + FADE_OUT_DURATION
-      );
+      gainNodeRef.current.gain.linearRampToValueAtTime(0, now + fadeSeconds);
     }
 
     if (reverbGainNodeRef.current) {
@@ -1061,7 +1140,7 @@ function Player({ title, sourcePath, custom, speed, stopAll }) {
       );
       reverbGainNodeRef.current.gain.linearRampToValueAtTime(
         0,
-        now + FADE_OUT_DURATION
+        now + fadeSeconds
       );
     }
 
@@ -1069,7 +1148,8 @@ function Player({ title, sourcePath, custom, speed, stopAll }) {
       isFadingRef.current = false;
       fadeTimeoutRef.current = null;
       disconnectAudioNodes();
-    }, FADE_OUT_DURATION * 1000);
+      if (stopFadeDuration != null) setStopFadeDuration(null);
+    }, fadeSeconds * 1000);
   }
 
   // STEREO ------------------------------------------------
@@ -1078,8 +1158,8 @@ function Player({ title, sourcePath, custom, speed, stopAll }) {
     const gainNode = gainNodeRef.current;
     if (!audioCtx || !gainNode) return;
 
-    // Wind: insert Haas delay after masterGain → bus
-    if (isWindCreator) {
+    // Layered creators (Wind): insert Haas delay after masterGain → bus
+    if (isLayeredCreator) {
       if (isStereo) {
         const { merger } = stereoNodesRef.current || {};
         gainNode.disconnect();
@@ -1200,7 +1280,7 @@ function Player({ title, sourcePath, custom, speed, stopAll }) {
 
   const renderActiveCard = () => (
     <div
-      className={`active-player-card${isWindCreator ? ' active-player-card--wind' : ''}`}
+      className={`active-player-card${isLayeredCreator ? ' active-player-card--wind' : ''}`}
       onClick={e => e.stopPropagation()}
       role="group"
       aria-label={`${formatPlayerLabel(title)} controls`}
@@ -1263,7 +1343,7 @@ function Player({ title, sourcePath, custom, speed, stopAll }) {
             {indicatorText}
           </div>
           <div className="active-player-card__sliders">
-            {!isWindCreator && (
+            {!isLayeredCreator && (
               <div
                 className="active-player-card__row"
                 role="group"
@@ -1334,7 +1414,7 @@ function Player({ title, sourcePath, custom, speed, stopAll }) {
                 </label>
               </>
             )}
-            {!isWindCreator && (
+            {!isLayeredCreator && (
               <label className="active-player-card__row">
                 <span className="active-player-card__row-label">
                   <i className="fa-solid fa-volume-high" aria-hidden="true" />
@@ -1351,7 +1431,7 @@ function Player({ title, sourcePath, custom, speed, stopAll }) {
                 />
               </label>
             )}
-            {speed && !isWindCreator && (
+            {speed && !isLayeredCreator && (
               <label className="active-player-card__row">
                 <span className="active-player-card__row-label">
                   <i className="fa-solid fa-gauge-high" aria-hidden="true" />
@@ -1372,59 +1452,96 @@ function Player({ title, sourcePath, custom, speed, stopAll }) {
               <WindCreatorSliders
                 params={windParams}
                 onChange={(next, key) => {
-                  setWindParams(mergeWindParams(next));
-                  if (!key) return;
-
-                  if (key === 'addLayer') {
-                    triggerIndicator(`Track ${next.layers.length} added`);
-                    return;
-                  }
-                  if (key === 'removeLayer') {
-                    triggerIndicator(`Track removed`);
-                    return;
-                  }
-
-                  if (key.includes('.')) {
-                    const [layerId, paramKey] = key.split('.');
-                    const index = next.layers.findIndex(l => l.id === layerId);
-                    const layer = next.layers[index];
-                    const label = `Track ${index + 1}`;
-                    const slider = WIND_LAYER_SLIDERS.find(
-                      s => s.key === paramKey
-                    );
-                    if (paramKey === 'enabled' && layer) {
-                      triggerIndicator(
-                        `${label}: ${layer.enabled ? 'on' : 'off'}`
-                      );
-                    } else if (
-                      (paramKey === 'highpass' || paramKey === 'lowpass') &&
-                      layer
-                    ) {
-                      triggerIndicator(
-                        `${label}: ${Math.round(layer.highpass)}–${Math.round(layer.lowpass)} Hz`
-                      );
-                    } else if (slider && layer) {
-                      triggerIndicator(
-                        `${label} ${slider.label}: ${layer[paramKey]}`
-                      );
-                    }
-                    return;
-                  }
-
-                  const globalMeta = WIND_GLOBAL_SLIDERS.find(
-                    s => s.key === key
-                  );
-                  if (globalMeta) {
-                    triggerIndicator(`${globalMeta.label}: ${next[key]}`);
-                  }
+                  const merged = mergeWindParams(next);
+                  setWindParams(merged);
+                  registerPlayerSituation(title, {
+                    windParams: serializeWindParams(merged),
+                  });
+                  handleLayeredCreatorChange(next, key, WIND_LAYER_SLIDERS, WIND_GLOBAL_SLIDERS);
                 }}
               />
+            )}
+            {isMusic && (
+              <button
+                type="button"
+                className={`player-control-btn active-player-card__stretch${
+                  stretchEnabled ? ' player-control-btn--active' : ''
+                }`}
+                onClick={async () => {
+                  const next = !stretchEnabled;
+                  setStretchEnabled(next);
+                  stretchEnabledRef.current = next;
+                  registerPlayerSituation(title, { stretch: next });
+                  triggerIndicator(next ? 'Stretch on' : 'Stretch off');
+                  if (!isPlaying) return;
+                  audioBufferRef.current = null;
+                  const generation = ++playbackGenerationRef.current;
+                  setIsLoading(true);
+                  await playFromSource(
+                    sourcePath,
+                    custom,
+                    volValue,
+                    filterValue,
+                    playbackRate,
+                    true,
+                    generation,
+                    highpassValue
+                  );
+                }}
+                aria-pressed={stretchEnabled}
+                aria-label="Toggle Paulstretch texture"
+              >
+                <i className="fa-solid fa-wave-square" aria-hidden="true" />
+                <span className="active-player-card__stretch-label">
+                  Stretch
+                </span>
+              </button>
             )}
           </div>
         </>
       )}
     </div>
   );
+
+  function handleLayeredCreatorChange(next, key, layerSliders, globalSliders) {
+    if (!key) return;
+
+    if (key === 'addLayer') {
+      triggerIndicator(`Track ${next.layers.length} added`);
+      return;
+    }
+    if (key === 'removeLayer') {
+      triggerIndicator(`Track removed`);
+      return;
+    }
+
+    if (key.includes('.')) {
+      const [layerId, paramKey] = key.split('.');
+      const index = next.layers.findIndex(l => l.id === layerId);
+      const layer = next.layers[index];
+      const label = `Track ${index + 1}`;
+      const slider = layerSliders.find(s => s.key === paramKey);
+      if (paramKey === 'enabled' && layer) {
+        triggerIndicator(`${label}: ${layer.enabled ? 'on' : 'off'}`);
+      } else if (
+        (paramKey === 'highpass' || paramKey === 'lowpass') &&
+        layer &&
+        layer.highpass != null
+      ) {
+        triggerIndicator(
+          `${label}: ${Math.round(layer.highpass)}–${Math.round(layer.lowpass)} Hz`
+        );
+      } else if (slider && layer) {
+        triggerIndicator(`${label} ${slider.label}: ${layer[paramKey]}`);
+      }
+      return;
+    }
+
+    const globalMeta = globalSliders.find(s => s.key === key);
+    if (globalMeta) {
+      triggerIndicator(`${globalMeta.label}: ${next[key]}`);
+    }
+  }
 
   return (
     <>

@@ -95,7 +95,6 @@ function App() {
             </>
           )}
         </div>
-        <p className="app-header__tagline">Mix your focus soundscape</p>
       </header>
 
       <main className="sound-grid" aria-label="Sound library">

@@ -138,6 +138,7 @@
   white-space: nowrap;
 }
 
+.saved-snap__share,
 .saved-snap__delete {
   flex-shrink: 0;
   display: flex;
@@ -157,11 +158,17 @@
   -webkit-tap-highlight-color: transparent;
 }
 
+.saved-snap__share:hover {
+  background: var(--color-accent-soft);
+  color: var(--color-accent);
+}
+
 .saved-snap__delete:hover {
   background: rgba(255, 100, 100, 0.12);
   color: #ff9999;
 }
 
+.saved-snap__share i,
 .saved-snap__delete i {
   font-size: 0.8rem;
   color: inherit;
