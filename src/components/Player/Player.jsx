@@ -974,6 +974,16 @@ function Player({ title, sourcePath, custom, speed, stopAll }) {
       gainNodeRef.current.disconnect();
       gainNodeRef.current = null;
     }
+    if (stereoNodesRef.current) {
+      try {
+        stereoNodesRef.current.merger?.disconnect();
+        stereoNodesRef.current.splitter?.disconnect();
+        stereoNodesRef.current.delayRight?.disconnect();
+      } catch {
+        // already disconnected
+      }
+      stereoNodesRef.current = null;
+    }
     if (reverbNodeRef.current) {
       reverbNodeRef.current.disconnect();
       reverbNodeRef.current = null;
@@ -1065,10 +1075,30 @@ function Player({ title, sourcePath, custom, speed, stopAll }) {
   // STEREO ------------------------------------------------
   function toggleStereoEffect() {
     const audioCtx = audioCtxRef.current;
-    const filter = filterRef.current;
     const gainNode = gainNodeRef.current;
+    if (!audioCtx || !gainNode) return;
 
-    if (!audioCtx || !filter || !gainNode) return;
+    // Wind: insert Haas delay after masterGain → bus
+    if (isWindCreator) {
+      if (isStereo) {
+        const { merger } = stereoNodesRef.current || {};
+        gainNode.disconnect();
+        if (merger) merger.disconnect();
+        connectToMasterBus(gainNode);
+        setIsStereo(false);
+        stereoNodesRef.current = null;
+      } else {
+        gainNode.disconnect();
+        const stereoNodes = applyStereoDelayRight(audioCtx, gainNode);
+        stereoNodesRef.current = stereoNodes;
+        connectToMasterBus(stereoNodes.merger);
+        setIsStereo(true);
+      }
+      return;
+    }
+
+    const filter = filterRef.current;
+    if (!filter) return;
 
     if (isStereo) {
       // Disable stereo
@@ -1365,6 +1395,13 @@ function Player({ title, sourcePath, custom, speed, stopAll }) {
                     if (paramKey === 'enabled' && layer) {
                       triggerIndicator(
                         `${label}: ${layer.enabled ? 'on' : 'off'}`
+                      );
+                    } else if (
+                      (paramKey === 'highpass' || paramKey === 'lowpass') &&
+                      layer
+                    ) {
+                      triggerIndicator(
+                        `${label}: ${Math.round(layer.highpass)}–${Math.round(layer.lowpass)} Hz`
                       );
                     } else if (slider && layer) {
                       triggerIndicator(

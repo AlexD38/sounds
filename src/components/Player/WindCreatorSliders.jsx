@@ -2,9 +2,11 @@ import {
   addWindLayer,
   MAX_WIND_LAYERS,
   removeWindLayer,
+  WIND_BAND_FILTER,
   WIND_GLOBAL_SLIDERS,
   WIND_LAYER_SLIDERS,
 } from '../../utils/windCreator';
+import { BandFilterSlider } from './BandFilterSlider';
 
 /**
  * UI Wind Creator : 1 piste par défaut, ajout jusqu'à 3.
@@ -85,7 +87,68 @@ export function WindCreatorSliders({ params, onChange }) {
               )}
             </div>
 
-            {WIND_LAYER_SLIDERS.map(slider => (
+            {WIND_LAYER_SLIDERS.filter(s => s.key === 'speed').map(slider => (
+              <label key={slider.key} className="active-player-card__row">
+                <span
+                  className="active-player-card__row-label"
+                  title={`${slider.label}: ${layer[slider.key]}`}
+                >
+                  <i
+                    className={`fa-solid fa-${slider.icon}`}
+                    aria-hidden="true"
+                  />
+                </span>
+                <input
+                  className="active-player-card__range"
+                  type="range"
+                  min={slider.min}
+                  max={slider.max}
+                  step={slider.step}
+                  value={layer[slider.key]}
+                  disabled={!enabled}
+                  onChange={e =>
+                    updateLayer(layer.id, slider.key, e.target.value)
+                  }
+                  aria-label={`${label} ${slider.label}`}
+                />
+                <span className="active-player-card__wind-value">
+                  {formatParamValue(layer[slider.key], slider.step)}
+                </span>
+              </label>
+            ))}
+
+            <div
+              className="active-player-card__row"
+              role="group"
+              aria-label={`${label} band filter`}
+            >
+              <span
+                className="active-player-card__row-label"
+                title={`Filter: ${Math.round(layer.highpass)}–${Math.round(layer.lowpass)} Hz`}
+              >
+                <i className="fa-solid fa-filter" aria-hidden="true" />
+              </span>
+              <BandFilterSlider
+                low={layer.highpass}
+                high={layer.lowpass}
+                min={WIND_BAND_FILTER.min}
+                max={WIND_BAND_FILTER.max}
+                step={WIND_BAND_FILTER.step}
+                gap={WIND_BAND_FILTER.gap}
+                disabled={!enabled}
+                onLowChange={value =>
+                  updateLayer(layer.id, 'highpass', value)
+                }
+                onHighChange={value =>
+                  updateLayer(layer.id, 'lowpass', value)
+                }
+              />
+              <span className="active-player-card__wind-value">
+                {Math.round(layer.highpass)}–{Math.round(layer.lowpass)}
+              </span>
+            </div>
+
+            {WIND_LAYER_SLIDERS.filter(s => s.key === 'volume').map(slider => (
               <label key={slider.key} className="active-player-card__row">
                 <span
                   className="active-player-card__row-label"

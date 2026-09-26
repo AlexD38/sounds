@@ -768,6 +768,11 @@
   z-index: 2;
 }
 
+.band-filter-slider.is-disabled {
+  opacity: 0.45;
+  pointer-events: none;
+}
+
 .band-filter-slider__thumb::-webkit-slider-runnable-track {
   height: 4px;
   background: transparent;

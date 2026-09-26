@@ -20,6 +20,7 @@ export function BandFilterSlider({
   max = BAND_FILTER_MAX,
   step = BAND_FILTER_STEP,
   gap = BAND_FILTER_GAP,
+  disabled = false,
 }) {
   const lowSafe = clamp(low, min, max - gap);
   const highSafe = clamp(high, lowSafe + gap, max);
@@ -38,7 +39,7 @@ export function BandFilterSlider({
 
   return (
     <div
-      className="band-filter-slider"
+      className={`band-filter-slider${disabled ? ' is-disabled' : ''}`}
       style={{
         '--band-low': `${lowPct}%`,
         '--band-high': `${highPct}%`,
@@ -52,6 +53,7 @@ export function BandFilterSlider({
         max={max}
         step={step}
         value={lowSafe}
+        disabled={disabled}
         onChange={handleLow}
         aria-label="High-pass filter"
       />
@@ -62,6 +64,7 @@ export function BandFilterSlider({
         max={max}
         step={step}
         value={highSafe}
+        disabled={disabled}
         onChange={handleHigh}
         aria-label="Low-pass filter"
       />

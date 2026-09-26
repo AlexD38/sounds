@@ -28,7 +28,7 @@ export const DEFAULT_LAYER_SETTINGS = {
   lowpass: 8000,
 };
 
-/** Curseurs propres à chaque piste. */
+/** Curseurs propres à chaque piste (HP/LP → BandFilterSlider). */
 export const WIND_LAYER_SLIDERS = [
   {
     key: 'speed',
@@ -39,22 +39,6 @@ export const WIND_LAYER_SLIDERS = [
     step: 0.0005,
   },
   {
-    key: 'highpass',
-    label: 'High-pass',
-    icon: 'arrow-up',
-    min: 20,
-    max: 4000,
-    step: 10,
-  },
-  {
-    key: 'lowpass',
-    label: 'Low-pass',
-    icon: 'arrow-down',
-    min: 200,
-    max: 12000,
-    step: 50,
-  },
-  {
     key: 'volume',
     label: 'Volume',
     icon: 'volume-high',
@@ -63,6 +47,14 @@ export const WIND_LAYER_SLIDERS = [
     step: 0.01,
   },
 ];
+
+/** Plage Hz du slider bande par piste (alignée sur l’ancien LP wind). */
+export const WIND_BAND_FILTER = {
+  min: 20,
+  max: 12000,
+  step: 10,
+  gap: 50,
+};
 
 let layerIdCounter = 1;
 
