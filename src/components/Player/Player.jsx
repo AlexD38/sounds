@@ -26,6 +26,7 @@ import {
 import { cacheManager } from '../../utils/cacheManager';
 import { stretchAudioBuffer } from '../../utils/stretchBuffer';
 import { hasFreesoundApiKey, LOCAL_MUSIC_TRACKS } from '../../ref/localMusic';
+import { CROSSFADE_DURATION } from '../../ref/mix.constants';
 import { formatPlayerLabel } from '../../utils/formatPlayerLabel';
 import { PlayerTitle } from '../PlayerTitle/PlayerTitle';
 import { BandFilterSlider } from './BandFilterSlider';
@@ -36,6 +37,7 @@ const FADE_OUT_DURATION = 2.5;
 const FADE_IN_DURATION = 2.5;
 /** Transparent high-pass default for classic players (Wind has per-layer HP). */
 const DEFAULT_HIGHPASS = 20;
+const MUSIC_CROSSFADE = CROSSFADE_DURATION;
 
 function Player({ title, sourcePath, custom, speed, stopAll }) {
   const {
@@ -97,12 +99,34 @@ function Player({ title, sourcePath, custom, speed, stopAll }) {
   const perlinFadeTimerRef = useRef(null);
   const playbackGenerationRef = useRef(0);
   const [portalTarget, setPortalTarget] = useState(null);
+  const musicAdvanceTimerRef = useRef(null);
+  const musicCrossfadingRef = useRef(false);
+  const nextMusicBufferRef = useRef(null);
+  const nextMusicUrlRef = useRef(null);
 
   // Ref to hold the latest playlist state for the onended handler
   const playlistRef = useRef(playlist);
   useEffect(() => {
     playlistRef.current = playlist;
   }, [playlist]);
+
+  const volValueRef = useRef(volValue);
+  const playbackRateRef = useRef(playbackRate);
+  const reverbValueRef = useRef(reverbValue);
+  const reverbDurationRef = useRef(reverbDuration);
+
+  useEffect(() => {
+    volValueRef.current = volValue;
+  }, [volValue]);
+  useEffect(() => {
+    playbackRateRef.current = playbackRate;
+  }, [playbackRate]);
+  useEffect(() => {
+    reverbValueRef.current = reverbValue;
+  }, [reverbValue]);
+  useEffect(() => {
+    reverbDurationRef.current = reverbDuration;
+  }, [reverbDuration]);
 
   const stereoNodesRef = useRef(null);
   const savedSnapsRef = useRef(savedSnaps);
@@ -148,6 +172,7 @@ function Player({ title, sourcePath, custom, speed, stopAll }) {
     return () => {
       if (fadeTimeoutRef.current) clearTimeout(fadeTimeoutRef.current);
       if (perlinFadeTimerRef.current) clearTimeout(perlinFadeTimerRef.current);
+      if (musicAdvanceTimerRef.current) clearTimeout(musicAdvanceTimerRef.current);
     };
   }, []);
 
@@ -837,6 +862,7 @@ function Player({ title, sourcePath, custom, speed, stopAll }) {
             }
 
             setPlaylist(newPlaylist);
+            playlistRef.current = newPlaylist;
             const firstTrack = newPlaylist.find(p => p.isCurrent) || newPlaylist[0];
             audioSource = firstTrack.url;
             if (hasFreesoundApiKey() && !String(firstTrack.id).includes('local')) {
@@ -929,18 +955,13 @@ function Player({ title, sourcePath, custom, speed, stopAll }) {
 
       const sourceNode = audioCtx.createBufferSource();
       sourceNode.buffer = audioBuffer;
-      sourceNode.loop = source !== 'apiSearch' && title !== 'bowl';
+      // Music is a playlist — never loop a single track
+      sourceNode.loop =
+        !isMusic && source !== 'apiSearch' && title !== 'bowl';
       sourceNode.playbackRate.setValueAtTime(newSpeed, audioCtx.currentTime);
 
-      if (source === 'apiSearch') {
-        sourceNode.onended = () => {
-          if (isPlaybackCancelled(generation)) return;
-          refresh();
-        };
-      }
-
       const gainNode = audioCtx.createGain();
-      const dryLevel = source === 'apiSearch' ? 1 - reverbValue : 1;
+      const dryLevel = source === 'apiSearch' || isMusic ? 1 - reverbValue : 1;
       const dryTarget = newVol * dryLevel;
       applyGainFadeIn(gainNode, dryTarget, audioCtx);
 
@@ -958,8 +979,8 @@ function Player({ title, sourcePath, custom, speed, stopAll }) {
       filter.connect(gainNode);
       connectToMasterBus(gainNode);
 
-      // Reverb path pour les sons API
-      if (source === 'apiSearch') {
+      // Reverb path pour music / API
+      if (source === 'apiSearch' || isMusic) {
         const reverbNode = audioCtx.createConvolver();
         reverbNode.buffer = createImpulseResponse(audioCtx, reverbDuration);
         const reverbGainNode = audioCtx.createGain();
@@ -984,6 +1005,15 @@ function Player({ title, sourcePath, custom, speed, stopAll }) {
       gainNodeRef.current = gainNode;
       highpassRef.current = highpass;
       filterRef.current = filter;
+
+      if (isMusic) {
+        scheduleMusicCrossfade(
+          audioBuffer.duration,
+          newSpeed,
+          generation
+        );
+        preloadNextMusicBuffer(generation);
+      }
 
       if (custom === 'perlinNoise') {
         schedulePerlinAfterFade(generation, newVol);
@@ -1077,6 +1107,10 @@ function Player({ title, sourcePath, custom, speed, stopAll }) {
 
   function stop({ fade = true } = {}) {
     invalidatePlayback();
+    clearMusicAdvanceTimer();
+    nextMusicBufferRef.current = null;
+    nextMusicUrlRef.current = null;
+    musicCrossfadingRef.current = false;
 
     if (fadeTimeoutRef.current) {
       clearTimeout(fadeTimeoutRef.current);
@@ -1225,57 +1259,267 @@ function Player({ title, sourcePath, custom, speed, stopAll }) {
     return { splitter, delayRight, merger };
   }
 
+  function clearMusicAdvanceTimer() {
+    if (musicAdvanceTimerRef.current) {
+      clearTimeout(musicAdvanceTimerRef.current);
+      musicAdvanceTimerRef.current = null;
+    }
+  }
+
+  async function prepareMusicBuffer(url, audioCtx, generation) {
+    let buffer = await cacheManager.decodeFromUrl(url, audioCtx, {
+      persist: String(url).startsWith('/assets/'),
+    });
+    if (
+      stretchEnabledRef.current &&
+      buffer &&
+      !isPlaybackCancelled(generation)
+    ) {
+      buffer = await stretchAudioBuffer(audioCtx, buffer, {
+        stretchFactor: 8,
+        maxInputSeconds: 18,
+      });
+    }
+    return buffer;
+  }
+
+  function scheduleMusicCrossfade(bufferDuration, speed, generation) {
+    clearMusicAdvanceTimer();
+    if (!isMusic || !bufferDuration) return;
+
+    const rate = speed > 0 ? speed : 1;
+    const durationSec = bufferDuration / rate;
+    const lead = Math.min(MUSIC_CROSSFADE, Math.max(0.8, durationSec * 0.15));
+    const waitMs = Math.max(50, (durationSec - lead) * 1000);
+
+    musicAdvanceTimerRef.current = setTimeout(() => {
+      musicAdvanceTimerRef.current = null;
+      if (isPlaybackCancelled(generation) || !isPlayingRef.current) return;
+      refresh();
+    }, waitMs);
+  }
+
+  async function preloadNextMusicBuffer(generation) {
+    if (!isMusic) return;
+    const list = playlistRef.current;
+    if (!Array.isArray(list) || list.length < 2) return;
+
+    const currentIndex = list.findIndex(track => track.isCurrent);
+    if (currentIndex < 0) return;
+
+    const nextTrack = list[(currentIndex + 1) % list.length];
+    if (!nextTrack?.url) return;
+    if (
+      nextMusicUrlRef.current === nextTrack.url &&
+      nextMusicBufferRef.current
+    ) {
+      return;
+    }
+
+    nextMusicUrlRef.current = nextTrack.url;
+    nextMusicBufferRef.current = null;
+
+    try {
+      const audioCtx = audioCtxRef.current;
+      if (!audioCtx) return;
+      const buffer = await prepareMusicBuffer(
+        nextTrack.url,
+        audioCtx,
+        generation
+      );
+      if (isPlaybackCancelled(generation)) return;
+      if (nextMusicUrlRef.current === nextTrack.url) {
+        nextMusicBufferRef.current = buffer;
+      }
+    } catch (err) {
+      console.warn('[music] preload failed:', err);
+    }
+  }
+
+  function disconnectOutgoingMusicNodes(nodes) {
+    if (!nodes) return;
+    const { source, gain, highpass, filter, reverb, reverbGain } = nodes;
+    if (source) {
+      source.onended = null;
+      try {
+        source.stop();
+      } catch {
+        /* already stopped */
+      }
+      try {
+        source.disconnect();
+      } catch {
+        /* already disconnected */
+      }
+    }
+    try {
+      highpass?.disconnect();
+      filter?.disconnect();
+      gain?.disconnect();
+      reverb?.disconnect();
+      reverbGain?.disconnect();
+    } catch {
+      /* already disconnected */
+    }
+  }
+
   // REFRESH -----------------------------------------------
   const refresh = async () => {
-    if (!isPlayingRef.current) return;
+    if (!isPlayingRef.current || !isMusic) return;
+    if (musicCrossfadingRef.current) return;
 
     const generation = playbackGenerationRef.current;
     if (isPlaybackCancelled(generation)) return;
 
     const currentPlaylist = playlistRef.current;
     const currentIndex = currentPlaylist.findIndex(x => x.isCurrent);
+    if (currentIndex === -1 || currentPlaylist.length === 0) return;
 
-    if (currentIndex === -1) {
-      // This can happen if the playlist is empty or state is weird
-      return;
-    }
+    musicCrossfadingRef.current = true;
+    clearMusicAdvanceTimer();
 
-    // Resume context if it was suspended (e.g., tab was inactive)
-    if (audioCtxRef.current && audioCtxRef.current.state === 'suspended') {
+    if (audioCtxRef.current?.state === 'suspended') {
       await resumeSharedAudioContext();
     }
 
-    const nextIndex = (currentIndex + 1) % currentPlaylist.length; // Loop back to start
-
+    const nextIndex = (currentIndex + 1) % currentPlaylist.length;
     const updatedPlaylist = currentPlaylist.map((track, index) => ({
       ...track,
       isCurrent: index === nextIndex,
     }));
-
     setPlaylist(updatedPlaylist);
+    playlistRef.current = updatedPlaylist;
 
     const nextTrack = updatedPlaylist[nextIndex];
-
+    setCustomSound(nextTrack);
     setNotification({
       message: `Now playing "${nextTrack.title}" by ${nextTrack.author}`,
     });
-    setTimeout(() => {
-      setNotification(null);
-    }, 3000);
+    setTimeout(() => setNotification(null), 3000);
 
-    setCustomSound(nextTrack);
+    const audioCtx = audioCtxRef.current;
+    if (!audioCtx) {
+      musicCrossfadingRef.current = false;
+      return;
+    }
 
+    let nextBuffer = null;
+    const hadPreload =
+      nextMusicUrlRef.current === nextTrack.url && nextMusicBufferRef.current;
+
+    if (hadPreload) {
+      nextBuffer = nextMusicBufferRef.current;
+      nextMusicBufferRef.current = null;
+      nextMusicUrlRef.current = null;
+    } else {
+      setIsLoading(true);
+      try {
+        nextBuffer = await prepareMusicBuffer(
+          nextTrack.url,
+          audioCtx,
+          generation
+        );
+      } catch (err) {
+        console.error('[music] crossfade load failed:', err);
+        setNotification({ message: 'Could not load next track' });
+        setTimeout(() => setNotification(null), 3000);
+        setIsLoading(false);
+        musicCrossfadingRef.current = false;
+        return;
+      }
+      setIsLoading(false);
+    }
+
+    if (isPlaybackCancelled(generation) || !nextBuffer || !isPlayingRef.current) {
+      musicCrossfadingRef.current = false;
+      return;
+    }
+
+    // Hold outgoing graph while incoming fades in
+    const outgoing = {
+      source: sourceNodeRef.current,
+      gain: gainNodeRef.current,
+      highpass: highpassRef.current,
+      filter: filterRef.current,
+      reverb: reverbNodeRef.current,
+      reverbGain: reverbGainNodeRef.current,
+    };
+    if (outgoing.source) outgoing.source.onended = null;
+
+    const newVol = volValueRef.current;
+    const newFilter = filterValueRef.current;
+    const newHighpass = highpassValueRef.current;
+    const newSpeed = playbackRateRef.current;
+    const wet = reverbValueRef.current;
+    const room = reverbDurationRef.current;
+
+    const sourceNode = audioCtx.createBufferSource();
+    sourceNode.buffer = nextBuffer;
+    sourceNode.loop = false;
+    sourceNode.playbackRate.setValueAtTime(newSpeed, audioCtx.currentTime);
+
+    const gainNode = audioCtx.createGain();
+    const highpass = audioCtx.createBiquadFilter();
+    highpass.type = 'highpass';
+    highpass.frequency.setValueAtTime(newHighpass, audioCtx.currentTime);
+    highpass.Q.setValueAtTime(0.7, audioCtx.currentTime);
+
+    const filter = audioCtx.createBiquadFilter();
+    filter.type = 'lowpass';
+    filter.frequency.setValueAtTime(newFilter, audioCtx.currentTime);
+
+    sourceNode.connect(highpass);
+    highpass.connect(filter);
+    filter.connect(gainNode);
+    connectToMasterBus(gainNode);
+
+    const reverbNode = audioCtx.createConvolver();
+    reverbNode.buffer = createImpulseResponse(audioCtx, room);
+    const reverbGainNode = audioCtx.createGain();
+    filter.connect(reverbNode);
+    reverbNode.connect(reverbGainNode);
+    connectToMasterBus(reverbGainNode);
+
+    const now = audioCtx.currentTime;
+    const xfade = MUSIC_CROSSFADE;
+    const dryTarget = newVol * (1 - wet);
+    const wetTarget = newVol * wet;
+
+    gainNode.gain.setValueAtTime(0, now);
+    gainNode.gain.linearRampToValueAtTime(dryTarget, now + xfade);
+    reverbGainNode.gain.setValueAtTime(0, now);
+    reverbGainNode.gain.linearRampToValueAtTime(wetTarget, now + xfade);
+
+    if (outgoing.gain) {
+      outgoing.gain.gain.cancelScheduledValues(now);
+      outgoing.gain.gain.setValueAtTime(outgoing.gain.gain.value, now);
+      outgoing.gain.gain.linearRampToValueAtTime(0, now + xfade);
+    }
+    if (outgoing.reverbGain) {
+      outgoing.reverbGain.gain.cancelScheduledValues(now);
+      outgoing.reverbGain.gain.setValueAtTime(
+        outgoing.reverbGain.gain.value,
+        now
+      );
+      outgoing.reverbGain.gain.linearRampToValueAtTime(0, now + xfade);
+    }
+
+    sourceNode.start();
+    sourceNodeRef.current = sourceNode;
+    gainNodeRef.current = gainNode;
+    highpassRef.current = highpass;
+    filterRef.current = filter;
+    reverbNodeRef.current = reverbNode;
+    reverbGainNodeRef.current = reverbGainNode;
     audioBufferRef.current = null;
-    await playFromSource(
-      nextTrack.url,
-      null,
-      volValue,
-      filterValue,
-      playbackRate,
-      true,
-      generation,
-      highpassValue
-    );
+
+    setTimeout(() => {
+      disconnectOutgoingMusicNodes(outgoing);
+    }, xfade * 1000 + 40);
+
+    scheduleMusicCrossfade(nextBuffer.duration, newSpeed, generation);
+    preloadNextMusicBuffer(generation);
+    musicCrossfadingRef.current = false;
   };
 
   const renderActiveCard = () => (
@@ -1473,20 +1717,135 @@ function Player({ title, sourcePath, custom, speed, stopAll }) {
                   stretchEnabledRef.current = next;
                   registerPlayerSituation(title, { stretch: next });
                   triggerIndicator(next ? 'Stretch on' : 'Stretch off');
+                  // Invalidate preloaded (stretch) buffers
+                  nextMusicBufferRef.current = null;
+                  nextMusicUrlRef.current = null;
                   if (!isPlaying) return;
-                  audioBufferRef.current = null;
-                  const generation = ++playbackGenerationRef.current;
+                  // Crossfade into a freshly processed version of the current track
+                  const list = playlistRef.current;
+                  const current = list.find(t => t.isCurrent) || list[0];
+                  if (!current?.url) return;
+                  const generation = playbackGenerationRef.current;
+                  musicCrossfadingRef.current = false;
+                  clearMusicAdvanceTimer();
                   setIsLoading(true);
-                  await playFromSource(
-                    sourcePath,
-                    custom,
-                    volValue,
-                    filterValue,
-                    playbackRate,
-                    true,
-                    generation,
-                    highpassValue
-                  );
+                  try {
+                    const audioCtx = audioCtxRef.current;
+                    const buffer = await prepareMusicBuffer(
+                      current.url,
+                      audioCtx,
+                      generation
+                    );
+                    if (isPlaybackCancelled(generation) || !buffer) {
+                      setIsLoading(false);
+                      return;
+                    }
+                    // Temporarily point "next" at same track and reuse crossfade path
+                    // by swapping playlist current with itself via manual fade
+                    const outgoing = {
+                      source: sourceNodeRef.current,
+                      gain: gainNodeRef.current,
+                      highpass: highpassRef.current,
+                      filter: filterRef.current,
+                      reverb: reverbNodeRef.current,
+                      reverbGain: reverbGainNodeRef.current,
+                    };
+                    if (outgoing.source) outgoing.source.onended = null;
+
+                    const newVol = volValueRef.current;
+                    const wet = reverbValueRef.current;
+                    const sourceNode = audioCtx.createBufferSource();
+                    sourceNode.buffer = buffer;
+                    sourceNode.loop = false;
+                    sourceNode.playbackRate.setValueAtTime(
+                      playbackRateRef.current,
+                      audioCtx.currentTime
+                    );
+
+                    const gainNode = audioCtx.createGain();
+                    const highpass = audioCtx.createBiquadFilter();
+                    highpass.type = 'highpass';
+                    highpass.frequency.setValueAtTime(
+                      highpassValueRef.current,
+                      audioCtx.currentTime
+                    );
+                    highpass.Q.setValueAtTime(0.7, audioCtx.currentTime);
+                    const filter = audioCtx.createBiquadFilter();
+                    filter.type = 'lowpass';
+                    filter.frequency.setValueAtTime(
+                      filterValueRef.current,
+                      audioCtx.currentTime
+                    );
+
+                    sourceNode.connect(highpass);
+                    highpass.connect(filter);
+                    filter.connect(gainNode);
+                    connectToMasterBus(gainNode);
+
+                    const reverbNode = audioCtx.createConvolver();
+                    reverbNode.buffer = createImpulseResponse(
+                      audioCtx,
+                      reverbDurationRef.current
+                    );
+                    const reverbGainNode = audioCtx.createGain();
+                    filter.connect(reverbNode);
+                    reverbNode.connect(reverbGainNode);
+                    connectToMasterBus(reverbGainNode);
+
+                    const now = audioCtx.currentTime;
+                    const xfade = MUSIC_CROSSFADE;
+                    gainNode.gain.setValueAtTime(0, now);
+                    gainNode.gain.linearRampToValueAtTime(
+                      newVol * (1 - wet),
+                      now + xfade
+                    );
+                    reverbGainNode.gain.setValueAtTime(0, now);
+                    reverbGainNode.gain.linearRampToValueAtTime(
+                      newVol * wet,
+                      now + xfade
+                    );
+                    if (outgoing.gain) {
+                      outgoing.gain.gain.cancelScheduledValues(now);
+                      outgoing.gain.gain.setValueAtTime(
+                        outgoing.gain.gain.value,
+                        now
+                      );
+                      outgoing.gain.gain.linearRampToValueAtTime(0, now + xfade);
+                    }
+                    if (outgoing.reverbGain) {
+                      outgoing.reverbGain.gain.cancelScheduledValues(now);
+                      outgoing.reverbGain.gain.setValueAtTime(
+                        outgoing.reverbGain.gain.value,
+                        now
+                      );
+                      outgoing.reverbGain.gain.linearRampToValueAtTime(
+                        0,
+                        now + xfade
+                      );
+                    }
+
+                    sourceNode.start();
+                    sourceNodeRef.current = sourceNode;
+                    gainNodeRef.current = gainNode;
+                    highpassRef.current = highpass;
+                    filterRef.current = filter;
+                    reverbNodeRef.current = reverbNode;
+                    reverbGainNodeRef.current = reverbGainNode;
+
+                    setTimeout(
+                      () => disconnectOutgoingMusicNodes(outgoing),
+                      xfade * 1000 + 40
+                    );
+                    scheduleMusicCrossfade(
+                      buffer.duration,
+                      playbackRateRef.current,
+                      generation
+                    );
+                    preloadNextMusicBuffer(generation);
+                  } catch (err) {
+                    console.error(err);
+                  }
+                  setIsLoading(false);
                 }}
                 aria-pressed={stretchEnabled}
                 aria-label="Toggle Paulstretch texture"
