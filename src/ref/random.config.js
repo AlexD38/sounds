@@ -156,13 +156,6 @@ export const config = [
     category: 'Soundscapes',
   },
   {
-    title: 'waves',
-    apiSuggestions: ['waves', 'shore'],
-    titleSuggestions: ['waves', 'shore'],
-    category: 'Soundscapes',
-    speed: true,
-  },
-  {
     title: 'market',
     apiSuggestions: ['market', 'crowd'],
     titleSuggestions: ['market', 'bustling'],

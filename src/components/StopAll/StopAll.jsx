@@ -13,14 +13,16 @@ export const StopAll = () => {
   };
 
   return (
-    <button
-      type="button"
-      className="bar-action"
-      onClick={handleStopAll}
-      aria-label="Stop all sounds"
-    >
-      <i className="fa-solid fa-pause" aria-hidden="true" />
-      <span className="bar-action__label">Stop</span>
-    </button>
+    <div className="bar-action-wrapper">
+      <button
+        type="button"
+        className="bar-action"
+        onClick={handleStopAll}
+        aria-label="Stop all sounds"
+      >
+        <i className="fa-solid fa-pause" aria-hidden="true" />
+        <span className="bar-action__label">Stop</span>
+      </button>
+    </div>
   );
 };

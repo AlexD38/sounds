@@ -30,7 +30,7 @@ export function EvolveControl() {
             : 'Evolve mix'
         }
       >
-        <i className="fa-solid fa-seedling" aria-hidden="true" />
+        <i className="fa-solid fa-arrows-rotate" aria-hidden="true" />
         <span className="bar-action__label">Evolve</span>
       </button>
     </div>

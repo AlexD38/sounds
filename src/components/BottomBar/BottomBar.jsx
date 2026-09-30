@@ -16,15 +16,17 @@ export function BottomBar({ installPromptEvent, onInstallClick }) {
           <EvolveControl />
           <Timer />
           {installPromptEvent && (
-            <button
-              type="button"
-              className="bar-action bar-action--install"
-              onClick={onInstallClick}
-              aria-label="Install application"
-            >
-              <i className="fa-solid fa-puzzle-piece" aria-hidden="true" />
-              <span className="bar-action__label">Install</span>
-            </button>
+            <div className="bar-action-wrapper">
+              <button
+                type="button"
+                className="bar-action bar-action--install"
+                onClick={onInstallClick}
+                aria-label="Install application"
+              >
+                <i className="fa-solid fa-puzzle-piece" aria-hidden="true" />
+                <span className="bar-action__label">Install</span>
+              </button>
+            </div>
           )}
         </div>
       </nav>

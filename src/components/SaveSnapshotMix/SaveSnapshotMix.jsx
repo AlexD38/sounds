@@ -122,15 +122,17 @@ export const SaveSnapshotMix = () => {
 
   return (
     <>
-      <button
-        type="button"
-        className="bar-action"
-        onClick={() => setShowInput(true)}
-        aria-label="Save current mix"
-      >
-        <i className="fa-solid fa-floppy-disk" aria-hidden="true" />
-        <span className="bar-action__label">Save</span>
-      </button>
+      <div className="bar-action-wrapper">
+        <button
+          type="button"
+          className="bar-action"
+          onClick={() => setShowInput(true)}
+          aria-label="Save current mix"
+        >
+          <i className="fa-solid fa-floppy-disk" aria-hidden="true" />
+          <span className="bar-action__label">Save</span>
+        </button>
+      </div>
       {modal}
     </>
   );

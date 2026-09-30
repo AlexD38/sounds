@@ -14,7 +14,7 @@ export const PlayerTitle = ({ title, isPlaying }) => {
   } else if (title === 'spring') {
     iconLabel = 'seedling';
   } else if (title === 'ocean') {
-    iconLabel = 'water';
+    iconLabel = 'house-tsunami';
   } else if (title === 'lake') {
     iconLabel = 'water';
   } else if (title === 'lightRain') {
@@ -53,8 +53,6 @@ export const PlayerTitle = ({ title, isPlaying }) => {
     iconLabel = 'house-chimney';
   } else if (title === 'city') {
     iconLabel = 'city';
-  } else if (title === 'waves') {
-    iconLabel = 'water';
   } else if (title === 'market') {
     iconLabel = 'store';
   } else {
