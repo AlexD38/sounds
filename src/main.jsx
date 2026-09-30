@@ -4,8 +4,11 @@ import { getStoredTheme } from './ref/themes';
 import './index.css';
 import App from './App.jsx';
 import { ContextProvider } from './context/context.jsx';
+import { clearDevServiceWorkers } from './devClearServiceWorker.js';
 
 document.documentElement.setAttribute('data-theme', getStoredTheme());
+
+await clearDevServiceWorkers();
 
 createRoot(document.getElementById('root')).render(
   <StrictMode>

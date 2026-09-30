@@ -8,6 +8,11 @@ export default defineConfig({
     react(),
     VitePWA({
       registerType: 'autoUpdate',
+      // Never install a service worker during `vite` / `npm run dev`.
+      // Leftover SWs from preview/prod are cleared in src/devClearServiceWorker.js.
+      devOptions: {
+        enabled: false,
+      },
       includeAssets: [
         'AA.svg',
         'favicon.svg',
@@ -17,6 +22,9 @@ export default defineConfig({
         'apple-touch-icon.png',
       ],
       workbox: {
+        cleanupOutdatedCaches: true,
+        clientsClaim: true,
+        skipWaiting: true,
         maximumFileSizeToCacheInBytes: 6 * 1024 * 1024,
         runtimeCaching: [
           {
