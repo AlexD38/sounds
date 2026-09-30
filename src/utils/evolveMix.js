@@ -71,10 +71,14 @@ function nudgeEntry(entry) {
   return next;
 }
 
+const MIN_LAYERS = 2;
+const MAX_LAYERS = 4;
+
 /**
  * Evolve the current mix with a stable pivot layer.
- * Always keeps ≥1 unchanged player when 2+ are playing so ambience carries over.
- * Mutates at most one other layer (mute or swap) — never all at once.
+ * Always keeps ≥1 unchanged player so ambience carries over.
+ * Applies a single step (add, mute or swap one layer) — never all at once.
+ * Mix size stays within MIN_LAYERS–MAX_LAYERS; below MIN it grows back.
  */
 export function evolveMix({
   snapshotMix,
@@ -95,14 +99,23 @@ export function evolveMix({
   const pool = getPool();
   const nextPlayers = playing.map(p => ({ ...p }));
 
-  // Single layer: gentle nudge only — this layer is the pivot.
-  if (nextPlayers.length === 1) {
-    nextPlayers[0] = nudgeEntry(nextPlayers[0]);
+  const freePool = pool.filter(
+    p => !nextPlayers.some(n => n.playerTitle === p.title)
+  );
+  const pickFree = () =>
+    freePool[Math.floor(Math.random() * freePool.length)];
+
+  if (nextPlayers.length < MIN_LAYERS) {
+    // Existing layer(s) act as the pivot; grow back toward MIN_LAYERS.
+    if (freePool.length > 0) {
+      nextPlayers.push(buildPlayerEntry(pickFree()));
+    } else {
+      nextPlayers[0] = nudgeEntry(nextPlayers[0]);
+    }
   } else {
     // Pick a pivot that never changes (same player + params).
     const pivotIdx = Math.floor(Math.random() * nextPlayers.length);
 
-    // Candidates excluding pivot — mutate exactly one for a soft step.
     const candidates = [];
     for (let i = 0; i < nextPlayers.length; i++) {
       if (i !== pivotIdx) candidates.push(i);
@@ -110,27 +123,23 @@ export function evolveMix({
     const targetIdx =
       candidates[Math.floor(Math.random() * candidates.length)];
 
-    const freePool = pool.filter(
-      p => !nextPlayers.some(n => n.playerTitle === p.title)
-    );
-    // Mute only if we'd still keep the pivot (+ maybe others).
-    const canMute = nextPlayers.length > 1;
-    const canSwap = freePool.length > 0;
-
-    let action = 'nudge';
-    if (canMute && canSwap) {
-      action = Math.random() < 0.5 ? 'mute' : 'swap';
-    } else if (canMute) {
-      action = 'mute';
-    } else if (canSwap) {
-      action = 'swap';
+    const actions = [];
+    if (nextPlayers.length > MIN_LAYERS) actions.push('mute');
+    if (freePool.length > 0) actions.push('swap');
+    if (nextPlayers.length < MAX_LAYERS && freePool.length > 0) {
+      actions.push('add');
     }
+    const action =
+      actions.length > 0
+        ? actions[Math.floor(Math.random() * actions.length)]
+        : 'nudge';
 
     if (action === 'mute') {
       nextPlayers.splice(targetIdx, 1);
     } else if (action === 'swap') {
-      const pick = freePool[Math.floor(Math.random() * freePool.length)];
-      nextPlayers[targetIdx] = buildPlayerEntry(pick);
+      nextPlayers[targetIdx] = buildPlayerEntry(pickFree());
+    } else if (action === 'add') {
+      nextPlayers.push(buildPlayerEntry(pickFree()));
     } else {
       nextPlayers[targetIdx] = nudgeEntry(nextPlayers[targetIdx]);
     }
