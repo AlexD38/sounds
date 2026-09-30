@@ -64,6 +64,8 @@ export function ContextProvider({ children }) {
   const [zenQuote, setZenQuote] = useState(null);
   /** Override fade-out duration (seconds) for the next stop-all, e.g. sleep timer. */
   const [stopFadeDuration, setStopFadeDuration] = useState(null);
+  /** Fade length (seconds) for the mix currently being loaded. */
+  const [mixFadeDuration, setMixFadeDuration] = useState(null);
   const [evolveEnabled, setEvolveEnabledState] = useState(false);
   const [evolveIntervalSec, setEvolveIntervalSecState] = useState(
     readStoredEvolveInterval
@@ -195,11 +197,16 @@ export function ContextProvider({ children }) {
     setScenesSheetOpen(true);
   }, []);
 
-  const loadMix = useCallback(({ label, snapMap, activeMix: mixMeta }) => {
+  const loadMix = useCallback(({ label, snapMap, activeMix: mixMeta, fadeDuration }) => {
     if (mixTransitionTimeoutRef.current) {
       clearTimeout(mixTransitionTimeoutRef.current);
     }
 
+    const hasCustomFade =
+      typeof fadeDuration === 'number' && fadeDuration > 0;
+    const fadeSec = hasCustomFade ? fadeDuration : CROSSFADE_DURATION;
+
+    setMixFadeDuration(hasCustomFade ? fadeDuration : null);
     setMixTransition(true);
     setRandomSnap(snapMap ?? null);
     setPlayingSnap(label);
@@ -210,8 +217,9 @@ export function ContextProvider({ children }) {
     mixTransitionTimeoutRef.current = setTimeout(() => {
       setMixTransition(false);
       setLoadASnap(false);
+      setMixFadeDuration(null);
       mixTransitionTimeoutRef.current = null;
-    }, CROSSFADE_DURATION * 1000);
+    }, fadeSec * 1000);
   }, []);
 
   const clearEvolveTimer = useCallback(() => {
@@ -358,6 +366,7 @@ export function ContextProvider({ children }) {
       setStopAll,
       stopFadeDuration,
       setStopFadeDuration,
+      mixFadeDuration,
       randomSnap,
       setRandomSnap,
       mixTransition,
@@ -391,6 +400,7 @@ export function ContextProvider({ children }) {
       playingSnap,
       stopAll,
       stopFadeDuration,
+      mixFadeDuration,
       randomSnap,
       mixTransition,
       activeMix,

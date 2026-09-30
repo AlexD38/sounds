@@ -73,6 +73,9 @@ function nudgeEntry(entry) {
 
 const MAX_LAYERS = 3;
 
+/** Fade length for an evolve mute, play (add) or swap. Pivot layers are untouched. */
+export const EVOLVE_FADE_SEC = 10;
+
 /**
  * Evolve the current mix with a stable pivot layer.
  * Always keeps ≥1 unchanged player so ambience carries over.
@@ -170,6 +173,7 @@ export function evolveMix({
     label,
     snapMap,
     activeMix: { type: 'random', label },
+    fadeDuration: EVOLVE_FADE_SEC,
   });
 
   if (!silent) {

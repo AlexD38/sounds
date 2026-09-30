@@ -53,6 +53,7 @@ function Player({ title, sourcePath, custom, speed, stopAll }) {
     setStopAll,
     stopFadeDuration,
     setStopFadeDuration,
+    mixFadeDuration,
     randomSnap,
     setNotification,
     playlist,
@@ -148,6 +149,8 @@ function Player({ title, sourcePath, custom, speed, stopAll }) {
 
   const isPlayingRef = useRef(isPlaying);
   const mixTransitionRef = useRef(mixTransition);
+  const mixFadeDurationRef = useRef(mixFadeDuration);
+  mixFadeDurationRef.current = mixFadeDuration;
 
   const { setCustomSound } = useContext(Context);
 
@@ -396,16 +399,25 @@ function Player({ title, sourcePath, custom, speed, stopAll }) {
           spatialChainRef.current?.setWidth?.(widthValueRef.current);
         }
       } else {
-        play(null, sourcePath, custom, volume, filter, speed, highpass);
+        play(
+          null,
+          sourcePath,
+          custom,
+          volume,
+          filter,
+          speed,
+          highpass,
+          mixFadeDurationRef.current
+        );
       }
     } else if (isPlayingRef.current) {
-      stop({ fade: true });
+      stop({ fade: true, fadeSeconds: mixFadeDurationRef.current });
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [loadASnap, playingSnap, stopAll]);
 
   //  PERLIN --------------------------------------
-  function startPerlinModulation(minGain = 0, maxGain = 1.5) {
+  function startPerlinModulation(minGain = 0, maxGain = 1.5, fadeInSeconds) {
     if (!gainNodeRef.current || !audioCtxRef.current) return;
 
     if (isWindCreator) {
@@ -416,6 +428,7 @@ function Player({ title, sourcePath, custom, speed, stopAll }) {
         maxGain,
         getParams: () => windParamsRef.current,
         intervalRef: modulatorIntervalRef,
+        fadeInSeconds,
       });
       return;
     }
@@ -630,14 +643,14 @@ function Player({ title, sourcePath, custom, speed, stopAll }) {
     }
   }
 
-  function applyGainFadeIn(gainNode, targetValue, audioCtx) {
+  function applyGainFadeIn(gainNode, targetValue, audioCtx, fadeSeconds = FADE_IN_DURATION) {
     const now = audioCtx.currentTime;
     gainNode.gain.cancelScheduledValues(now);
     gainNode.gain.setValueAtTime(0, now);
-    gainNode.gain.linearRampToValueAtTime(targetValue, now + FADE_IN_DURATION);
+    gainNode.gain.linearRampToValueAtTime(targetValue, now + fadeSeconds);
   }
 
-  function schedulePerlinAfterFade(generation, maxGain) {
+  function schedulePerlinAfterFade(generation, maxGain, fadeSeconds = FADE_IN_DURATION) {
     clearPerlinFadeTimer();
     perlinFadeTimerRef.current = setTimeout(() => {
       perlinFadeTimerRef.current = null;
@@ -647,7 +660,7 @@ function Player({ title, sourcePath, custom, speed, stopAll }) {
         isLayeredCreator ? WIND_MIN_GAIN : 0.5,
         maxGain
       );
-    }, FADE_IN_DURATION * 1000);
+    }, fadeSeconds * 1000);
   }
 
   function crossfadeParams(
@@ -756,7 +769,8 @@ function Player({ title, sourcePath, custom, speed, stopAll }) {
     newVol = volValue,
     newFilter = filterValue,
     newSpeed = playbackRate,
-    newHighpass = highpassValue
+    newHighpass = highpassValue,
+    fadeInSeconds
   ) {
     cancelPendingFade();
 
@@ -798,7 +812,8 @@ function Player({ title, sourcePath, custom, speed, stopAll }) {
       newSpeed,
       false,
       generation,
-      newHighpass
+      newHighpass,
+      fadeInSeconds
     );
   }
 
@@ -810,8 +825,13 @@ function Player({ title, sourcePath, custom, speed, stopAll }) {
     newSpeed = playbackRate,
     forceReload = false,
     generation = playbackGenerationRef.current,
-    newHighpass = highpassValue
+    newHighpass = highpassValue,
+    fadeInSeconds
   ) {
+    const fadeIn =
+      typeof fadeInSeconds === 'number' && fadeInSeconds > 0
+        ? fadeInSeconds
+        : FADE_IN_DURATION;
     cancelPendingFade();
 
     if (isPlaybackCancelled(generation)) return;
@@ -989,7 +1009,7 @@ function Player({ title, sourcePath, custom, speed, stopAll }) {
         highpassRef.current = null;
         windLayerNodesRef.current = layerNodes;
 
-        startPerlinModulation(WIND_MIN_GAIN, newVol);
+        startPerlinModulation(WIND_MIN_GAIN, newVol, fadeInSeconds);
         setIsLoading(false);
         return;
       }
@@ -1004,7 +1024,7 @@ function Player({ title, sourcePath, custom, speed, stopAll }) {
       const gainNode = audioCtx.createGain();
       const dryLevel = source === 'apiSearch' || isMusic ? 1 - reverbValue : 1;
       const dryTarget = newVol * dryLevel;
-      applyGainFadeIn(gainNode, dryTarget, audioCtx);
+      applyGainFadeIn(gainNode, dryTarget, audioCtx, fadeIn);
 
       const highpass = audioCtx.createBiquadFilter();
       highpass.type = 'highpass';
@@ -1031,7 +1051,7 @@ function Player({ title, sourcePath, custom, speed, stopAll }) {
         reverbNode.buffer = createImpulseResponse(audioCtx, reverbDuration);
         const reverbGainNode = audioCtx.createGain();
         const wetTarget = newVol * reverbValue;
-        applyGainFadeIn(reverbGainNode, wetTarget, audioCtx);
+        applyGainFadeIn(reverbGainNode, wetTarget, audioCtx, fadeIn);
 
         filter.connect(reverbNode);
         reverbNode.connect(reverbGainNode);
@@ -1062,7 +1082,7 @@ function Player({ title, sourcePath, custom, speed, stopAll }) {
       }
 
       if (custom === 'perlinNoise') {
-        schedulePerlinAfterFade(generation, newVol);
+        schedulePerlinAfterFade(generation, newVol, fadeIn);
       }
       setIsLoading(false);
     } catch (error) {
@@ -1155,7 +1175,7 @@ function Player({ title, sourcePath, custom, speed, stopAll }) {
     }
   }
 
-  function stop({ fade = true } = {}) {
+  function stop({ fade = true, fadeSeconds: fadeOverride } = {}) {
     invalidatePlayback();
     clearMusicAdvanceTimer();
     nextMusicBufferRef.current = null;
@@ -1189,9 +1209,11 @@ function Player({ title, sourcePath, custom, speed, stopAll }) {
     }
 
     const fadeSeconds =
-      stopFadeDuration != null && stopFadeDuration > 0
-        ? stopFadeDuration
-        : FADE_OUT_DURATION;
+      typeof fadeOverride === 'number' && fadeOverride > 0
+        ? fadeOverride
+        : stopFadeDuration != null && stopFadeDuration > 0
+          ? stopFadeDuration
+          : FADE_OUT_DURATION;
 
     const shouldFade =
       fade && audioCtxRef.current && gainNodeRef.current && fadeSeconds > 0;

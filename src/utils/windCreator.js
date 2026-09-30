@@ -305,6 +305,7 @@ export function startWindModulation({
   maxGain = 1.5,
   getParams,
   intervalRef,
+  fadeInSeconds = 0.4,
 }) {
   if (!masterGain || !layerNodes || !audioCtx || !intervalRef) return;
 
@@ -318,9 +319,10 @@ export function startWindModulation({
   );
 
   const startTime = audioCtx.currentTime;
+  const fadeSec = fadeInSeconds > 0 ? fadeInSeconds : 0.4;
   masterGain.gain.cancelScheduledValues(startTime);
   masterGain.gain.setValueAtTime(0, startTime);
-  masterGain.gain.linearRampToValueAtTime(maxGain, startTime + 0.4);
+  masterGain.gain.linearRampToValueAtTime(maxGain, startTime + fadeSec);
 
   const readParams = () => mergeWindParams(getParams?.());
 
