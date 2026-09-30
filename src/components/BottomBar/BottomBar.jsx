@@ -1,9 +1,8 @@
 import { StopAll } from '../StopAll/StopAll';
 import { SaveSnapshotMix } from '../SaveSnapshotMix/SaveSnapshotMix';
-import { MoodPicker } from '../MoodPicker/MoodPicker';
 import { Timer } from '../timer/Timer';
-import { RandomSnapGenerator } from '../RandomSnapGenerator/RandomSnapGenerator';
-import { MixesSheet, MixesSheetTrigger } from '../MixesSheet/MixesSheet';
+import { EvolveControl } from '../EvolveControl/EvolveControl';
+import { ScenesSheet, ScenesSheetTrigger } from '../ScenesSheet/ScenesSheet';
 import './styles.css';
 
 export function BottomBar({ installPromptEvent, onInstallClick }) {
@@ -13,9 +12,8 @@ export function BottomBar({ installPromptEvent, onInstallClick }) {
         <div className="bottom-bar__inner">
           <StopAll />
           <SaveSnapshotMix />
-          <MixesSheetTrigger />
-          <MoodPicker />
-          <RandomSnapGenerator />
+          <ScenesSheetTrigger />
+          <EvolveControl />
           <Timer />
           {installPromptEvent && (
             <button
@@ -30,7 +28,7 @@ export function BottomBar({ installPromptEvent, onInstallClick }) {
           )}
         </div>
       </nav>
-      <MixesSheet />
+      <ScenesSheet />
     </>
   );
 }

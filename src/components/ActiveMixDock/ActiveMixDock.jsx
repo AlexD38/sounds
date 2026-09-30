@@ -2,6 +2,7 @@ import { useContext, useEffect, useMemo, useState } from 'react';
 import { Context } from '../../context/context';
 import { getMoodPresetById } from '../../ref/mood.presets';
 import { formatPlayerLabel } from '../../utils/formatPlayerLabel';
+import { formatEvolveInterval } from '../../utils/evolveMix';
 import { PlayerTitle } from '../PlayerTitle/PlayerTitle';
 import './styles.css';
 
@@ -10,6 +11,7 @@ const MIX_TYPE_LABELS = {
   saved: 'Saved mix',
   random: 'Random mix',
   shared: 'Shared mix',
+  weather: 'Weather',
 };
 
 const MIX_TYPE_ICONS = {
@@ -17,6 +19,7 @@ const MIX_TYPE_ICONS = {
   saved: 'bookmark',
   random: 'dice',
   shared: 'link',
+  weather: 'cloud-sun',
 };
 
 const DOCK_HINT_KEY = 'dock-hint-shown';
@@ -26,7 +29,9 @@ export function ActiveMixDock() {
     snapshotMix,
     activeMix,
     mixTransition,
-    setMixesSheetOpen,
+    openScenesSheet,
+    evolveEnabled,
+    evolveIntervalSec,
   } = useContext(Context);
   const [isExpanded, setIsExpanded] = useState(false);
   const [showHint, setShowHint] = useState(false);
@@ -78,6 +83,33 @@ export function ActiveMixDock() {
     };
   }, [isExpanded]);
 
+  const showMixChip = Boolean(activeMix) && playingCount > 0;
+  const contextClassName = `active-mix-dock__context${
+    activeMix?.type === 'saved' ? ' active-mix-dock__context--clickable' : ''
+  }${mixTransition ? ' active-mix-dock__context--transitioning' : ''}${
+    evolveEnabled ? ' active-mix-dock__context--evolving' : ''
+  }`;
+  const contextContent = activeMix ? (
+    <>
+      {mixIcon && (
+        <span className="active-mix-dock__context-icon" aria-hidden="true">
+          <i className={`fa-solid fa-${mixIcon}`} />
+        </span>
+      )}
+      <span className="active-mix-dock__context-text">
+        <span className="active-mix-dock__context-type">
+          {evolveEnabled
+            ? `Evolving · ${formatEvolveInterval(evolveIntervalSec)}`
+            : mixTypeLabel}
+        </span>
+        <span className="active-mix-dock__context-label">{activeMix.label}</span>
+      </span>
+      {(mixTransition || evolveEnabled) && (
+        <span className="active-mix-dock__context-pulse" aria-hidden="true" />
+      )}
+    </>
+  ) : null;
+
   return (
     <>
       {isExpanded && playingCount > 0 && (
@@ -119,66 +151,35 @@ export function ActiveMixDock() {
         <div id="active-mix-portal" className="active-mix-dock__cards" />
       </div>
 
+      {showMixChip &&
+        (activeMix.type === 'saved' ? (
+          <button
+            type="button"
+            className={contextClassName}
+            onClick={() => openScenesSheet('mixes')}
+            aria-label={`Saved mix ${activeMix.label}. Open scenes.`}
+          >
+            {contextContent}
+          </button>
+        ) : (
+          <span
+            className={contextClassName}
+            aria-label={`${mixTypeLabel}: ${activeMix.label}${
+              evolveEnabled
+                ? `, evolving ${formatEvolveInterval(evolveIntervalSec)}`
+                : ''
+            }`}
+          >
+            {contextContent}
+          </span>
+        ))}
+
       <aside
         className={`active-mix-dock${playingCount > 0 ? ' active-mix-dock--visible' : ''}${showHint ? ' active-mix-dock--hint' : ''}${isExpanded ? ' active-mix-dock--expanded' : ''}`}
         aria-label="Now playing"
         aria-hidden={playingCount === 0}
       >
         <div className="active-mix-dock__compact">
-          {activeMix &&
-            (activeMix.type === 'saved' ? (
-              <button
-                type="button"
-                className={`active-mix-dock__context active-mix-dock__context--clickable${mixTransition ? ' active-mix-dock__context--transitioning' : ''}`}
-                onClick={() => setMixesSheetOpen(true)}
-                aria-label={`Saved mix ${activeMix.label}. Open mixes.`}
-              >
-                {mixIcon && (
-                  <span className="active-mix-dock__context-icon" aria-hidden="true">
-                    <i className={`fa-solid fa-${mixIcon}`} />
-                  </span>
-                )}
-                <span className="active-mix-dock__context-text">
-                  <span className="active-mix-dock__context-type">
-                    {mixTypeLabel}
-                  </span>
-                  <span className="active-mix-dock__context-label">
-                    {activeMix.label}
-                  </span>
-                </span>
-                {mixTransition && (
-                  <span
-                    className="active-mix-dock__context-pulse"
-                    aria-hidden="true"
-                  />
-                )}
-              </button>
-            ) : (
-              <span
-                className={`active-mix-dock__context${mixTransition ? ' active-mix-dock__context--transitioning' : ''}`}
-              >
-                {mixIcon && (
-                  <span className="active-mix-dock__context-icon" aria-hidden="true">
-                    <i className={`fa-solid fa-${mixIcon}`} />
-                  </span>
-                )}
-                <span className="active-mix-dock__context-text">
-                  <span className="active-mix-dock__context-type">
-                    {mixTypeLabel}
-                  </span>
-                  <span className="active-mix-dock__context-label">
-                    {activeMix.label}
-                  </span>
-                </span>
-                {mixTransition && (
-                  <span
-                    className="active-mix-dock__context-pulse"
-                    aria-hidden="true"
-                  />
-                )}
-              </span>
-            ))}
-
           <button
             type="button"
             className="active-mix-dock__expand"

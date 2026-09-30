@@ -26,8 +26,10 @@
   width: 100%;
   max-width: 26rem;
   max-height: min(80vh, 32rem);
-  overflow-y: auto;
-  padding: 1.25rem 1.15rem 1.15rem;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  padding: 1.25rem 0 0;
   background: var(--color-bg-mid);
   border: 1px solid var(--color-border-strong);
   border-radius: var(--radius-xl);
@@ -52,6 +54,8 @@
   justify-content: space-between;
   gap: 0.75rem;
   margin-bottom: 0.85rem;
+  padding: 0 1.15rem;
+  flex-shrink: 0;
 }
 
 .mixes-sheet__title {

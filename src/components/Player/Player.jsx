@@ -23,6 +23,10 @@ import {
   WIND_LAYER_SLIDERS,
   WIND_MIN_GAIN,
 } from '../../utils/windCreator';
+import {
+  buildPanOnlyChain,
+  buildSpatialChain,
+} from '../../utils/spatialAudio';
 import { cacheManager } from '../../utils/cacheManager';
 import { stretchAudioBuffer } from '../../utils/stretchBuffer';
 import { hasFreesoundApiKey, LOCAL_MUSIC_TRACKS } from '../../ref/localMusic';
@@ -75,7 +79,8 @@ function Player({ title, sourcePath, custom, speed, stopAll }) {
   const stretchEnabledRef = useRef(false);
   const [isPlaying, setIsPlaying] = useState(false);
   const [playbackRate, setPlaybackRate] = useState(1);
-  const [isStereo, setIsStereo] = useState(false);
+  const [panValue, setPanValue] = useState(0);
+  const [widthValue, setWidthValue] = useState(0);
   const [isLoading, setIsLoading] = useState(false);
   const [reverbValue, setReverbValue] = useState(0.3); // 0 to 1 (wet level)
   const [reverbDuration, setReverbDuration] = useState(2.5); // seconds
@@ -129,8 +134,18 @@ function Player({ title, sourcePath, custom, speed, stopAll }) {
   }, [reverbDuration]);
 
   const stereoNodesRef = useRef(null);
+  const spatialChainRef = useRef(null);
+  const panValueRef = useRef(0);
+  const widthValueRef = useRef(0);
   const savedSnapsRef = useRef(savedSnaps);
   const randomSnapRef = useRef(randomSnap);
+  useEffect(() => {
+    panValueRef.current = panValue;
+  }, [panValue]);
+  useEffect(() => {
+    widthValueRef.current = widthValue;
+  }, [widthValue]);
+
   const isPlayingRef = useRef(isPlaying);
   const mixTransitionRef = useRef(mixTransition);
 
@@ -351,6 +366,17 @@ function Player({ title, sourcePath, custom, speed, stopAll }) {
         setStretchEnabled(Boolean(playerState.stretch));
         stretchEnabledRef.current = Boolean(playerState.stretch);
       }
+      if (playerState.pan != null) {
+        setPanValue(playerState.pan);
+        panValueRef.current = playerState.pan;
+      }
+      if (playerState.width != null) {
+        setWidthValue(playerState.width);
+        widthValueRef.current = playerState.width;
+      } else if (playerState.isStereo) {
+        setWidthValue(1);
+        widthValueRef.current = 1;
+      }
       if (isPlayingRef.current) {
         if (isWindCreator && playerState.windParams) {
           const generation = ++playbackGenerationRef.current;
@@ -366,6 +392,8 @@ function Player({ title, sourcePath, custom, speed, stopAll }) {
           );
         } else {
           crossfadeParams(volume, filter, speed, highpass);
+          spatialChainRef.current?.setPan?.(panValueRef.current);
+          spatialChainRef.current?.setWidth?.(widthValueRef.current);
         }
       } else {
         play(null, sourcePath, custom, volume, filter, speed, highpass);
@@ -702,6 +730,8 @@ function Player({ title, sourcePath, custom, speed, stopAll }) {
       filter: newFilter,
       highpass: newHighpass,
       speed: newSpeed,
+      pan: panValueRef.current,
+      width: widthValueRef.current,
       ...(isWindCreator
         ? { windParams: serializeWindParams(windParamsRef.current) }
         : {}),
@@ -752,6 +782,8 @@ function Player({ title, sourcePath, custom, speed, stopAll }) {
       filter: newFilter,
       highpass: newHighpass,
       speed: newSpeed,
+      pan: panValueRef.current,
+      width: widthValueRef.current,
       ...(isWindCreator
         ? { windParams: serializeWindParams(windParamsRef.current) }
         : {}),
@@ -923,6 +955,10 @@ function Player({ title, sourcePath, custom, speed, stopAll }) {
         windLayerNodesRef.current = null;
       }
       if (gainNodeRef.current) gainNodeRef.current.disconnect();
+      if (spatialChainRef.current) {
+        spatialChainRef.current.disconnect();
+        spatialChainRef.current = null;
+      }
       if (reverbNodeRef.current) reverbNodeRef.current.disconnect();
       if (reverbGainNodeRef.current) reverbGainNodeRef.current.disconnect();
 
@@ -934,7 +970,12 @@ function Player({ title, sourcePath, custom, speed, stopAll }) {
           windParamsRef.current.layers
         );
 
-        connectToMasterBus(masterGain);
+        const spatial = buildPanOnlyChain(
+          audioCtx,
+          masterGain,
+          panValueRef.current
+        );
+        spatialChainRef.current = spatial;
 
         if (isPlaybackCancelled(generation)) {
           setIsLoading(false);
@@ -977,7 +1018,12 @@ function Player({ title, sourcePath, custom, speed, stopAll }) {
       sourceNode.connect(highpass);
       highpass.connect(filter);
       filter.connect(gainNode);
-      connectToMasterBus(gainNode);
+
+      const spatial = buildSpatialChain(audioCtx, gainNode, {
+        pan: panValueRef.current,
+        width: widthValueRef.current,
+      });
+      spatialChainRef.current = spatial;
 
       // Reverb path pour music / API
       if (source === 'apiSearch' || isMusic) {
@@ -1080,6 +1126,10 @@ function Player({ title, sourcePath, custom, speed, stopAll }) {
       gainNodeRef.current.disconnect();
       gainNodeRef.current = null;
     }
+    if (spatialChainRef.current) {
+      spatialChainRef.current.disconnect();
+      spatialChainRef.current = null;
+    }
     if (stereoNodesRef.current) {
       try {
         stereoNodesRef.current.merger?.disconnect();
@@ -1121,7 +1171,6 @@ function Player({ title, sourcePath, custom, speed, stopAll }) {
 
     setIsLoading(false);
     setIsPlaying(false);
-    setIsStereo(false);
 
     if (loadASnap && !mixTransitionRef.current) {
       setLoadASnap(false);
@@ -1186,77 +1235,23 @@ function Player({ title, sourcePath, custom, speed, stopAll }) {
     }, fadeSeconds * 1000);
   }
 
-  // STEREO ------------------------------------------------
-  function toggleStereoEffect() {
-    const audioCtx = audioCtxRef.current;
-    const gainNode = gainNodeRef.current;
-    if (!audioCtx || !gainNode) return;
-
-    // Layered creators (Wind): insert Haas delay after masterGain → bus
-    if (isLayeredCreator) {
-      if (isStereo) {
-        const { merger } = stereoNodesRef.current || {};
-        gainNode.disconnect();
-        if (merger) merger.disconnect();
-        connectToMasterBus(gainNode);
-        setIsStereo(false);
-        stereoNodesRef.current = null;
-      } else {
-        gainNode.disconnect();
-        const stereoNodes = applyStereoDelayRight(audioCtx, gainNode);
-        stereoNodesRef.current = stereoNodes;
-        connectToMasterBus(stereoNodes.merger);
-        setIsStereo(true);
-      }
-      return;
-    }
-
-    const filter = filterRef.current;
-    if (!filter) return;
-
-    if (isStereo) {
-      // Disable stereo
-      const { merger } = stereoNodesRef.current;
-
-      filter.disconnect();
-      merger.disconnect();
-
-      // Reconnect filter directly to gainNode
-      filter.connect(gainNode);
-
-      setIsStereo(false);
-      stereoNodesRef.current = null;
-    } else {
-      // Enable stereo
-      filter.disconnect();
-
-      const stereoNodes = applyStereoDelayRight(audioCtx, filter);
-      stereoNodesRef.current = stereoNodes;
-
-      stereoNodes.merger.connect(gainNode);
-
-      setIsStereo(true);
-    }
+  // SPATIAL ------------------------------------------------
+  function handlePanValue(event) {
+    const value = Number(event.target.value);
+    setPanValue(value);
+    panValueRef.current = value;
+    registerPlayerSituation(title, { pan: value });
+    spatialChainRef.current?.setPan?.(value);
+    triggerIndicator(`Pan ${value > 0 ? '+' : ''}${value.toFixed(2)}`);
   }
 
-  function applyStereoDelayRight(audioCtx, sourceNode) {
-    const splitter = audioCtx.createChannelSplitter(2);
-    const delayRight = audioCtx.createDelay();
-    delayRight.delayTime.setValueAtTime(0.025, audioCtx.currentTime); // 25ms delay
-
-    const merger = audioCtx.createChannelMerger(2);
-
-    // Connexions :
-    sourceNode.connect(splitter);
-
-    // Gauche (direct)
-    splitter.connect(merger, 0, 0); // out channel 0 → in channel 0
-
-    // Droite (delay)
-    splitter.connect(delayRight, 0); // out channel 0 → delay
-    delayRight.connect(merger, 0, 1); // delay output → in channel 1
-
-    return { splitter, delayRight, merger };
+  function handleWidthValue(event) {
+    const value = Number(event.target.value);
+    setWidthValue(value);
+    widthValueRef.current = value;
+    registerPlayerSituation(title, { width: value });
+    spatialChainRef.current?.setWidth?.(value);
+    triggerIndicator(`Width ${Math.round(value * 100)}%`);
   }
 
   function clearMusicAdvanceTimer() {
@@ -1338,7 +1333,8 @@ function Player({ title, sourcePath, custom, speed, stopAll }) {
 
   function disconnectOutgoingMusicNodes(nodes) {
     if (!nodes) return;
-    const { source, gain, highpass, filter, reverb, reverbGain } = nodes;
+    const { source, gain, highpass, filter, reverb, reverbGain, spatial } =
+      nodes;
     if (source) {
       source.onended = null;
       try {
@@ -1358,6 +1354,7 @@ function Player({ title, sourcePath, custom, speed, stopAll }) {
       gain?.disconnect();
       reverb?.disconnect();
       reverbGain?.disconnect();
+      spatial?.disconnect?.();
     } catch {
       /* already disconnected */
     }
@@ -1443,8 +1440,10 @@ function Player({ title, sourcePath, custom, speed, stopAll }) {
       filter: filterRef.current,
       reverb: reverbNodeRef.current,
       reverbGain: reverbGainNodeRef.current,
+      spatial: spatialChainRef.current,
     };
     if (outgoing.source) outgoing.source.onended = null;
+    spatialChainRef.current = null;
 
     const newVol = volValueRef.current;
     const newFilter = filterValueRef.current;
@@ -1471,7 +1470,10 @@ function Player({ title, sourcePath, custom, speed, stopAll }) {
     sourceNode.connect(highpass);
     highpass.connect(filter);
     filter.connect(gainNode);
-    connectToMasterBus(gainNode);
+    spatialChainRef.current = buildSpatialChain(audioCtx, gainNode, {
+      pan: panValueRef.current,
+      width: widthValueRef.current,
+    });
 
     const reverbNode = audioCtx.createConvolver();
     reverbNode.buffer = createImpulseResponse(audioCtx, room);
@@ -1550,20 +1552,6 @@ function Player({ title, sourcePath, custom, speed, stopAll }) {
           >
             <i className="fa-solid fa-pause" aria-hidden="true" />
           </button>
-          {title !== 'bowl' && (
-            <button
-              type="button"
-              className={`player-control-btn${isStereo ? ' player-control-btn--active' : ''}`}
-              onClick={toggleStereoEffect}
-              aria-label="Toggle stereo"
-              aria-pressed={isStereo}
-            >
-              <i
-                className={`fa-solid ${isStereo ? 'fa-check-double' : 'fa-check'}`}
-                aria-hidden="true"
-              />
-            </button>
-          )}
           {sourcePath === 'apiSearch' && (
             <button
               type="button"
@@ -1603,6 +1591,45 @@ function Player({ title, sourcePath, custom, speed, stopAll }) {
                   onHighChange={handleFilterValue}
                 />
               </div>
+            )}
+            {title !== 'bowl' && (
+              <>
+                <label className="active-player-card__row">
+                  <span className="active-player-card__row-label">
+                    <i className="fa-solid fa-left-right" aria-hidden="true" />
+                  </span>
+                  <input
+                    className="active-player-card__range"
+                    type="range"
+                    min="-1"
+                    max="1"
+                    step="0.01"
+                    value={panValue}
+                    onChange={handlePanValue}
+                    aria-label="Pan"
+                  />
+                </label>
+                {!isLayeredCreator && (
+                  <label className="active-player-card__row">
+                    <span className="active-player-card__row-label">
+                      <i
+                        className="fa-solid fa-expand"
+                        aria-hidden="true"
+                      />
+                    </span>
+                    <input
+                      className="active-player-card__range"
+                      type="range"
+                      min="0"
+                      max="1"
+                      step="0.01"
+                      value={widthValue}
+                      onChange={handleWidthValue}
+                      aria-label="Stereo width"
+                    />
+                  </label>
+                )}
+              </>
             )}
             {title === 'bowl' && (
               <label className="active-player-card__row">
@@ -1749,8 +1776,10 @@ function Player({ title, sourcePath, custom, speed, stopAll }) {
                       filter: filterRef.current,
                       reverb: reverbNodeRef.current,
                       reverbGain: reverbGainNodeRef.current,
+                      spatial: spatialChainRef.current,
                     };
                     if (outgoing.source) outgoing.source.onended = null;
+                    spatialChainRef.current = null;
 
                     const newVol = volValueRef.current;
                     const wet = reverbValueRef.current;
@@ -1780,7 +1809,14 @@ function Player({ title, sourcePath, custom, speed, stopAll }) {
                     sourceNode.connect(highpass);
                     highpass.connect(filter);
                     filter.connect(gainNode);
-                    connectToMasterBus(gainNode);
+                    spatialChainRef.current = buildSpatialChain(
+                      audioCtx,
+                      gainNode,
+                      {
+                        pan: panValueRef.current,
+                        width: widthValueRef.current,
+                      }
+                    );
 
                     const reverbNode = audioCtx.createConvolver();
                     reverbNode.buffer = createImpulseResponse(

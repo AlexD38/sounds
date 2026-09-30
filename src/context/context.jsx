@@ -13,6 +13,25 @@ import {
   clearShareParamFromUrl,
   readSharedMixFromLocation,
 } from '../utils/mixShare';
+import {
+  evolveMix,
+  formatEvolveInterval,
+  nextEvolveDelayMs,
+} from '../utils/evolveMix';
+
+const EVOLVE_INTERVAL_KEY = 'aa-evolve-interval';
+
+function readStoredEvolveInterval() {
+  try {
+    const raw = localStorage.getItem(EVOLVE_INTERVAL_KEY);
+    if (raw == null || raw === 'auto') return 'auto';
+    const n = Number(raw);
+    if ([20, 30, 45, 60].includes(n)) return n;
+  } catch {
+    // ignore
+  }
+  return 'auto';
+}
 
 // Crée le contexte
 // eslint-disable-next-line react-refresh/only-export-components
@@ -38,12 +57,34 @@ export function ContextProvider({ children }) {
   const [randomSnap, setRandomSnap] = useState(null);
   const [mixTransition, setMixTransition] = useState(false);
   const [activeMix, setActiveMix] = useState(null);
-  const [mixesSheetOpen, setMixesSheetOpen] = useState(false);
+  const [scenesSheetOpen, setScenesSheetOpen] = useState(false);
+  const [scenesSheetTab, setScenesSheetTab] = useState('moods');
   const [cachedAudios, setCachedAudios] = useState(null);
   const [playlist, setPlaylist] = useState([]);
   const [zenQuote, setZenQuote] = useState(null);
   /** Override fade-out duration (seconds) for the next stop-all, e.g. sleep timer. */
   const [stopFadeDuration, setStopFadeDuration] = useState(null);
+  const [evolveEnabled, setEvolveEnabledState] = useState(false);
+  const [evolveIntervalSec, setEvolveIntervalSecState] = useState(
+    readStoredEvolveInterval
+  );
+
+  const snapshotMixRef = useRef(snapshotMix);
+  useEffect(() => {
+    snapshotMixRef.current = snapshotMix;
+  }, [snapshotMix]);
+
+  const evolveEnabledRef = useRef(evolveEnabled);
+  useEffect(() => {
+    evolveEnabledRef.current = evolveEnabled;
+  }, [evolveEnabled]);
+
+  const evolveIntervalRef = useRef(evolveIntervalSec);
+  useEffect(() => {
+    evolveIntervalRef.current = evolveIntervalSec;
+  }, [evolveIntervalSec]);
+
+  const evolveTimerRef = useRef(null);
 
   // QUOTE ---------------------------------------------------------
   useEffect(() => {
@@ -149,6 +190,11 @@ export function ContextProvider({ children }) {
     setActiveMix(null);
   }, []);
 
+  const openScenesSheet = useCallback((tab = 'moods') => {
+    setScenesSheetTab(tab === 'mixes' ? 'mixes' : 'moods');
+    setScenesSheetOpen(true);
+  }, []);
+
   const loadMix = useCallback(({ label, snapMap, activeMix: mixMeta }) => {
     if (mixTransitionTimeoutRef.current) {
       clearTimeout(mixTransitionTimeoutRef.current);
@@ -167,6 +213,93 @@ export function ContextProvider({ children }) {
       mixTransitionTimeoutRef.current = null;
     }, CROSSFADE_DURATION * 1000);
   }, []);
+
+  const clearEvolveTimer = useCallback(() => {
+    if (evolveTimerRef.current) {
+      clearTimeout(evolveTimerRef.current);
+      evolveTimerRef.current = null;
+    }
+  }, []);
+
+  const scheduleEvolveTick = useCallback(() => {
+    clearEvolveTimer();
+    if (!evolveEnabledRef.current) return;
+
+    const delay = nextEvolveDelayMs(evolveIntervalRef.current);
+    evolveTimerRef.current = setTimeout(() => {
+      evolveTimerRef.current = null;
+      if (!evolveEnabledRef.current) return;
+      const snap = snapshotMixRef.current;
+      const hasPlaying = Array.from(snap.values()).some(p => p?.isPlaying);
+      if (!hasPlaying) {
+        scheduleEvolveTick();
+        return;
+      }
+
+      evolveMix({
+        snapshotMix: snap,
+        loadMix,
+        setNotification,
+        silent: true,
+      });
+      scheduleEvolveTick();
+    }, delay);
+  }, [clearEvolveTimer, loadMix]);
+
+  const setEvolveEnabled = useCallback(
+    enabled => {
+      const next = Boolean(enabled);
+      setEvolveEnabledState(next);
+      evolveEnabledRef.current = next;
+      if (!next) {
+        clearEvolveTimer();
+        return;
+      }
+
+      const hasPlaying = Array.from(snapshotMixRef.current.values()).some(
+        p => p?.isPlaying
+      );
+      if (!hasPlaying) {
+        setEvolveEnabledState(false);
+        evolveEnabledRef.current = false;
+        setNotification({ message: 'Play something first to evolve it' });
+        setTimeout(() => setNotification(null), 3000);
+        return;
+      }
+
+      setNotification({
+        message: `Evolve on · ${formatEvolveInterval(evolveIntervalRef.current)}`,
+      });
+      setTimeout(() => setNotification(null), 3000);
+      scheduleEvolveTick();
+    },
+    [clearEvolveTimer, scheduleEvolveTick]
+  );
+
+  const setEvolveIntervalSec = useCallback(
+    value => {
+      const next =
+        value === 'auto' || value == null
+          ? 'auto'
+          : [20, 30, 45, 60].includes(Number(value))
+            ? Number(value)
+            : 'auto';
+      setEvolveIntervalSecState(next);
+      evolveIntervalRef.current = next;
+      try {
+        localStorage.setItem(
+          EVOLVE_INTERVAL_KEY,
+          next === 'auto' ? 'auto' : String(next)
+        );
+      } catch {
+        // ignore
+      }
+      if (evolveEnabledRef.current) {
+        scheduleEvolveTick();
+      }
+    },
+    [scheduleEvolveTick]
+  );
 
   // Hydrate shared mix from ?mix= URL (after loadMix exists)
   useEffect(() => {
@@ -196,6 +329,9 @@ export function ContextProvider({ children }) {
     return () => {
       if (mixTransitionTimeoutRef.current) {
         clearTimeout(mixTransitionTimeoutRef.current);
+      }
+      if (evolveTimerRef.current) {
+        clearTimeout(evolveTimerRef.current);
       }
     };
   }, []);
@@ -227,8 +363,11 @@ export function ContextProvider({ children }) {
       mixTransition,
       activeMix,
       setActiveMix,
-      mixesSheetOpen,
-      setMixesSheetOpen,
+      scenesSheetOpen,
+      setScenesSheetOpen,
+      scenesSheetTab,
+      setScenesSheetTab,
+      openScenesSheet,
       loadMix,
       clearActiveMix,
       cachedAudios,
@@ -236,6 +375,10 @@ export function ContextProvider({ children }) {
       playlist,
       setPlaylist,
       zenQuote,
+      evolveEnabled,
+      setEvolveEnabled,
+      evolveIntervalSec,
+      setEvolveIntervalSec,
     }),
     [
       theme,
@@ -251,13 +394,19 @@ export function ContextProvider({ children }) {
       randomSnap,
       mixTransition,
       activeMix,
-      mixesSheetOpen,
+      scenesSheetOpen,
+      scenesSheetTab,
       cachedAudios,
       playlist,
       zenQuote,
       loadMix,
       clearActiveMix,
+      openScenesSheet,
       setTheme,
+      evolveEnabled,
+      setEvolveEnabled,
+      evolveIntervalSec,
+      setEvolveIntervalSec,
     ]
   );
 

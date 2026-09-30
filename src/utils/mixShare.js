@@ -36,6 +36,9 @@ export function serializeMix(snapshot) {
         if (p.highpass != null) entry.highpass = Number(p.highpass);
         if (p.speed != null) entry.speed = Number(p.speed);
         if (p.windParams) entry.windParams = p.windParams;
+        if (p.pan != null) entry.pan = Number(p.pan);
+        if (p.width != null) entry.width = Number(p.width);
+        if (p.stretch != null) entry.stretch = Boolean(p.stretch);
         return entry;
       }),
   };
@@ -57,6 +60,9 @@ export function deserializeMix(encoded) {
       ...(p.highpass != null ? { highpass: Number(p.highpass) } : {}),
       ...(p.speed != null ? { speed: Number(p.speed) } : {}),
       ...(p.windParams ? { windParams: p.windParams } : {}),
+      ...(p.pan != null ? { pan: Number(p.pan) } : {}),
+      ...(p.width != null ? { width: Number(p.width) } : {}),
+      ...(p.stretch != null ? { stretch: Boolean(p.stretch) } : {}),
     })),
   };
 }

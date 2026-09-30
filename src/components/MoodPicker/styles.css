@@ -97,10 +97,30 @@
   color: inherit;
 }
 
+.mood-grid-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
 .mood-grid {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
   gap: 0.6rem;
+}
+
+.mood-card--featured {
+  width: 100%;
+  background: var(--color-accent-soft);
+  border-color: var(--color-accent);
+}
+
+.mood-card__featured-badge {
+  font-size: 0.55rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--color-accent-bright);
 }
 
 .mood-card {
@@ -163,6 +183,21 @@
 .mood-card__icon-wrap i {
   font-size: 0.85rem;
   color: inherit;
+}
+
+.mood-card--busy {
+  opacity: 0.75;
+  cursor: wait;
+}
+
+.mood-card__spinner {
+  animation: mood-spin 0.8s linear infinite;
+}
+
+@keyframes mood-spin {
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 .mood-card__label {
