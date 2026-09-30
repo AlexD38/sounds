@@ -56,8 +56,24 @@
   transform: none;
 }
 
+.player-container.is-active.is-stretched {
+  border-color: var(--color-warm-dim);
+  background: color-mix(in srgb, var(--color-warm) 8%, var(--color-accent-subtle));
+  box-shadow:
+    0 0 14px var(--color-accent-emphasis),
+    0 0 22px color-mix(in srgb, var(--color-warm) 28%, transparent);
+}
+
 .player-container.is-active::before {
   opacity: 1;
+}
+
+.player-container.is-active.is-stretched::before {
+  background: radial-gradient(
+    circle at 50% 0%,
+    color-mix(in srgb, var(--color-warm) 22%, transparent) 0%,
+    transparent 65%
+  );
 }
 
 .player-container.is-active:hover {
@@ -143,6 +159,14 @@
   animation: active-dot-pulse 1.8s ease-in-out infinite;
 }
 
+.player-card__active-dot--stretch {
+  background: var(--color-warm);
+  box-shadow:
+    0 0 8px var(--color-warm),
+    0 0 14px color-mix(in srgb, var(--color-warm) 55%, transparent);
+  animation: stretch-dot-pulse 1.4s ease-in-out infinite;
+}
+
 @keyframes active-dot-pulse {
   0%,
   100% {
@@ -152,6 +176,24 @@
   50% {
     opacity: 0.55;
     transform: scale(0.85);
+  }
+}
+
+@keyframes stretch-dot-pulse {
+  0%,
+  100% {
+    opacity: 1;
+    transform: scale(1);
+    box-shadow:
+      0 0 8px var(--color-warm),
+      0 0 14px color-mix(in srgb, var(--color-warm) 55%, transparent);
+  }
+  50% {
+    opacity: 0.7;
+    transform: scale(1.25);
+    box-shadow:
+      0 0 12px var(--color-warm),
+      0 0 20px color-mix(in srgb, var(--color-warm) 70%, transparent);
   }
 }
 

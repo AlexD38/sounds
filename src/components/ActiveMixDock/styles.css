@@ -450,6 +450,36 @@
   flex-basis: min(22rem, 90vw);
 }
 
+.active-player-card--stretched {
+  border-color: color-mix(in srgb, var(--color-warm) 45%, var(--color-border-strong));
+  box-shadow:
+    var(--shadow-glow),
+    0 0 18px color-mix(in srgb, var(--color-warm) 22%, transparent);
+}
+
+.active-player-card--stretched .active-player-card__icon-wrap {
+  border-color: var(--color-warm-dim);
+  background: color-mix(in srgb, var(--color-warm) 14%, transparent);
+}
+
+.active-player-card--stretched .active-player-card__icon-wrap::after {
+  border-color: var(--color-warm);
+}
+
+.active-player-card--stretched .active-player-card__icon {
+  color: var(--color-warm);
+}
+
+.active-player-card__hint--stretch {
+  color: var(--color-warm);
+  font-weight: 600;
+}
+
+.active-player-card__stretch.player-control-btn--active {
+  border-color: color-mix(in srgb, var(--color-warm) 40%, var(--color-accent));
+  color: var(--color-warm);
+}
+
 @keyframes active-card-in {
   from {
     opacity: 0;
@@ -843,11 +873,48 @@
   box-shadow: 0 0 6px var(--color-accent-glow-md);
 }
 
+.active-player-card__loader-wrap {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.55rem;
+  min-height: 4.5rem;
+  padding: 0.75rem 0;
+  width: 100%;
+}
+
 .active-player-card__loader {
   align-self: center;
-  font-size: 1.25rem;
+  font-size: 1.35rem;
   color: var(--color-accent);
   animation: spin 0.8s linear infinite;
+}
+
+.active-player-card__loader-label {
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--color-text-muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.active-player-card__stretch-progress {
+  width: 100%;
+  max-width: 12rem;
+  height: 0.35rem;
+  border-radius: var(--radius-full);
+  background: var(--color-border);
+  overflow: hidden;
+}
+
+.active-player-card__stretch-progress-fill {
+  height: 100%;
+  border-radius: inherit;
+  background: var(--color-accent-bright);
+  box-shadow: 0 0 8px var(--color-accent-glow-md);
+  transition: width 0.15s ease-out;
 }
 
 .active-player-card__value-indicator {

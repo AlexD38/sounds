@@ -78,6 +78,8 @@ function Player({ title, sourcePath, custom, speed, stopAll }) {
   const windLayerNodesRef = useRef(null);
   const [stretchEnabled, setStretchEnabled] = useState(false);
   const stretchEnabledRef = useRef(false);
+  const [stretchPreparing, setStretchPreparing] = useState(false);
+  const [stretchProgress, setStretchProgress] = useState(0);
   const [isPlaying, setIsPlaying] = useState(false);
   const [playbackRate, setPlaybackRate] = useState(1);
   const [panValue, setPanValue] = useState(0);
@@ -938,11 +940,14 @@ function Player({ title, sourcePath, custom, speed, stopAll }) {
             audioBuffer &&
             !isPlaybackCancelled(generation)
           ) {
+            setStretchPreparing(true);
             setNotification({ message: 'Stretching texture…' });
-            audioBuffer = await stretchAudioBuffer(audioCtx, audioBuffer, {
-              stretchFactor: 8,
-              maxInputSeconds: 18,
-            });
+            await waitForPaint();
+            try {
+              audioBuffer = await runStretch(audioCtx, audioBuffer);
+            } finally {
+              setStretchPreparing(false);
+            }
             setTimeout(() => setNotification(null), 2000);
           }
         }
@@ -1283,7 +1288,34 @@ function Player({ title, sourcePath, custom, speed, stopAll }) {
     }
   }
 
-  async function prepareMusicBuffer(url, audioCtx, generation) {
+  /** Let React paint loaders before CPU-heavy Paulstretch work. */
+  function waitForPaint() {
+    return new Promise(resolve => {
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => {
+          setTimeout(resolve, 0);
+        });
+      });
+    });
+  }
+
+  function reportStretchProgress(pct) {
+    setStretchProgress(pct);
+  }
+
+  async function runStretch(audioCtx, buffer, { report = true } = {}) {
+    if (report) setStretchProgress(0);
+    return stretchAudioBuffer(audioCtx, buffer, {
+      onProgress: report ? reportStretchProgress : undefined,
+    });
+  }
+
+  async function prepareMusicBuffer(
+    url,
+    audioCtx,
+    generation,
+    { reportProgress = true } = {}
+  ) {
     let buffer = await cacheManager.decodeFromUrl(url, audioCtx, {
       persist: String(url).startsWith('/assets/'),
     });
@@ -1292,10 +1324,8 @@ function Player({ title, sourcePath, custom, speed, stopAll }) {
       buffer &&
       !isPlaybackCancelled(generation)
     ) {
-      buffer = await stretchAudioBuffer(audioCtx, buffer, {
-        stretchFactor: 8,
-        maxInputSeconds: 18,
-      });
+      await waitForPaint();
+      buffer = await runStretch(audioCtx, buffer, { report: reportProgress });
     }
     return buffer;
   }
@@ -1342,7 +1372,8 @@ function Player({ title, sourcePath, custom, speed, stopAll }) {
       const buffer = await prepareMusicBuffer(
         nextTrack.url,
         audioCtx,
-        generation
+        generation,
+        { reportProgress: false }
       );
       if (isPlaybackCancelled(generation)) return;
       if (nextMusicUrlRef.current === nextTrack.url) {
@@ -1548,7 +1579,9 @@ function Player({ title, sourcePath, custom, speed, stopAll }) {
 
   const renderActiveCard = () => (
     <div
-      className={`active-player-card${isLayeredCreator ? ' active-player-card--wind' : ''}`}
+      className={`active-player-card${isLayeredCreator ? ' active-player-card--wind' : ''}${
+        stretchEnabled && isPlaying ? ' active-player-card--stretched' : ''
+      }`}
       onClick={e => e.stopPropagation()}
       role="group"
       aria-label={`${formatPlayerLabel(title)} controls`}
@@ -1562,6 +1595,11 @@ function Player({ title, sourcePath, custom, speed, stopAll }) {
           {title === 'bowl' && (
             <p className="active-player-card__hint">
               every {(bowlInterval / 1000).toFixed(1)}s
+            </p>
+          )}
+          {isMusic && stretchEnabled && isPlaying && !stretchPreparing && (
+            <p className="active-player-card__hint active-player-card__hint--stretch">
+              Stretched texture
             </p>
           )}
         </div>
@@ -1588,7 +1626,35 @@ function Player({ title, sourcePath, custom, speed, stopAll }) {
       </div>
 
       {isLoading ? (
-        <i className="fa-solid fa-spinner active-player-card__loader" aria-hidden="true" />
+        <div
+          className="active-player-card__loader-wrap"
+          role="status"
+          aria-live="polite"
+          aria-valuemin={0}
+          aria-valuemax={100}
+          aria-valuenow={stretchPreparing ? stretchProgress : undefined}
+        >
+          <i
+            className="fa-solid fa-spinner active-player-card__loader"
+            aria-hidden="true"
+          />
+          <span className="active-player-card__loader-label">
+            {stretchPreparing
+              ? `Stretching… ${stretchProgress}%`
+              : 'Loading…'}
+          </span>
+          {stretchPreparing && (
+            <div
+              className="active-player-card__stretch-progress"
+              aria-hidden="true"
+            >
+              <div
+                className="active-player-card__stretch-progress-fill"
+                style={{ width: `${stretchProgress}%` }}
+              />
+            </div>
+          )}
+        </div>
       ) : (
         <>
           <div
@@ -1760,24 +1826,30 @@ function Player({ title, sourcePath, custom, speed, stopAll }) {
                 className={`player-control-btn active-player-card__stretch${
                   stretchEnabled ? ' player-control-btn--active' : ''
                 }`}
+                disabled={stretchPreparing}
                 onClick={async () => {
+                  if (stretchPreparing) return;
                   const next = !stretchEnabled;
                   setStretchEnabled(next);
                   stretchEnabledRef.current = next;
                   registerPlayerSituation(title, { stretch: next });
                   triggerIndicator(next ? 'Stretch on' : 'Stretch off');
-                  // Invalidate preloaded (stretch) buffers
                   nextMusicBufferRef.current = null;
                   nextMusicUrlRef.current = null;
                   if (!isPlaying) return;
-                  // Crossfade into a freshly processed version of the current track
+
                   const list = playlistRef.current;
                   const current = list.find(t => t.isCurrent) || list[0];
                   if (!current?.url) return;
+
                   const generation = playbackGenerationRef.current;
                   musicCrossfadingRef.current = false;
                   clearMusicAdvanceTimer();
+                  setStretchPreparing(true);
+                  setStretchProgress(0);
                   setIsLoading(true);
+                  await waitForPaint();
+
                   try {
                     const audioCtx = audioCtxRef.current;
                     const buffer = await prepareMusicBuffer(
@@ -1786,11 +1858,8 @@ function Player({ title, sourcePath, custom, speed, stopAll }) {
                       generation
                     );
                     if (isPlaybackCancelled(generation) || !buffer) {
-                      setIsLoading(false);
                       return;
                     }
-                    // Temporarily point "next" at same track and reuse crossfade path
-                    // by swapping playlist current with itself via manual fade
                     const outgoing = {
                       source: sourceNodeRef.current,
                       gain: gainNodeRef.current,
@@ -1902,15 +1971,31 @@ function Player({ title, sourcePath, custom, speed, stopAll }) {
                     preloadNextMusicBuffer(generation);
                   } catch (err) {
                     console.error(err);
+                  } finally {
+                    setIsLoading(false);
+                    setStretchPreparing(false);
                   }
-                  setIsLoading(false);
                 }}
                 aria-pressed={stretchEnabled}
-                aria-label="Toggle Paulstretch texture"
+                aria-busy={stretchPreparing}
+                aria-label={
+                  stretchEnabled
+                    ? 'Disable Paulstretch texture'
+                    : 'Enable Paulstretch texture'
+                }
               >
-                <i className="fa-solid fa-wave-square" aria-hidden="true" />
+                <i
+                  className={`fa-solid fa-${
+                    stretchPreparing ? 'spinner' : 'wave-square'
+                  }${stretchPreparing ? ' active-player-card__loader' : ''}`}
+                  aria-hidden="true"
+                />
                 <span className="active-player-card__stretch-label">
-                  Stretch
+                  {stretchPreparing
+                    ? `Stretching… ${stretchProgress}%`
+                    : stretchEnabled && isPlaying
+                      ? 'Stretched'
+                      : 'Stretch'}
                 </span>
               </button>
             )}
@@ -1963,7 +2048,9 @@ function Player({ title, sourcePath, custom, speed, stopAll }) {
   return (
     <>
       <div
-        className={`player-container${isPlaying ? ' is-active' : ''}`}
+        className={`player-container${isPlaying ? ' is-active' : ''}${
+          isPlaying && stretchEnabled ? ' is-stretched' : ''
+        }`}
         onClick={event =>
           play(event, sourcePath, custom, volValue, filterValue, playbackRate)
         }
@@ -1974,7 +2061,14 @@ function Player({ title, sourcePath, custom, speed, stopAll }) {
           </div>
           <span className="player-card__label">{formatPlayerLabel(title)}</span>
         </div>
-        {isPlaying && <span className="player-card__active-dot" aria-hidden="true" />}
+        {isPlaying && (
+          <span
+            className={`player-card__active-dot${
+              stretchEnabled ? ' player-card__active-dot--stretch' : ''
+            }`}
+            aria-hidden="true"
+          />
+        )}
       </div>
       {isPlaying &&
         portalTarget &&
