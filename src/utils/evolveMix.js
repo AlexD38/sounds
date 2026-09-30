@@ -71,14 +71,14 @@ function nudgeEntry(entry) {
   return next;
 }
 
-const MIN_LAYERS = 2;
-const MAX_LAYERS = 4;
+const MAX_LAYERS = 3;
 
 /**
  * Evolve the current mix with a stable pivot layer.
  * Always keeps ≥1 unchanged player so ambience carries over.
  * Applies a single step (add, mute or swap one layer) — never all at once.
- * Mix size stays within MIN_LAYERS–MAX_LAYERS; below MIN it grows back.
+ * Size stays within 1–MAX_LAYERS. One layer is allowed for a single step;
+ * the next tick always adds, so evolve never stays stuck on one player.
  */
 export function evolveMix({
   snapshotMix,
@@ -105,13 +105,23 @@ export function evolveMix({
   const pickFree = () =>
     freePool[Math.floor(Math.random() * freePool.length)];
 
-  if (nextPlayers.length < MIN_LAYERS) {
-    // Existing layer(s) act as the pivot; grow back toward MIN_LAYERS.
+  if (nextPlayers.length === 1) {
+    // One layer is the pivot. Always grow so the next mix is not stuck at 1.
     if (freePool.length > 0) {
       nextPlayers.push(buildPlayerEntry(pickFree()));
     } else {
       nextPlayers[0] = nudgeEntry(nextPlayers[0]);
     }
+  } else if (nextPlayers.length > MAX_LAYERS) {
+    // Above the cap: drop one non-pivot layer until we are back within range.
+    const pivotIdx = Math.floor(Math.random() * nextPlayers.length);
+    const candidates = [];
+    for (let i = 0; i < nextPlayers.length; i++) {
+      if (i !== pivotIdx) candidates.push(i);
+    }
+    const targetIdx =
+      candidates[Math.floor(Math.random() * candidates.length)];
+    nextPlayers.splice(targetIdx, 1);
   } else {
     // Pick a pivot that never changes (same player + params).
     const pivotIdx = Math.floor(Math.random() * nextPlayers.length);
@@ -124,7 +134,8 @@ export function evolveMix({
       candidates[Math.floor(Math.random() * candidates.length)];
 
     const actions = [];
-    if (nextPlayers.length > MIN_LAYERS) actions.push('mute');
+    // Mute may land on a single layer; the following tick adds one back.
+    if (nextPlayers.length > 1) actions.push('mute');
     if (freePool.length > 0) actions.push('swap');
     if (nextPlayers.length < MAX_LAYERS && freePool.length > 0) {
       actions.push('add');
