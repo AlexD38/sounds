@@ -184,26 +184,17 @@ export function evolveMix({
   return label;
 }
 
-/** Fixed interval options (seconds). `null` / 'auto' = random 20–60 each tick. */
-export const EVOLVE_INTERVAL_PRESETS = [20, 30, 45, 60];
+/** Random delay range between evolve steps (seconds). */
+export const EVOLVE_INTERVAL_MIN = 40;
+export const EVOLVE_INTERVAL_MAX = 90;
 
-export const EVOLVE_INTERVAL_MIN = 20;
-export const EVOLVE_INTERVAL_MAX = 60;
-
-/** @param {number | 'auto' | null} intervalSec */
-export function nextEvolveDelayMs(intervalSec) {
-  if (typeof intervalSec === 'number' && intervalSec > 0) {
-    return intervalSec * 1000;
-  }
+export function nextEvolveDelayMs() {
   const sec =
     EVOLVE_INTERVAL_MIN +
     Math.random() * (EVOLVE_INTERVAL_MAX - EVOLVE_INTERVAL_MIN);
   return Math.round(sec * 1000);
 }
 
-export function formatEvolveInterval(intervalSec) {
-  if (intervalSec == null || intervalSec === 'auto') {
-    return 'every 20–60s';
-  }
-  return `every ${intervalSec}s`;
+export function formatEvolveInterval() {
+  return `every ${EVOLVE_INTERVAL_MIN}–${EVOLVE_INTERVAL_MAX}s`;
 }

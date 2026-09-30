@@ -19,20 +19,6 @@ import {
   nextEvolveDelayMs,
 } from '../utils/evolveMix';
 
-const EVOLVE_INTERVAL_KEY = 'aa-evolve-interval';
-
-function readStoredEvolveInterval() {
-  try {
-    const raw = localStorage.getItem(EVOLVE_INTERVAL_KEY);
-    if (raw == null || raw === 'auto') return 'auto';
-    const n = Number(raw);
-    if ([20, 30, 45, 60].includes(n)) return n;
-  } catch {
-    // ignore
-  }
-  return 'auto';
-}
-
 // Crée le contexte
 // eslint-disable-next-line react-refresh/only-export-components
 export const Context = createContext();
@@ -67,9 +53,6 @@ export function ContextProvider({ children }) {
   /** Fade length (seconds) for the mix currently being loaded. */
   const [mixFadeDuration, setMixFadeDuration] = useState(null);
   const [evolveEnabled, setEvolveEnabledState] = useState(false);
-  const [evolveIntervalSec, setEvolveIntervalSecState] = useState(
-    readStoredEvolveInterval
-  );
 
   const snapshotMixRef = useRef(snapshotMix);
   useEffect(() => {
@@ -80,11 +63,6 @@ export function ContextProvider({ children }) {
   useEffect(() => {
     evolveEnabledRef.current = evolveEnabled;
   }, [evolveEnabled]);
-
-  const evolveIntervalRef = useRef(evolveIntervalSec);
-  useEffect(() => {
-    evolveIntervalRef.current = evolveIntervalSec;
-  }, [evolveIntervalSec]);
 
   const evolveTimerRef = useRef(null);
 
@@ -233,7 +211,7 @@ export function ContextProvider({ children }) {
     clearEvolveTimer();
     if (!evolveEnabledRef.current) return;
 
-    const delay = nextEvolveDelayMs(evolveIntervalRef.current);
+    const delay = nextEvolveDelayMs();
     evolveTimerRef.current = setTimeout(() => {
       evolveTimerRef.current = null;
       if (!evolveEnabledRef.current) return;
@@ -276,37 +254,12 @@ export function ContextProvider({ children }) {
       }
 
       setNotification({
-        message: `Evolve on · ${formatEvolveInterval(evolveIntervalRef.current)}`,
+        message: `Evolve on · ${formatEvolveInterval()}`,
       });
       setTimeout(() => setNotification(null), 3000);
       scheduleEvolveTick();
     },
     [clearEvolveTimer, scheduleEvolveTick]
-  );
-
-  const setEvolveIntervalSec = useCallback(
-    value => {
-      const next =
-        value === 'auto' || value == null
-          ? 'auto'
-          : [20, 30, 45, 60].includes(Number(value))
-            ? Number(value)
-            : 'auto';
-      setEvolveIntervalSecState(next);
-      evolveIntervalRef.current = next;
-      try {
-        localStorage.setItem(
-          EVOLVE_INTERVAL_KEY,
-          next === 'auto' ? 'auto' : String(next)
-        );
-      } catch {
-        // ignore
-      }
-      if (evolveEnabledRef.current) {
-        scheduleEvolveTick();
-      }
-    },
-    [scheduleEvolveTick]
   );
 
   // Hydrate shared mix from ?mix= URL (after loadMix exists)
@@ -386,8 +339,6 @@ export function ContextProvider({ children }) {
       zenQuote,
       evolveEnabled,
       setEvolveEnabled,
-      evolveIntervalSec,
-      setEvolveIntervalSec,
     }),
     [
       theme,
@@ -415,8 +366,6 @@ export function ContextProvider({ children }) {
       setTheme,
       evolveEnabled,
       setEvolveEnabled,
-      evolveIntervalSec,
-      setEvolveIntervalSec,
     ]
   );
 

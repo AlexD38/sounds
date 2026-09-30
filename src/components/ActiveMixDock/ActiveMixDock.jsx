@@ -31,7 +31,6 @@ export function ActiveMixDock() {
     mixTransition,
     openScenesSheet,
     evolveEnabled,
-    evolveIntervalSec,
   } = useContext(Context);
   const [isExpanded, setIsExpanded] = useState(false);
   const [showHint, setShowHint] = useState(false);
@@ -99,7 +98,7 @@ export function ActiveMixDock() {
       <span className="active-mix-dock__context-text">
         <span className="active-mix-dock__context-type">
           {evolveEnabled
-            ? `Evolving · ${formatEvolveInterval(evolveIntervalSec)}`
+            ? `Evolving · ${formatEvolveInterval()}`
             : mixTypeLabel}
         </span>
         <span className="active-mix-dock__context-label">{activeMix.label}</span>
@@ -166,7 +165,7 @@ export function ActiveMixDock() {
             className={contextClassName}
             aria-label={`${mixTypeLabel}: ${activeMix.label}${
               evolveEnabled
-                ? `, evolving ${formatEvolveInterval(evolveIntervalSec)}`
+                ? `, evolving ${formatEvolveInterval()}`
                 : ''
             }`}
           >
