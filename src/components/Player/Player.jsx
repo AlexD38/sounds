@@ -33,7 +33,12 @@ import { hasFreesoundApiKey, LOCAL_MUSIC_TRACKS } from '../../ref/localMusic';
 import { CROSSFADE_DURATION } from '../../ref/mix.constants';
 import { formatPlayerLabel } from '../../utils/formatPlayerLabel';
 import { PlayerTitle } from '../PlayerTitle/PlayerTitle';
-import { BAND_FILTER_GAP, BandFilterSlider } from './BandFilterSlider';
+import {
+  BAND_FILTER_GAP,
+  BAND_FILTER_MAX,
+  BAND_FILTER_MIN,
+  BandFilterSlider,
+} from './BandFilterSlider';
 import { WindCreatorSliders } from './WindCreatorSliders';
 import './styles.css'; // Import local styles
 
@@ -41,6 +46,11 @@ const FADE_OUT_DURATION = 2.5;
 const FADE_IN_DURATION = 2.5;
 /** Transparent high-pass default for classic players (Wind has per-layer HP). */
 const DEFAULT_HIGHPASS = 20;
+/** Hz range of the band filter, per player (default = full slider scale). */
+const BAND_RANGES = {
+  whiteNoise: { min: 50, max: 4000 },
+};
+const DEFAULT_BAND_RANGE = { min: BAND_FILTER_MIN, max: BAND_FILTER_MAX };
 const MUSIC_CROSSFADE = CROSSFADE_DURATION;
 
 function Player({ title, sourcePath, custom, speed, stopAll }) {
@@ -64,10 +74,17 @@ function Player({ title, sourcePath, custom, speed, stopAll }) {
   const isWindCreator = checkIsWindCreator(title);
   const isLayeredCreator = isWindCreator;
   const isMusic = title === 'music';
-  const [filterValue, setFilterValue] = useState(
-    isWindCreator ? WIND_DEFAULT_FILTER : 1800
+  const bandRange = BAND_RANGES[title] ?? DEFAULT_BAND_RANGE;
+  const clampHighpass = value =>
+    Math.min(Math.max(value, bandRange.min), bandRange.max - BAND_FILTER_GAP);
+  const clampLowpass = value =>
+    Math.min(Math.max(value, bandRange.min + BAND_FILTER_GAP), bandRange.max);
+  const [filterValue, setFilterValue] = useState(() =>
+    clampLowpass(isWindCreator ? WIND_DEFAULT_FILTER : 1800)
   );
-  const [highpassValue, setHighpassValue] = useState(DEFAULT_HIGHPASS);
+  const [highpassValue, setHighpassValue] = useState(() =>
+    clampHighpass(DEFAULT_HIGHPASS)
+  );
   const [volValue, setVolValue] = useState(1.5);
   const filterValueRef = useRef(filterValue);
   const highpassValueRef = useRef(highpassValue);
@@ -355,8 +372,10 @@ function Player({ title, sourcePath, custom, speed, stopAll }) {
     if (playerState?.isPlaying === true) {
       setStopAll(false);
       const volume = playerState.volume ?? 1.5;
-      const filter = playerState.filter ?? (isWindCreator ? WIND_DEFAULT_FILTER : 1800);
-      const highpass = playerState.highpass ?? DEFAULT_HIGHPASS;
+      const filter = clampLowpass(
+        playerState.filter ?? (isWindCreator ? WIND_DEFAULT_FILTER : 1800)
+      );
+      const highpass = clampHighpass(playerState.highpass ?? DEFAULT_HIGHPASS);
       const speed = playerState.speed ?? 1;
       setFilterValue(filter);
       setHighpassValue(highpass);
@@ -469,9 +488,12 @@ function Player({ title, sourcePath, custom, speed, stopAll }) {
       if (filterRef.current) {
         const filterNoise = perlinNoise(t * 0.7 + 40);
         const filterMapped = (filterNoise + 1) / 2;
-        const filterHz = Math.max(
-          filterValueRef.current * (0.72 + filterMapped * 0.56),
-          highpassValueRef.current + BAND_FILTER_GAP
+        const filterHz = Math.min(
+          Math.max(
+            filterValueRef.current * (0.72 + filterMapped * 0.56),
+            highpassValueRef.current + BAND_FILTER_GAP
+          ),
+          bandRange.max
         );
         filterRef.current.frequency.setTargetAtTime(
           filterHz,
@@ -494,7 +516,7 @@ function Player({ title, sourcePath, custom, speed, stopAll }) {
 
   // FILTER (low-pass) ----------------------------------------
   const handleFilterValue = e => {
-    const value = parseFloat(e?.currentTarget?.value ?? e);
+    const value = clampLowpass(parseFloat(e?.currentTarget?.value ?? e));
     setFilterValue(value);
     filterValueRef.current = value;
     registerPlayerSituation(title, { filter: value });
@@ -516,7 +538,7 @@ function Player({ title, sourcePath, custom, speed, stopAll }) {
 
   // HIGH-PASS ----------------------------------------
   const handleHighpassValue = e => {
-    const value = parseFloat(e?.currentTarget?.value ?? e);
+    const value = clampHighpass(parseFloat(e?.currentTarget?.value ?? e));
     setHighpassValue(value);
     highpassValueRef.current = value;
     registerPlayerSituation(title, { highpass: value });
@@ -1679,6 +1701,8 @@ function Player({ title, sourcePath, custom, speed, stopAll }) {
                 <BandFilterSlider
                   low={highpassValue}
                   high={filterValue}
+                  min={bandRange.min}
+                  max={bandRange.max}
                   onLowChange={handleHighpassValue}
                   onHighChange={handleFilterValue}
                 />
