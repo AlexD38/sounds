@@ -11,4 +11,60 @@
 .evolve-control__icon svg {
   width: 1.15em;
   height: 1.15em;
+  overflow: visible;
+}
+
+.evolve-control__star {
+  transform-box: fill-box;
+  transform-origin: center;
+}
+
+.evolve-control__icon--sparkle {
+  animation: evolve-pop 0.7s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.evolve-control__icon--sparkle .evolve-control__star--big {
+  animation: evolve-twinkle 0.6s ease-out 0.1s;
+}
+
+.evolve-control__icon--sparkle .evolve-control__star--small {
+  animation: evolve-twinkle 0.6s ease-out 0.25s;
+}
+
+@keyframes evolve-pop {
+  0% {
+    transform: scale(1) rotate(0deg);
+    filter: drop-shadow(0 0 0 transparent);
+  }
+  35% {
+    transform: scale(1.35) rotate(-18deg);
+    filter: drop-shadow(0 0 6px currentColor);
+  }
+  100% {
+    transform: scale(1) rotate(0deg);
+    filter: drop-shadow(0 0 0 transparent);
+  }
+}
+
+@keyframes evolve-twinkle {
+  0%,
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+  40% {
+    transform: scale(0.55);
+    opacity: 0.6;
+  }
+  70% {
+    transform: scale(1.25);
+    opacity: 1;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .evolve-control__icon--sparkle,
+  .evolve-control__icon--sparkle .evolve-control__star {
+    animation: none;
+  }
 }
