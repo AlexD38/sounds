@@ -3,3 +3,12 @@
   cursor: not-allowed;
   pointer-events: none;
 }
+
+.evolve-control__icon {
+  display: inline-flex;
+}
+
+.evolve-control__icon svg {
+  width: 1.15em;
+  height: 1.15em;
+}
