@@ -239,6 +239,8 @@ export function ContextProvider({ children }) {
       evolveEnabledRef.current = next;
       if (!next) {
         clearEvolveTimer();
+        setNotification({ message: 'The current mix will no longer evolve' });
+        setTimeout(() => setNotification(null), 3000);
         return;
       }
 
