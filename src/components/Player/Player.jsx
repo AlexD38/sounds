@@ -33,7 +33,7 @@ import { hasFreesoundApiKey, LOCAL_MUSIC_TRACKS } from '../../ref/localMusic';
 import { CROSSFADE_DURATION } from '../../ref/mix.constants';
 import { formatPlayerLabel } from '../../utils/formatPlayerLabel';
 import { PlayerTitle } from '../PlayerTitle/PlayerTitle';
-import { BandFilterSlider } from './BandFilterSlider';
+import { BAND_FILTER_GAP, BandFilterSlider } from './BandFilterSlider';
 import { WindCreatorSliders } from './WindCreatorSliders';
 import './styles.css'; // Import local styles
 
@@ -443,7 +443,6 @@ function Player({ title, sourcePath, custom, speed, stopAll }) {
     let t = Math.random() * 100;
     const speed = 0.005;
     const timeConstant = 0.05;
-    const baseFilter = filterValueRef.current;
 
     const now = audioCtxRef.current.currentTime;
 
@@ -470,7 +469,10 @@ function Player({ title, sourcePath, custom, speed, stopAll }) {
       if (filterRef.current) {
         const filterNoise = perlinNoise(t * 0.7 + 40);
         const filterMapped = (filterNoise + 1) / 2;
-        const filterHz = baseFilter * (0.72 + filterMapped * 0.56);
+        const filterHz = Math.max(
+          filterValueRef.current * (0.72 + filterMapped * 0.56),
+          highpassValueRef.current + BAND_FILTER_GAP
+        );
         filterRef.current.frequency.setTargetAtTime(
           filterHz,
           audioCtxRef.current.currentTime,
@@ -494,6 +496,7 @@ function Player({ title, sourcePath, custom, speed, stopAll }) {
   const handleFilterValue = e => {
     const value = parseFloat(e?.currentTarget?.value ?? e);
     setFilterValue(value);
+    filterValueRef.current = value;
     registerPlayerSituation(title, { filter: value });
     triggerIndicator(
       `${Math.round(highpassValue)} – ${Math.round(value)} Hz`
@@ -515,6 +518,7 @@ function Player({ title, sourcePath, custom, speed, stopAll }) {
   const handleHighpassValue = e => {
     const value = parseFloat(e?.currentTarget?.value ?? e);
     setHighpassValue(value);
+    highpassValueRef.current = value;
     registerPlayerSituation(title, { highpass: value });
     triggerIndicator(`${Math.round(value)} – ${Math.round(filterValue)} Hz`);
 
